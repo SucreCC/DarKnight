@@ -23,7 +23,7 @@ Usage:
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from darknight import logging
+import logging
 from typing import Any, Optional
 
 # Model pricing per 1K tokens (USD)

@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from darknight import logging
+import logging
 from typing import Any, Iterator
 
 
