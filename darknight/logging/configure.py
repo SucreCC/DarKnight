@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from .. import logging
-from darknight.logging import RotatingFileHandler
+import logging
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 import sys
 

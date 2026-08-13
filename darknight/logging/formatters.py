@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import json
-from .. import logging
+import logging
 from typing import Any
 
 from .context import LOG_CONTEXT_FIELDS, current_log_context

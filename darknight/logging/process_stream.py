@@ -7,7 +7,7 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 import inspect
-from .. import logging
+import logging
 from typing import Any
 
 from .context import LOG_CONTEXT_FIELDS

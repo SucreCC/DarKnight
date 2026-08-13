@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from darknight import logging
+import logging
 from typing import Any
 
 
