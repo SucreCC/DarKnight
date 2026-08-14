@@ -7,6 +7,7 @@ from pathlib import Path
 
 PROJECT_HOME_ENV = "PROJECT_HOME"
 PACKAGE_ROOT = Path(__file__).resolve().parents[2]
+TOP_LEVEL_PACKAGE = Path(__file__).resolve().parents[1]
 
 
 def get_runtime_home(home: str | Path | None = None) -> Path:
@@ -36,6 +37,7 @@ def get_runtime_data_root(home: str | Path | None = None) -> Path:
 __all__ = [
     "PROJECT_HOME_ENV",
     "PACKAGE_ROOT",
+    "TOP_LEVEL_PACKAGE",
     "get_runtime_home",
     "get_runtime_data_root",
 ]
@@ -44,3 +46,4 @@ if __name__ == "__main__":
     print("runtime_home:", get_runtime_home())
     print("data_root:", get_runtime_data_root())
     print("PACKAGE_ROOT:", PACKAGE_ROOT)
+    print("TOP_LEVEL_PACKAGE:", TOP_LEVEL_PACKAGE)
