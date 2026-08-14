@@ -1,4 +1,4 @@
-"""DeepTutor logging bootstrap."""
+"""Process-wide stdlib logging bootstrap."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from .formatters import ConsoleFormatter, ContextFilter, JsonlFormatter
 from .loguru_bridge import install_loguru_bridge
 
 _CONFIGURED = False
-_MANAGED_ATTR = "_deeptutor_managed"
+_MANAGED_ATTR = "_logging_managed"
 
 
 def _level(value: str | int) -> int:
