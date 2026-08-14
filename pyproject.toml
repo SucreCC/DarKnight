@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "darknight"
+version = "0.1.0"
+description = "DarKnight"
+requires-python = ">=3.10"
+dependencies = [
+    "typer==0.7.0",
+    "PyYAML==6.0.2",
+    "uvicorn==0.27.0.post1",
+    "loguru>=0.7.3,<1.0.0",
+]
+
+[project.scripts]
+darknight = "darknight_cli.main:main"
+
+[tool.setuptools.packages.find]
+include = ["darknight*", "darknight_cli*"]
+
+[tool.setuptools.package-data]
+darknight = ["config.yaml"]

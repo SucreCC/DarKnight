@@ -15,7 +15,7 @@ def get_runtime_home(home: str | Path | None = None) -> Path:
     Priority:
     1. Explicit *home* argument.
     2. ``PROJECT_HOME`` environment variable.
-    3. ``PACKAGE_ROOT`` (project root derived from this file's location).
+    3. Current working directory.
 
     The returned path is the workspace root; runtime data lives below
     ``<home>/data``.
@@ -23,7 +23,7 @@ def get_runtime_home(home: str | Path | None = None) -> Path:
 
     raw = home if home is not None else os.getenv(PROJECT_HOME_ENV)
     if raw is None or str(raw).strip() == "":
-        return PACKAGE_ROOT
+        return Path.cwd().resolve()
     return Path(raw).expanduser().resolve()
 
 
@@ -41,6 +41,6 @@ __all__ = [
 ]
 
 if __name__ == "__main__":
-    print(PACKAGE_ROOT)
-    print(get_runtime_data_root())
-    print(get_runtime_home())
+    print("runtime_home:", get_runtime_home())
+    print("data_root:", get_runtime_data_root())
+    print("PACKAGE_ROOT:", PACKAGE_ROOT)

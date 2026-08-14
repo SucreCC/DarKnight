@@ -12,9 +12,7 @@ if str(_project_root) not in sys.path:
 import asyncio
 import logging
 import os
-
-from darknight.logging import configure_logging
-from darknight.runtime.home import get_runtime_data_root, get_runtime_home
+import sys
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
@@ -30,15 +28,17 @@ if hasattr(sys.stderr, "reconfigure"):
 
 
 def main() -> None:
-    project_root = get_runtime_home()
-    print(project_root)
-    os.chdir(str(project_root))
+    from darknight.logging import configure_logging
+    from darknight.runtime.bootstrap import prepare_runtime
+    from darknight.services.setup import init_user_directories
 
+    runtime_home = prepare_runtime()
+    init_user_directories(runtime_home)
     configure_logging()
+
     logger = logging.getLogger("main")
     logger.info("Starting Dark Night")
 
 
 if __name__ == "__main__":
     main()
-
