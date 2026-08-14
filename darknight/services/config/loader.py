@@ -24,41 +24,14 @@ def _load_yaml_file(file_path: Path) -> dict[str, Any]:
 
 def _inject_runtime_paths(config: dict[str, Any]) -> dict[str, Any]:
     """Expose canonical runtime paths without treating YAML paths as user-editable state."""
-    path_service = get_path_service()
+    # path_service = get_path_service()
     normalized = dict(config or {})
-    tools = dict(normalized.get("tools", {}) or {})
-    run_code = dict(tools.get("run_code", {}) or {})
-    run_code["workspace"] = str(path_service.get_chat_feature_dir("_detached_code_execution"))
-    tools["run_code"] = run_code
-    normalized["tools"] = tools
-    normalized["paths"] = {
-        "user_data_dir": str(path_service.get_user_root()),
-        "knowledge_bases_dir": str(path_service.get_knowledge_bases_root()),
-        "user_log_dir": str(path_service.get_logs_dir()),
-        "performance_log_dir": str(path_service.get_logs_dir() / "performance"),
-        "question_output_dir": str(path_service.get_chat_feature_dir("deep_question")),
-        "research_output_dir": str(path_service.get_research_dir()),
-        "research_reports_dir": str(path_service.get_research_reports_dir()),
-        "solve_output_dir": str(path_service.get_chat_feature_dir("deep_solve")),
-    }
     return normalized
 
 
 async def _load_yaml_file_async(file_path: Path) -> dict[str, Any]:
     """Async version of _load_yaml_file."""
     return await asyncio.to_thread(_load_yaml_file, file_path)
-
-
-def resolve_config_path(
-    config_file: str,
-    project_root: Path | None = None,
-) -> tuple[Path, bool]:
-    config_path = project_root / config_file
-    if config_path.exists():
-        return config_path, False
-    raise FileNotFoundError(
-        f"Configuration file not found: {config_file} (expected under {project_root})"
-    )
 
 
 def load_config_with_main(config_file: str, top_level_package: Path | None = None) -> dict[str, Any]:
@@ -81,25 +54,14 @@ def load_config_with_main(config_file: str, top_level_package: Path | None = Non
 
 
 async def load_config_with_main_async(
-    config_file: str, project_root: Path | None = None
+    config_file: str, top_level_package: Path | None = None
 ) -> dict[str, Any]:
-    """
-    Async version of load_config_with_main for non-blocking file operations.
-
-    Load configuration file, automatically merge with main.yaml common configuration
-
-    Args:
-        config_file: Configuration file name (e.g., "main.yaml")
-        project_root: Project root directory (if None, will try to auto-detect)
-
-    Returns:
-        Merged configuration dictionary
-    """
-    if project_root is None:
-        project_root = PROJECT_ROOT
-
-    config_path, _ = resolve_config_path(config_file, project_root)
-    return _inject_runtime_paths(await _load_yaml_file_async(config_path))
+    config_path = top_level_package / config_file
+    if config_path.exists():
+        return _inject_runtime_paths(_load_yaml_file(config_path))
+    raise FileNotFoundError(
+        f"Configuration file not found: {config_file} (expected under {top_level_package})"
+    )
 
 
 def get_path_from_config(config: dict[str, Any], path_key: str, default: str = None) -> str:
