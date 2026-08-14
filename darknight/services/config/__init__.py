@@ -24,7 +24,7 @@ from .models import (
     WebhookConfig,
     XrayConfig,
 )
-from .settings import get_settings, load_settings, parse_app_config
+from .settings import get_app_config, load_settings, parse_app_config
 
 __all__ = [
     "PROJECT_ROOT",
@@ -52,7 +52,7 @@ __all__ = [
     "WebhookConfig",
     "XrayConfig",
     "get_path_from_config",
-    "get_settings",
+    "get_app_config",
     "load_config_with_main",
     "load_settings",
     "parse_app_config",

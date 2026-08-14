@@ -21,12 +21,12 @@ def load_settings(config_file: str = "config.yaml") -> AppConfig:
 
 
 @lru_cache(maxsize=1)
-def get_settings() -> AppConfig:
+def get_app_config() -> AppConfig:
     return load_settings()
 
 
 __all__ = [
-    "get_settings",
+    "get_app_config",
     "load_settings",
     "parse_app_config",
 ]
