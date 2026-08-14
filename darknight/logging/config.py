@@ -32,18 +32,15 @@ def load_logging_config() -> LoggingConfig:
             get_path_from_config,
             load_config_with_main,
         )
-        config = load_config_with_main("main.yaml", PROJECT_ROOT)
+        config = load_config_with_main("config.yaml", PROJECT_ROOT)
         logging_config = config.get("logging", {}) or {}
-
-        print(get_runtime_data_root)
-
         return LoggingConfig(
             namespace=str(logging_config.get("namespace")),
             filename=str(logging_config.get("filename")),
             level=str(logging_config.get("level", "INFO")).upper(),
             console_output=bool(logging_config.get("console_output", True)),
             file_output=bool(logging_config.get("save_to_file", True)),
-            log_dir=f"{get_runtime_data_root} / logs",
+            log_dir=str(get_runtime_data_root() / "logs"),
             max_bytes=int(logging_config.get("max_bytes", 10 * 1024 * 1024)),
             backup_count=int(logging_config.get("backup_count", 5)),
         )

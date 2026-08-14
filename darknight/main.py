@@ -31,6 +31,7 @@ if hasattr(sys.stderr, "reconfigure"):
 
 def main() -> None:
     project_root = get_runtime_home()
+    print(project_root)
     os.chdir(str(project_root))
 
     configure_logging()
