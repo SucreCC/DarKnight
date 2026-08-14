@@ -8,6 +8,8 @@ from pathlib import Path
 
 @dataclass(frozen=True)
 class LoggingConfig:
+    namespace: str = ""
+    filename: str = ""
     level: str = "INFO"
     console_output: bool = True
     file_output: bool = True
@@ -25,7 +27,7 @@ def get_default_log_dir() -> Path:
 def load_logging_config() -> LoggingConfig:
     """Load logging settings from ``data/user/settings/main.yaml``."""
     try:
-        from darknight.services.config import (
+        from darknight.services.loader import (
             PROJECT_ROOT,
             get_path_from_config,
             load_config_with_main,
@@ -33,7 +35,10 @@ def load_logging_config() -> LoggingConfig:
 
         config = load_config_with_main("main.yaml", PROJECT_ROOT)
         logging_config = config.get("logging", {}) or {}
+        namespace = str(logging_config.get("namespace"))
         return LoggingConfig(
+            namespace=namespace,
+            filename=str(logging_config.get("filename", namespace)),
             level=str(logging_config.get("level", "INFO")).upper(),
             console_output=bool(logging_config.get("console_output", True)),
             file_output=bool(logging_config.get("save_to_file", True)),

@@ -60,7 +60,7 @@ def configure_logging(force: bool = False) -> LoggingConfig:
         log_dir.mkdir(parents=True, exist_ok=True)
         file_handler = _managed(
             RotatingFileHandler(
-                log_dir / "deeptutor.jsonl",
+                log_dir / f"{config.filename}.jsonl",
                 maxBytes=config.max_bytes,
                 backupCount=config.backup_count,
                 encoding="utf-8",
@@ -70,8 +70,9 @@ def configure_logging(force: bool = False) -> LoggingConfig:
         file_handler.setFormatter(JsonlFormatter())
         root.addHandler(file_handler)
 
-    logging.getLogger("deeptutor").setLevel(logging.DEBUG)
-    logging.getLogger("deeptutor").propagate = True
+    app_logger = logging.getLogger(config.namespace)
+    app_logger.setLevel(logging.DEBUG)
+    app_logger.propagate = True
     install_loguru_bridge(logging.DEBUG)
     _CONFIGURED = True
     return config
