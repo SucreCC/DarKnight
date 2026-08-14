@@ -15,10 +15,6 @@ from darknight.runtime.home import get_runtime_home
 from darknight.services.path_service import get_path_service
 PROJECT_ROOT = get_runtime_home()
 
-def get_runtime_settings_dir(project_root: Path | None = None) -> Path:
-    """Return the canonical runtime settings directory under ``data/user/settings``."""
-    root = project_root or PROJECT_ROOT
-    return root / "data" / "user" / "settings"
 
 def _load_yaml_file(file_path: Path) -> dict[str, Any]:
     """Load a YAML file and return its contents as a dict."""
@@ -57,28 +53,15 @@ def resolve_config_path(
     config_file: str,
     project_root: Path | None = None,
 ) -> tuple[Path, bool]:
-    """
-    Resolve *config_file* inside ``data/user/settings/``.
-
-    Returns:
-        ``(path, False)``
-
-    Raises:
-        FileNotFoundError: If the requested config does not exist.
-    """
-    if project_root is None:
-        project_root = PROJECT_ROOT
-
-    settings_dir = get_runtime_settings_dir(project_root)
-    config_path = settings_dir / config_file
+    config_path = project_root / config_file
     if config_path.exists():
         return config_path, False
     raise FileNotFoundError(
-        f"Configuration file not found: {config_file} (expected under {settings_dir})"
+        f"Configuration file not found: {config_file} (expected under {project_root})"
     )
 
 
-def load_config_with_main(config_file: str, project_root: Path | None = None) -> dict[str, Any]:
+def load_config_with_main(config_file: str, top_level_package: Path | None = None) -> dict[str, Any]:
     """
     Load configuration file, automatically merge with main.yaml common configuration
 
@@ -89,11 +72,12 @@ def load_config_with_main(config_file: str, project_root: Path | None = None) ->
     Returns:
         Merged configuration dictionary
     """
-    if project_root is None:
-        project_root = PROJECT_ROOT
-
-    config_path, _ = resolve_config_path(config_file, project_root)
-    return _inject_runtime_paths(_load_yaml_file(config_path))
+    config_path = top_level_package / config_file
+    if config_path.exists():
+        return _inject_runtime_paths(_load_yaml_file(config_path))
+    raise FileNotFoundError(
+        f"Configuration file not found: {config_file} (expected under {top_level_package})"
+    )
 
 
 async def load_config_with_main_async(
