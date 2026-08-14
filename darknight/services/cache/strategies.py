@@ -41,3 +41,9 @@ class CacheEntry:
         """更新访问时间和计数"""
         self.last_access = time.time()
         self.access_count += 1
+
+
+__all__ = [
+    "CacheEntry",
+    "CacheStrategy",
+]

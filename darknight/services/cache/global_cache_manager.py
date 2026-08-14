@@ -214,3 +214,8 @@ class GlobalCacheManager:
 
 # 创建全局缓存管理器实例
 cache_manager = GlobalCacheManager()
+
+
+__all__ = [
+    "cache_manager",
+]
