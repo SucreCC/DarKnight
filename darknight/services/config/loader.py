@@ -15,7 +15,10 @@ from darknight.runtime.home import get_runtime_home
 from darknight.services.path_service import get_path_service
 PROJECT_ROOT = get_runtime_home()
 
-
+def get_runtime_settings_dir(project_root: Path | None = None) -> Path:
+    """Return the canonical runtime settings directory under ``data/user/settings``."""
+    root = project_root or PROJECT_ROOT
+    return root / "data" / "user" / "settings"
 
 def _load_yaml_file(file_path: Path) -> dict[str, Any]:
     """Load a YAML file and return its contents as a dict."""

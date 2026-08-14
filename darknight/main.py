@@ -32,10 +32,9 @@ def main() -> None:
     from darknight.runtime.bootstrap import prepare_runtime
     from darknight.services.setup import init_user_directories
 
-    runtime_home = prepare_runtime()
-    init_user_directories(runtime_home)
-    configure_logging()
-
+    # runtime_home = prepare_runtime()
+    config = configure_logging()
+    print(config)
     logger = logging.getLogger("main")
     logger.info("Starting Dark Night")
 

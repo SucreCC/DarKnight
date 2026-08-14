@@ -21,7 +21,7 @@ def _reset_runtime_singletons() -> None:
 
 def _refresh_loader_project_root() -> None:
     try:
-        import darknight.services.loader as loader
+        import darknight.services.config.loader as loader
 
         loader.PROJECT_ROOT = get_runtime_home()
     except Exception:

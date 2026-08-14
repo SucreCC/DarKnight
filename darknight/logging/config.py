@@ -4,7 +4,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from darknight.runtime.home import get_runtime_data_root
 
 
 @dataclass(frozen=True)
@@ -27,12 +26,12 @@ def get_default_log_dir() -> Path:
 
 def load_logging_config() -> LoggingConfig:
     try:
-        from darknight.services.loader import (
-            PROJECT_ROOT,
-            get_path_from_config,
+        from darknight.services.config.loader import (
             load_config_with_main,
         )
-        config = load_config_with_main("config.yaml", PROJECT_ROOT)
+        from darknight.runtime.home import get_runtime_data_root, PACKAGE_ROOT
+
+        config = load_config_with_main("config.yaml", PACKAGE_ROOT)
         logging_config = config.get("logging", {}) or {}
         return LoggingConfig(
             namespace=str(logging_config.get("namespace")),

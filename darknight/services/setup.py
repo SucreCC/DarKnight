@@ -26,8 +26,8 @@ def init_user_directories(project_root: Path | None = None) -> Path:
     runtime_home.mkdir(parents=True, exist_ok=True)
 
     path_service = get_path_service()
-    path_service.ensure_all_directories()
-    _seed_default_config(path_service.get_settings_dir())
+    # path_service.ensure_all_directories()
+    # _seed_default_config(path_service.get_settings_dir())
     return runtime_home
 
 
