@@ -7,7 +7,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 import sys
 
-from .config import LoggingConfig, load_logging_config
+from .config import LoggingConfig, get_default_log_dir, load_logging_config
 from .formatters import ConsoleFormatter, ContextFilter, JsonlFormatter
 from .loguru_bridge import install_loguru_bridge
 
@@ -56,7 +56,7 @@ def configure_logging(force: bool = False) -> LoggingConfig:
         root.addHandler(console)
 
     if config.file_output:
-        log_dir = Path(config.log_dir) if config.log_dir else Path("data/user/logs")
+        log_dir = Path(config.log_dir) if config.log_dir else get_default_log_dir()
         log_dir.mkdir(parents=True, exist_ok=True)
         file_handler = _managed(
             RotatingFileHandler(

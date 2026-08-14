@@ -57,12 +57,7 @@ WorkspaceFeature = Literal[
 
 
 class PathService:
-    """Runtime path manager rooted at a workspace root.
-
-    The default root is the historical ``data/`` directory.  The optional
-    multi-user layer instantiates this class with ``data/users/<uid>/`` so the
-    public API can stay the same while disk writes become scoped per user.
-    """
+    """Runtime path manager rooted at ``<runtime-home>/data``."""
 
     _instance: "PathService | None" = None
 
@@ -422,18 +417,7 @@ class PathService:
 
 
 def get_path_service() -> PathService:
-    try:
-        from darknight.multi_user.paths import get_current_path_service
-
-        return get_current_path_service()
-    except Exception:
-        import logging as _logging
-
-        _logging.getLogger(__name__).warning(
-            "get_path_service() fell back to default instance; multi-user path resolution failed",
-            exc_info=True,
-        )
-        return PathService.get_instance()
+    return PathService.get_instance()
 
 
 __all__ = [
