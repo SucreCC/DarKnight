@@ -23,7 +23,7 @@ def get_runtime_home(home: str | Path | None = None) -> Path:
 
     raw = home if home is not None else os.getenv(PROJECT_HOME_ENV)
     if raw is None or str(raw).strip() == "":
-        return Path.cwd().resolve()
+        return PACKAGE_ROOT
     return Path(raw).expanduser().resolve()
 
 
