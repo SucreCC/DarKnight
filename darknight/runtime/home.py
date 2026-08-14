@@ -1,4 +1,4 @@
-"""Runtime home resolution for installed and source DeepTutor runs."""
+"""Runtime home resolution for DarKnight source and installed runs."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ def get_runtime_home(home: str | Path | None = None) -> Path:
     Priority:
     1. Explicit *home* argument.
     2. ``PROJECT_HOME`` environment variable.
-    3. Current working directory.
+    3. ``PACKAGE_ROOT`` (project root derived from this file's location).
 
     The returned path is the workspace root; runtime data lives below
     ``<home>/data``.
@@ -23,7 +23,7 @@ def get_runtime_home(home: str | Path | None = None) -> Path:
 
     raw = home if home is not None else os.getenv(PROJECT_HOME_ENV)
     if raw is None or str(raw).strip() == "":
-        return Path.cwd().resolve()
+        return PACKAGE_ROOT
     return Path(raw).expanduser().resolve()
 
 
