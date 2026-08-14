@@ -41,5 +41,6 @@ __all__ = [
 ]
 
 if __name__ == "__main__":
+    print(PACKAGE_ROOT)
     print(get_runtime_data_root())
     print(get_runtime_home())
