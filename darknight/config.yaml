@@ -1,20 +1,139 @@
-service:
-  service_name: darknight
+project:
+  project_name: darknight
   description: "darknight"
   version: 1.0.0
   api_version: "/api/v1"
+
+server:
+  host: 0.0.0.0              # UVICORN_HOST
+  port: 33100                # UVICORN_PORT
+  uds: null                  # UVICORN_UDS
+  ssl:
+    certfile: null           # UVICORN_SSL_CERTFILE
+    keyfile: null            # UVICORN_SSL_KEYFILE
+    ca_type: public          # UVICORN_SSL_CA_TYPE: public | private
   doc_url: "/docs"
   redoc_url: "/redoc"
-  instances: 1
-  host: 0.0.0.0
-  port: 33100
+  docs: false
+  allowed_origins:
+    - "*"
+
+web:
+  dashboard_path: /dashboard/
+  debug: false
+  # DEBUG=true 且未显式设置时，会自动变为 http://127.0.0.1:{port}/api/
+  vite_base_api: /api/
 
 logging:
   namespace: darknight       # logger 命名空间（darknight.xxx）
   filename: darknight        # 日志文件名（darknight.jsonl）
-  level: INFO              # DEBUG, INFO, WARNING, ERROR
-  save_to_file: true       # 写入 data/user/logs/darknight.jsonl
-  console_output: true     # 输出到终端
-  max_bytes: 10485760      # 单文件上限 10MB
-  backup_count: 5          # 轮转保留份数
+  level: INFO                # DEBUG, INFO, WARNING, ERROR
+  save_to_file: true         # 写入 data/user/logs/darknight.jsonl
+  console_output: true       # 输出到终端
+  max_bytes: 10485760        # 单文件上限 10MB
+  backup_count: 5            # 轮转保留份数
 
+database:
+  url: sqlite:///db.sqlite3  # SQLALCHEMY_DATABASE_URL
+  pool_size: 10                # SQLALCHEMY_POOL_SIZE
+  max_overflow: 30             # SQLALCHEMY_MAX_OVERFLOW
+
+xray:
+  json: ./xray_config.json
+  fallbacks_inbound_tag: ""    # 兼容旧名 XRAY_FALLBACK_INBOUND_TAG
+  executable_path: /usr/local/bin/xray
+  assets_path: /usr/local/share/xray
+  exclude_inbound_tags: []
+  subscription_url_prefix: ""
+  subscription_path: sub
+
+telegram:
+  api_token: ""
+  admin_id: []                 # 逗号分隔的管理员 ID 列表
+  proxy_url: ""
+  logger_channel_id: 0
+  default_vless_flow: ""
+
+jwt:
+  access_token_expire_minutes: 1440
+
+templates:
+  custom_directory: null
+  subscription_page: subscription/index.html
+  home_page: home/index.html
+  clash:
+    subscription: clash/default.yml
+    settings: clash/settings.yml
+  singbox:
+    subscription: singbox/default.json
+    settings: singbox/settings.json
+  mux: mux/default.json
+  v2ray:
+    subscription: v2ray/default.json
+    settings: v2ray/settings.json
+  user_agent:
+    default: user_agent/default.json
+    grpc: user_agent/grpc.json
+
+notifications:
+  status_change: true
+  user_created: true
+  user_updated: true
+  user_deleted: true
+  user_data_used_reset: true
+  user_sub_revoked: true
+  if_data_usage_percent_reached: true
+  if_days_left_reached: true
+  login: true
+  reached_usage_percent:
+    - 80
+  days_left:
+    - 3
+  recurrent:
+    timeout: 180               # 每次重试间隔（秒）
+    count: 3                   # 未收到成功响应时的重试次数
+
+status_text:
+  active: Active
+  expired: Expired
+  limited: Limited
+  disabled: Disabled
+  on_hold: On-Hold
+
+users:
+  autodelete_days: -1
+  autodelete_include_limited_accounts: false
+
+auth:
+  sudo:
+    username: ""
+    password: ""
+
+webhook:
+  addresses: []                # 逗号分隔的 webhook 地址列表
+  secret: null
+
+subscription:
+  update_interval: "12"        # profile-update-interval（小时）
+  support_url: https://t.me/
+  profile_title: Subscription
+
+discord:
+  webhook_url: ""
+
+jobs:
+  core_health_check_interval: 10
+  record_node_usages_interval: 30
+  record_user_usages_interval: 10
+  review_users_interval: 10
+  send_notifications_interval: 30
+
+features:
+  disable_recording_node_usage: false
+  external_config: ""
+  login_notify_white_list: []
+  use_custom_json_default: false
+  use_custom_json_for_v2rayn: false
+  use_custom_json_for_v2rayng: false
+  use_custom_json_for_streisand: false
+  use_custom_json_for_happ: false
