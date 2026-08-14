@@ -5,6 +5,7 @@ from .discord import DiscordConfig
 from .features import FeaturesConfig
 from .jobs import JobsConfig
 from .jwt import JwtConfig
+from .logging import LoggingConfig
 from .notifications import NotificationsConfig, RecurrentNotificationConfig
 from .project import ProjectConfig
 from .server import ServerConfig, SslConfig
@@ -25,6 +26,7 @@ __all__ = [
     "FeaturesConfig",
     "JobsConfig",
     "JwtConfig",
+    "LoggingConfig",
     "NotificationsConfig",
     "ProjectConfig",
     "RecurrentNotificationConfig",

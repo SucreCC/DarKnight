@@ -7,12 +7,32 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 import sys
 
-from .config import LoggingConfig, get_default_log_dir, load_logging_config
+from darknight.services.config.models.logging import LoggingConfig
+
 from .formatters import ConsoleFormatter, ContextFilter, JsonlFormatter
 from .loguru_bridge import install_loguru_bridge
 
 _CONFIGURED = False
 _MANAGED_ATTR = "_logging_managed"
+
+
+def get_default_log_dir() -> Path:
+    from darknight.services.path_service import get_path_service
+
+    return get_path_service().get_logs_dir()
+
+
+def load_logging_config() -> LoggingConfig:
+    try:
+        from darknight.services.config.settings import get_app_config
+
+        return get_app_config().logging
+    except Exception:
+        return LoggingConfig(log_dir=str(get_default_log_dir()))
+
+
+def get_global_log_level() -> str:
+    return load_logging_config().level
 
 
 def _level(value: str | int) -> int:
@@ -76,3 +96,12 @@ def configure_logging(force: bool = False) -> LoggingConfig:
     install_loguru_bridge(logging.DEBUG)
     _CONFIGURED = True
     return config
+
+
+__all__ = [
+    "LoggingConfig",
+    "configure_logging",
+    "get_default_log_dir",
+    "get_global_log_level",
+    "load_logging_config",
+]

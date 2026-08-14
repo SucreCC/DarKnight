@@ -9,6 +9,7 @@ from .discord import DiscordConfig
 from .features import FeaturesConfig
 from .jobs import JobsConfig
 from .jwt import JwtConfig
+from .logging import LoggingConfig
 from .notifications import NotificationsConfig
 from .project import ProjectConfig
 from .server import ServerConfig
@@ -42,11 +43,15 @@ class AppConfig:
     discord: DiscordConfig = field(default_factory=DiscordConfig)
     jobs: JobsConfig = field(default_factory=JobsConfig)
     features: FeaturesConfig = field(default_factory=FeaturesConfig)
+    logging: LoggingConfig = field(default_factory=LoggingConfig)
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any] | None = None) -> AppConfig:
+        from darknight.runtime.home import get_runtime_data_root
+
         data = raw or {}
         server = ServerConfig.from_dict(section(data, "server"))
+        log_dir = str(get_runtime_data_root() / "logs")
         return cls(
             project=ProjectConfig.from_dict(section(data, "project")),
             server=server,
@@ -65,6 +70,7 @@ class AppConfig:
             discord=DiscordConfig.from_dict(section(data, "discord")),
             jobs=JobsConfig.from_dict(section(data, "jobs")),
             features=FeaturesConfig.from_dict(section(data, "features")),
+            logging=LoggingConfig.from_dict(section(data, "logging"), log_dir=log_dir),
         )
 
 

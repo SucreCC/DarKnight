@@ -128,18 +128,17 @@ Then, navigate to {click.style(f"http://127.0.0.1:{server.port}", bold=True)} on
 
 
 def main() -> None:
-    from darknight.logging import configure_logging, get_global_log_level
-
-    configure_logging()
-    logger = logging.getLogger("main")
-
+    from darknight.logging import configure_logging
     from darknight.services.config.settings import get_app_config
 
+    configure_logging()
     app_config = get_app_config()
+
+    logger = logging.getLogger(f"{app_config.logging.namespace}.main")
     debug = app_config.web.debug
     bind_args = build_bind_args(app_config, logger)
 
-    log_level_name = get_global_log_level()
+    log_level_name = app_config.logging.level
     uvicorn_log_level = logging.DEBUG if debug else getattr(logging, log_level_name, logging.INFO)
 
     # Do NOT change workers count for now
