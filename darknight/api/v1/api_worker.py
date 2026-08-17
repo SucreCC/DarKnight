@@ -14,6 +14,8 @@ from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 
 from darknight.api.v1.api_router import api_router
+from darknight.runtime.banner import print_startup_banner
+from darknight.runtime.server import build_bind_args, resolve_uvicorn_log_level
 from darknight.services.config.models import AppConfig
 
 APP_IMPORT_PATH = "darknight.api.v1.api_worker:app"
@@ -28,7 +30,11 @@ def use_route_names_as_operation_ids(app: FastAPI) -> None:
 class APIWorker:
     """DarKnight API 服务：FastAPI 应用组装与 Uvicorn 生命周期。"""
 
-    def __init__(self, app_config: AppConfig):
+    def __init__(self, app_config: AppConfig | None = None):
+        if app_config is None:
+            from darknight.services.config.settings import get_app_config
+
+            app_config = get_app_config()
         self.app_config = app_config
         self.scheduler = BackgroundScheduler(
             {"apscheduler.job_defaults.max_instances": 20},
@@ -101,13 +107,13 @@ class APIWorker:
                 content=jsonable_encoder({"detail": details}),
             )
 
-    def run(
-        self,
-        bind_args: dict[str, Any],
-        *,
-        reload: bool = False,
-        log_level: int | str = logging.INFO,
-    ) -> None:
+    def run(self) -> None:
+        bind_args = build_bind_args(self.app_config, self.logger)
+        reload = self.app_config.web.debug
+        log_level = resolve_uvicorn_log_level(self.app_config)
+
+        print_startup_banner(self.app_config, bind_args, logger=self.logger)
+
         try:
             if reload:
                 uvicorn.run(
