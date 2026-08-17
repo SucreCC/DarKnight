@@ -63,7 +63,11 @@ class APIWorker:
             allow_headers=["*"],
         )
 
-        app.include_router(api_router, prefix=project.api_version)
+        app.include_router(api_router)
+
+        from darknight.dashboard import register_dashboard
+
+        register_dashboard(app, self.app_config)
 
         use_route_names_as_operation_ids(app)
         self._register_lifecycle(app)
