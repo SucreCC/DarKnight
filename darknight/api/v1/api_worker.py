@@ -138,12 +138,3 @@ class APIWorker:
             pass
 
 
-def create_app(app_config: AppConfig | None = None) -> FastAPI:
-    if app_config is None:
-        from darknight.services.config.settings import get_app_config
-
-        app_config = get_app_config()
-    return APIWorker(app_config).app
-
-
-app = create_app()
