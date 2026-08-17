@@ -1,14 +1,15 @@
 import time
 import traceback
 
-from app import app, logger, scheduler, xray
-from app.db import GetDB, crud
-from app.models.node import NodeStatus
-from config import JOB_CORE_HEALTH_CHECK_INTERVAL
+from darknight.db import GetDB, crud
+from darknight.models.node import NodeStatus
+from darknight.jobs.manager import JobManager
+from darknight.jobs._runtime import mgr
 from xray_api import exc as xray_exc
 
 
 def core_health_check():
+    xray = mgr().xray
     config = None
 
     # main core
@@ -34,8 +35,10 @@ def core_health_check():
             xray.operations.connect_node(node_id, config)
 
 
-@app.on_event("startup")
 def start_core():
+    logger = mgr().logger
+    xray = mgr().xray
+
     logger.info("Generating Xray core config")
 
     start_time = time.time()
@@ -60,13 +63,19 @@ def start_core():
     for node_id in node_ids:
         xray.operations.connect_node(node_id, config)
 
-    scheduler.add_job(core_health_check, 'interval',
-                      seconds=JOB_CORE_HEALTH_CHECK_INTERVAL,
-                      coalesce=True, max_instances=1)
+    mgr().add_job(
+        core_health_check,
+        "interval",
+        seconds=mgr().config.jobs.core_health_check_interval,
+        coalesce=True,
+        max_instances=1,
+    )
 
 
-@app.on_event("shutdown")
 def app_shutdown():
+    logger = mgr().logger
+    xray = mgr().xray
+
     logger.info("Stopping main Xray core")
     xray.core.stop()
 
@@ -76,3 +85,8 @@ def app_shutdown():
             node.disconnect()
         except Exception:
             pass
+
+
+def register(manager: JobManager) -> None:
+    manager.on_startup(start_core)
+    manager.on_shutdown(app_shutdown)

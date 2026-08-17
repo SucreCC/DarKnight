@@ -1,8 +1,9 @@
 from datetime import datetime
 
-from app import logger, scheduler, xray
-from app.db import crud, GetDB, get_users
-from app.models.user import UserDataLimitResetStrategy, UserStatus
+from darknight.db import crud, GetDB, get_users
+from darknight.models.user import UserDataLimitResetStrategy, UserStatus
+from darknight.jobs.manager import JobManager
+from darknight.jobs._runtime import mgr
 
 reset_strategy_to_days = {
     UserDataLimitResetStrategy.day.value: 1,
@@ -13,6 +14,8 @@ reset_strategy_to_days = {
 
 
 def reset_user_data_usage():
+    logger = mgr().logger
+    xray = mgr().xray
     now = datetime.utcnow()
     with GetDB() as db:
         for user in get_users(db,
@@ -40,4 +43,5 @@ def reset_user_data_usage():
             logger.info(f"User data usage reset for User \"{user.username}\"")
 
 
-scheduler.add_job(reset_user_data_usage, 'interval', coalesce=True, hours=1)
+def register(manager: JobManager) -> None:
+    manager.add_job(reset_user_data_usage, "interval", coalesce=True, hours=1)

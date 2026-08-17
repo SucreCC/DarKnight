@@ -9,14 +9,10 @@ from sqlalchemy import and_, bindparam, insert, select, update
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.dml import Insert
 
-from app import scheduler, xray
-from app.db import GetDB
-from app.db.models import Admin, NodeUsage, NodeUserUsage, System, User
-from config import (
-    DISABLE_RECORDING_NODE_USAGE,
-    JOB_RECORD_NODE_USAGES_INTERVAL,
-    JOB_RECORD_USER_USAGES_INTERVAL,
-)
+from darknight.db import GetDB
+from darknight.db.models import Admin, NodeUsage, NodeUserUsage, System, User
+from darknight.jobs.manager import JobManager
+from darknight.jobs._runtime import mgr
 from xray_api import XRay as XRayAPI
 from xray_api import exc as xray_exc
 
@@ -128,6 +124,9 @@ def get_outbounds_stats(api: XRayAPI):
 
 
 def record_user_usages():
+    xray = mgr().xray
+    disable_node_usage = mgr().config.features.disable_recording_node_usage
+
     api_instances = {None: xray.api}
     usage_coefficient = {None: 1}  # default usage coefficient for the main api instance
 
@@ -176,7 +175,7 @@ def record_user_usages():
                 values(users_usage=Admin.users_usage + bindparam('value'))
             safe_execute(db, admin_update_stmt, admin_data)
 
-    if DISABLE_RECORDING_NODE_USAGE:
+    if disable_node_usage:
         return
 
     for node_id, params in api_params.items():
@@ -184,6 +183,9 @@ def record_user_usages():
 
 
 def record_node_usages():
+    xray = mgr().xray
+    disable_node_usage = mgr().config.features.disable_recording_node_usage
+
     api_instances = {None: xray.api}
     for node_id, node in list(xray.nodes.items()):
         if node.connected and node.started:
@@ -210,16 +212,27 @@ def record_node_usages():
         )
         safe_execute(db, stmt)
 
-    if DISABLE_RECORDING_NODE_USAGE:
+    if disable_node_usage:
         return
 
     for node_id, params in api_params.items():
         record_node_stats(params, node_id)
 
 
-scheduler.add_job(record_user_usages, 'interval',
-                  seconds=JOB_RECORD_USER_USAGES_INTERVAL,
-                  coalesce=True, max_instances=1)
-scheduler.add_job(record_node_usages, 'interval',
-                  seconds=JOB_RECORD_NODE_USAGES_INTERVAL,
-                  coalesce=True, max_instances=1)
+def register(manager: JobManager) -> None:
+    jobs = manager.config.jobs
+
+    manager.add_job(
+        record_user_usages,
+        "interval",
+        seconds=jobs.record_user_usages_interval,
+        coalesce=True,
+        max_instances=1,
+    )
+    manager.add_job(
+        record_node_usages,
+        "interval",
+        seconds=jobs.record_node_usages_interval,
+        coalesce=True,
+        max_instances=1,
+    )

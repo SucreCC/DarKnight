@@ -3,25 +3,26 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy.orm import Session
 
-from app import logger, scheduler, xray
-from app.db import (GetDB, get_notification_reminder, get_users,
+from darknight.db import (GetDB, get_notification_reminder, get_users,
                     start_user_expire, update_user_status, reset_user_by_next)
-from app.models.user import ReminderType, UserResponse, UserStatus
-from app.utils import report
-from app.utils.helpers import (calculate_expiration_days,
+from darknight.models.user import ReminderType, UserResponse, UserStatus
+from darknight.utils import report
+from darknight.utils.helpers import (calculate_expiration_days,
                                calculate_usage_percent)
-from config import (JOB_REVIEW_USERS_INTERVAL, NOTIFY_DAYS_LEFT,
-                    NOTIFY_REACHED_USAGE_PERCENT, WEBHOOK_ADDRESS)
+from darknight.jobs.manager import JobManager
+from darknight.jobs._runtime import mgr
 
 if TYPE_CHECKING:
-    from app.db.models import User
+    from darknight.db.models import User
 
 
 def add_notification_reminders(db: Session, user: "User", now: datetime = datetime.utcnow()) -> None:
+    notifications = mgr().config.notifications
+
     if user.data_limit:
         usage_percent = calculate_usage_percent(user.used_traffic, user.data_limit)
 
-        for percent in sorted(NOTIFY_REACHED_USAGE_PERCENT, reverse=True):
+        for percent in sorted(notifications.reached_usage_percent, reverse=True):
             if usage_percent >= percent:
                 if not get_notification_reminder(db, user.id, ReminderType.data_usage, threshold=percent):
                     report.data_usage_percent_reached(
@@ -33,7 +34,7 @@ def add_notification_reminders(db: Session, user: "User", now: datetime = dateti
     if user.expire:
         expire_days = calculate_expiration_days(user.expire)
 
-        for days_left in sorted(NOTIFY_DAYS_LEFT):
+        for days_left in sorted(notifications.days_left):
             if expire_days <= days_left:
                 if not get_notification_reminder(db, user.id, ReminderType.expiration_date, threshold=days_left):
                     report.expire_days_reached(
@@ -44,6 +45,7 @@ def add_notification_reminders(db: Session, user: "User", now: datetime = dateti
 
 
 def reset_user_by_next_report(db: Session, user: "User"):
+    xray = mgr().xray
     user = reset_user_by_next(db, user)
 
     xray.operations.update_user(user)
@@ -52,6 +54,10 @@ def reset_user_by_next_report(db: Session, user: "User"):
 
 
 def review():
+    logger = mgr().logger
+    xray = mgr().xray
+    webhook_addresses = mgr().config.webhook.addresses
+
     now = datetime.utcnow()
     now_ts = now.timestamp()
     with GetDB() as db:
@@ -76,7 +82,7 @@ def review():
             elif expired:
                 status = UserStatus.expired
             else:
-                if WEBHOOK_ADDRESS:
+                if webhook_addresses:
                     add_notification_reminders(db, user, now)
                 continue
 
@@ -115,6 +121,13 @@ def review():
             logger.info(f"User \"{user.username}\" status changed to {status}")
 
 
-scheduler.add_job(review, 'interval',
-                  seconds=JOB_REVIEW_USERS_INTERVAL,
-                  coalesce=True, max_instances=1)
+def register(manager: JobManager) -> None:
+    jobs = manager.config.jobs
+
+    manager.add_job(
+        review,
+        "interval",
+        seconds=jobs.review_users_interval,
+        coalesce=True,
+        max_instances=1,
+    )

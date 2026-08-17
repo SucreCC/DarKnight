@@ -1,11 +1,11 @@
 from typing import Optional, Union
-from app.models.admin import AdminInDB, AdminValidationResult, Admin
-from app.models.user import UserResponse, UserStatus
-from app.db import Session, crud, get_db
-from config import SUDOERS
+from darknight.models.admin import AdminInDB, AdminValidationResult, Admin
+from darknight.models.user import UserResponse, UserStatus
+from darknight.db import Session, crud, get_db
+from darknight.services.config.settings import get_app_config
 from fastapi import Depends, HTTPException
 from datetime import datetime, timezone, timedelta
-from app.utils.jwt import get_subscription_payload
+from darknight.utils.jwt import get_subscription_payload
 
 
 def validate_admin(db: Session, username: str, password: str) -> Optional[AdminValidationResult]:

@@ -68,8 +68,21 @@ class APIWorker:
         use_route_names_as_operation_ids(app)
         self._register_lifecycle(app)
         self._register_exception_handlers(app)
+        self._register_jobs(app)
 
         return app
+
+    def _register_jobs(self, app: FastAPI) -> None:
+        from darknight.jobs import JobManager, register_all_jobs
+
+        self.job_manager = JobManager(
+            app=app,
+            scheduler=self.scheduler,
+            logger=self.logger,
+            config=self.app_config,
+            xray=getattr(self, "xray", None),
+        )
+        register_all_jobs(self.job_manager)
 
     def _register_lifecycle(self, app: FastAPI) -> None:
         subscription_path = self.app_config.xray.subscription_path
