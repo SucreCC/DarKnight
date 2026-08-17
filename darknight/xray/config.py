@@ -14,7 +14,7 @@ from darknight.db import models as db_models
 from darknight.models.proxy import ProxyTypes
 from darknight.models.user import UserStatus
 from darknight.utils.crypto import get_cert_SANs
-from config import DEBUG, XRAY_EXCLUDE_INBOUND_TAGS, XRAY_FALLBACKS_INBOUND_TAG
+from darknight.services.config.settings import get_app_config
 
 
 def merge_dicts(a, b):  # B will override A dictionary key and values
@@ -56,7 +56,8 @@ class XRayConfig(dict):
         self.inbounds = []
         self.inbounds_by_protocol = {}
         self.inbounds_by_tag = {}
-        self._fallbacks_inbound = self.get_inbound(XRAY_FALLBACKS_INBOUND_TAG)
+        xray_cfg = get_app_config().xray
+        self._fallbacks_inbound = self.get_inbound(xray_cfg.fallbacks_inbound_tag)
         self._resolve_inbounds()
 
         self._apply_api()
@@ -145,7 +146,7 @@ class XRayConfig(dict):
             if not inbound['protocol'] in ProxyTypes._value2member_map_:
                 continue
 
-            if inbound['tag'] in XRAY_EXCLUDE_INBOUND_TAGS:
+            if inbound['tag'] in get_app_config().xray.exclude_inbound_tags:
                 continue
 
             if not inbound.get('settings'):
@@ -226,10 +227,13 @@ class XRayConfig(dict):
                                 f"You need to provide privateKey in realitySettings of {inbound['tag']}")
 
                         try:
-                            from darknight.xray import core
-                            x25519 = core.get_x25519(pvk)
-                            settings['pbk'] = x25519['public_key']
-                        except ImportError:
+                            import sys
+
+                            xray_pkg = sys.modules.get("darknight.xray")
+                            if xray_pkg is not None:
+                                x25519 = xray_pkg.core.get_x25519(pvk)
+                                settings['pbk'] = x25519['public_key']
+                        except Exception:
                             pass
 
                         if not settings.get('pbk'):
@@ -429,7 +433,7 @@ class XRayConfig(dict):
 
                         clients.append(client)
 
-        if DEBUG:
+        if get_app_config().web.debug:
             with open('generated_config-debug.json', 'w') as f:
                 f.write(config.to_json(indent=4))
 

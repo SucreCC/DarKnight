@@ -5,7 +5,7 @@ from typing import Type
 
 from pydantic import BaseModel
 
-from config import WEBHOOK_ADDRESS
+from darknight.services.config.settings import get_app_config
 from darknight.models.admin import Admin
 from darknight.models.user import UserResponse
 
@@ -107,5 +107,5 @@ class UserSubscriptionRevoked(UserNotification):
 
 
 def notify(message: Type[Notification]) -> None:
-    if WEBHOOK_ADDRESS:
+    if get_app_config().webhook.addresses:
         queue.append(message)

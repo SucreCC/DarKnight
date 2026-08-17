@@ -1,17 +1,17 @@
-import requests
+﻿import requests
 from datetime import datetime
-from app.db.models import User
-from app.utils.system import readable_size
-from app.models.user import UserDataLimitResetStrategy
-from app.models.admin import Admin
+from darknight.db.models import User
+from darknight.utils.system import readable_size
+from darknight.models.user import UserDataLimitResetStrategy
+from darknight.models.admin import Admin
 from telebot.formatting import escape_html
-from app import logger
-from config import DISCORD_WEBHOOK_URL
+from darknight import logger
+from darknight.services.config.settings import get_app_config
 
 
 def send_webhooks(json_data, admin_webhook:str = None):
-    if DISCORD_WEBHOOK_URL:
-        send_webhook(json_data=json_data, webhook=DISCORD_WEBHOOK_URL)
+    if get_app_config().discord.webhook_url:
+        send_webhook(json_data=json_data, webhook=get_app_config().discord.webhook_url)
     if admin_webhook:
         send_webhook(json_data=json_data, webhook=admin_webhook)
 

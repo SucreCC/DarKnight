@@ -1,12 +1,12 @@
-from fastapi import APIRouter
+﻿from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 
-from config import HOME_PAGE_TEMPLATE
-from app.templates import render_template
+from darknight.services.config.settings import get_app_config
+from darknight.templates import render_template
 
 router = APIRouter()
 
 
 @router.get("/", response_class=HTMLResponse)
 def base():
-    return render_template(HOME_PAGE_TEMPLATE)
+    return render_template(get_app_config().templates.home_page)

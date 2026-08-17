@@ -1,10 +1,10 @@
 from functools import lru_cache
 import logging
+import sys
 from typing import TYPE_CHECKING
 
 from sqlalchemy.exc import SQLAlchemyError
 
-import darknight.xray as xray
 from darknight.db import GetDB, crud
 from darknight.models.node import NodeStatus
 from darknight.models.user import UserResponse
@@ -16,8 +16,14 @@ from xray_api.types.account import Account, XTLSFlows
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    import darknight.xray as xray
+
     from darknight.db import User as DBUser
     from darknight.db.models import Node as DBNode
+
+
+def _xray():
+    return sys.modules["darknight.xray"]
 
 
 @lru_cache(maxsize=None)
@@ -35,7 +41,7 @@ def get_tls():
 def _add_user_to_inbound(api: XRayAPI, inbound_tag: str, account: Account):
     try:
         api.add_inbound_user(tag=inbound_tag, user=account, timeout=30)
-    except (xray.exc.EmailExistsError, xray.exc.ConnectionError):
+    except (_xray().exc.EmailExistsError, _xray().exc.ConnectionError):
         pass
 
 
@@ -43,7 +49,7 @@ def _add_user_to_inbound(api: XRayAPI, inbound_tag: str, account: Account):
 def _remove_user_from_inbound(api: XRayAPI, inbound_tag: str, email: str):
     try:
         api.remove_inbound_user(tag=inbound_tag, email=email, timeout=30)
-    except (xray.exc.EmailNotFoundError, xray.exc.ConnectionError):
+    except (_xray().exc.EmailNotFoundError, _xray().exc.ConnectionError):
         pass
 
 
@@ -51,11 +57,11 @@ def _remove_user_from_inbound(api: XRayAPI, inbound_tag: str, email: str):
 def _alter_inbound_user(api: XRayAPI, inbound_tag: str, account: Account):
     try:
         api.remove_inbound_user(tag=inbound_tag, email=account.email, timeout=30)
-    except (xray.exc.EmailNotFoundError, xray.exc.ConnectionError):
+    except (_xray().exc.EmailNotFoundError, _xray().exc.ConnectionError):
         pass
     try:
         api.add_inbound_user(tag=inbound_tag, user=account, timeout=30)
-    except (xray.exc.EmailExistsError, xray.exc.ConnectionError):
+    except (_xray().exc.EmailExistsError, _xray().exc.ConnectionError):
         pass
 
 
@@ -65,7 +71,7 @@ def add_user(dbuser: "DBUser"):
 
     for proxy_type, inbound_tags in user.inbounds.items():
         for inbound_tag in inbound_tags:
-            inbound = xray.config.inbounds_by_tag.get(inbound_tag, {})
+            inbound = _xray().config.inbounds_by_tag.get(inbound_tag, {})
 
             try:
                 proxy_settings = user.proxies[proxy_type].dict(no_obj=True)
@@ -87,8 +93,8 @@ def add_user(dbuser: "DBUser"):
             ):
                 account.flow = XTLSFlows.NONE
 
-            _add_user_to_inbound(xray.api, inbound_tag, account)  # main core
-            for node in list(xray.nodes.values()):
+            _add_user_to_inbound(_xray().api, inbound_tag, account)  # main core
+            for node in list(_xray().nodes.values()):
                 if node.connected and node.started:
                     _add_user_to_inbound(node.api, inbound_tag, account)
 
@@ -96,9 +102,9 @@ def add_user(dbuser: "DBUser"):
 def remove_user(dbuser: "DBUser"):
     email = f"{dbuser.id}.{dbuser.username}"
 
-    for inbound_tag in xray.config.inbounds_by_tag:
-        _remove_user_from_inbound(xray.api, inbound_tag, email)
-        for node in list(xray.nodes.values()):
+    for inbound_tag in _xray().config.inbounds_by_tag:
+        _remove_user_from_inbound(_xray().api, inbound_tag, email)
+        for node in list(_xray().nodes.values()):
             if node.connected and node.started:
                 _remove_user_from_inbound(node.api, inbound_tag, email)
 
@@ -111,7 +117,7 @@ def update_user(dbuser: "DBUser"):
     for proxy_type, inbound_tags in user.inbounds.items():
         for inbound_tag in inbound_tags:
             active_inbounds.append(inbound_tag)
-            inbound = xray.config.inbounds_by_tag.get(inbound_tag, {})
+            inbound = _xray().config.inbounds_by_tag.get(inbound_tag, {})
 
             try:
                 proxy_settings = user.proxies[proxy_type].dict(no_obj=True)
@@ -133,30 +139,30 @@ def update_user(dbuser: "DBUser"):
             ):
                 account.flow = XTLSFlows.NONE
 
-            _alter_inbound_user(xray.api, inbound_tag, account)  # main core
-            for node in list(xray.nodes.values()):
+            _alter_inbound_user(_xray().api, inbound_tag, account)  # main core
+            for node in list(_xray().nodes.values()):
                 if node.connected and node.started:
                     _alter_inbound_user(node.api, inbound_tag, account)
 
-    for inbound_tag in xray.config.inbounds_by_tag:
+    for inbound_tag in _xray().config.inbounds_by_tag:
         if inbound_tag in active_inbounds:
             continue
         # remove disabled inbounds
-        _remove_user_from_inbound(xray.api, inbound_tag, email)
-        for node in list(xray.nodes.values()):
+        _remove_user_from_inbound(_xray().api, inbound_tag, email)
+        for node in list(_xray().nodes.values()):
             if node.connected and node.started:
                 _remove_user_from_inbound(node.api, inbound_tag, email)
 
 
 def remove_node(node_id: int):
-    if node_id in xray.nodes:
+    if node_id in _xray().nodes:
         try:
-            xray.nodes[node_id].disconnect()
+            _xray().nodes[node_id].disconnect()
         except Exception:
             pass
         finally:
             try:
-                del xray.nodes[node_id]
+                del _xray().nodes[node_id]
             except KeyError:
                 pass
 
@@ -165,14 +171,14 @@ def add_node(dbnode: "DBNode"):
     remove_node(dbnode.id)
 
     tls = get_tls()
-    xray.nodes[dbnode.id] = XRayNode(address=dbnode.address,
+    _xray().nodes[dbnode.id] = XRayNode(address=dbnode.address,
                                      port=dbnode.port,
                                      api_port=dbnode.api_port,
                                      ssl_key=tls['key'],
                                      ssl_cert=tls['certificate'],
                                      usage_coefficient=dbnode.usage_coefficient)
 
-    return xray.nodes[dbnode.id]
+    return _xray().nodes[dbnode.id]
 
 
 def _change_node_status(node_id: int, status: NodeStatus, message: str = None, version: str = None):
@@ -209,10 +215,10 @@ def connect_node(node_id, config=None):
         return
 
     try:
-        node = xray.nodes[dbnode.id]
+        node = _xray().nodes[dbnode.id]
         assert node.connected
     except (KeyError, AssertionError):
-        node = xray.operations.add_node(dbnode)
+        node = add_node(dbnode)
 
     try:
         _connecting_nodes[node_id] = True
@@ -221,7 +227,7 @@ def connect_node(node_id, config=None):
         logger.info(f"Connecting to \"{dbnode.name}\" node")
 
         if config is None:
-            config = xray.config.include_db_users()
+            config = _xray().config.include_db_users()
 
         node.start(config)
         version = node.get_version()
@@ -248,9 +254,9 @@ def restart_node(node_id, config=None):
         return
 
     try:
-        node = xray.nodes[dbnode.id]
+        node = _xray().nodes[dbnode.id]
     except KeyError:
-        node = xray.operations.add_node(dbnode)
+        node = add_node(dbnode)
 
     if not node.connected:
         return connect_node(node_id, config)
@@ -259,7 +265,7 @@ def restart_node(node_id, config=None):
         logger.info(f"Restarting Xray core of \"{dbnode.name}\" node")
 
         if config is None:
-            config = xray.config.include_db_users()
+            config = _xray().config.include_db_users()
 
         node.restart(config)
         logger.info(f"Xray core of \"{dbnode.name}\" node restarted")

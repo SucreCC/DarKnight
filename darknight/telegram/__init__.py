@@ -1,31 +1,40 @@
-import importlib.util
+﻿import importlib.util
 from os.path import dirname
 from threading import Thread
-from config import TELEGRAM_API_TOKEN, TELEGRAM_PROXY_URL
-from app import app
+
+from fastapi import FastAPI
 from telebot import TeleBot, apihelper
 
+from darknight.services.config.settings import get_app_config
+
+_telegram = get_app_config().telegram
 
 bot = None
-if TELEGRAM_API_TOKEN:
-    apihelper.proxy = {'http': TELEGRAM_PROXY_URL, 'https': TELEGRAM_PROXY_URL}
-    bot = TeleBot(TELEGRAM_API_TOKEN)
+if _telegram.api_token:
+    if _telegram.proxy_url:
+        apihelper.proxy = {
+            'http': _telegram.proxy_url,
+            'https': _telegram.proxy_url,
+        }
+    bot = TeleBot(_telegram.api_token)
 
 handler_names = ["admin", "report", "user"]
 
-@app.on_event("startup")
-def start_bot():
-    if bot:
-        handler_dir = dirname(__file__) + "/handlers/"
-        for name in handler_names:
-            spec = importlib.util.spec_from_file_location(name, f"{handler_dir}{name}.py")
-            spec.loader.exec_module(importlib.util.module_from_spec(spec))
 
-        from app.telegram import utils # setup custom handlers
-        utils.setup()
+def register(app: FastAPI) -> None:
+    @app.on_event("startup")
+    def start_bot():
+        if bot:
+            handler_dir = dirname(__file__) + "/handlers/"
+            for name in handler_names:
+                spec = importlib.util.spec_from_file_location(name, f"{handler_dir}{name}.py")
+                spec.loader.exec_module(importlib.util.module_from_spec(spec))
 
-        thread = Thread(target=bot.infinity_polling, daemon=True)
-        thread.start()
+            from darknight.telegram import utils  # setup custom handlers
+            utils.setup()
+
+            thread = Thread(target=bot.infinity_polling, daemon=True)
+            thread.start()
 
 
 from .handlers.report import (  # noqa
@@ -42,6 +51,7 @@ from .handlers.report import (  # noqa
 
 __all__ = [
     "bot",
+    "register",
     "report",
     "report_new_user",
     "report_user_modification",

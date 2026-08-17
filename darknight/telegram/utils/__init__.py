@@ -1,4 +1,4 @@
-from app.telegram.utils import custom_filters
+﻿from darknight.telegram.utils import custom_filters
 
 
 def setup() -> None:

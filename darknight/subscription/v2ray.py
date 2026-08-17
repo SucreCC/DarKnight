@@ -1,4 +1,4 @@
-import base64
+﻿import base64
 import copy
 import json
 import urllib.parse as urlparse
@@ -9,17 +9,14 @@ from uuid import UUID
 
 from jinja2.exceptions import TemplateNotFound
 
-from app.subscription.funcs import get_grpc_gun, get_grpc_multi
-from app.templates import render_template
-from app.utils.helpers import UUIDEncoder
-from config import (
-    EXTERNAL_CONFIG,
-    GRPC_USER_AGENT_TEMPLATE,
-    MUX_TEMPLATE,
-    USER_AGENT_TEMPLATE,
-    V2RAY_SETTINGS_TEMPLATE,
-    V2RAY_SUBSCRIPTION_TEMPLATE,
-)
+from darknight.services.config.settings import get_app_config
+from darknight.subscription.funcs import get_grpc_gun, get_grpc_multi
+from darknight.templates import render_template
+from darknight.utils.helpers import UUIDEncoder
+
+_cfg = get_app_config()
+_templates = _cfg.templates
+_features = _cfg.features
 
 
 class V2rayShareLink(str):
@@ -30,8 +27,8 @@ class V2rayShareLink(str):
         self.links.append(link)
 
     def render(self, reverse=False):
-        if EXTERNAL_CONFIG:
-            self.links.append(EXTERNAL_CONFIG)
+        if _features.external_config:
+            self.links.append(_features.external_config)
         if reverse:
             self.links.reverse()
         return self.links
@@ -489,16 +486,16 @@ class V2rayJsonConfig(str):
 
     def __init__(self):
         self.config = []
-        self.template = render_template(V2RAY_SUBSCRIPTION_TEMPLATE)
-        self.mux_template = render_template(MUX_TEMPLATE)
-        user_agent_data = json.loads(render_template(USER_AGENT_TEMPLATE))
+        self.template = render_template(_templates.v2ray.subscription)
+        self.mux_template = render_template(_templates.mux)
+        user_agent_data = json.loads(render_template(_templates.user_agent.default))
 
         if 'list' in user_agent_data and isinstance(user_agent_data['list'], list):
             self.user_agent_list = user_agent_data['list']
         else:
             self.user_agent_list = []
 
-        grpc_user_agent_data = json.loads(render_template(GRPC_USER_AGENT_TEMPLATE))
+        grpc_user_agent_data = json.loads(render_template(_templates.user_agent.grpc))
 
         if 'list' in grpc_user_agent_data and isinstance(grpc_user_agent_data['list'], list):
             self.grpc_user_agent_data = grpc_user_agent_data['list']
@@ -506,7 +503,7 @@ class V2rayJsonConfig(str):
             self.grpc_user_agent_data = []
 
         try:
-            self.settings = json.loads(render_template(V2RAY_SETTINGS_TEMPLATE))
+            self.settings = json.loads(render_template(_templates.v2ray.settings))
         except TemplateNotFound:
             self.settings = {}
 

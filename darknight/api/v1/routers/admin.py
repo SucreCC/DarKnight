@@ -1,16 +1,16 @@
-from typing import List, Optional
+﻿from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.exc import IntegrityError
 
-from app import xray
-from app.db import Session, crud, get_db
-from app.dependencies import get_admin_by_username, validate_admin
-from app.models.admin import Admin, AdminCreate, AdminModify, Token
-from app.utils import report, responses
-from app.utils.jwt import create_admin_token
-from config import LOGIN_NOTIFY_WHITE_LIST
+from darknight import xray
+from darknight.db import Session, crud, get_db
+from darknight.api.v1.dependencies import get_admin_by_username, validate_admin
+from darknight.models.admin import Admin, AdminCreate, AdminModify, Token
+from darknight.services.config.settings import get_app_config
+from darknight.utils import report, responses
+from darknight.utils.jwt import create_admin_token
 
 router = APIRouter(tags=["Admin"], prefix="/api", responses={401: responses._401})
 
@@ -43,7 +43,7 @@ def admin_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    if client_ip not in LOGIN_NOTIFY_WHITE_LIST:
+    if client_ip not in get_app_config().features.login_notify_white_list:
         report.login(form_data.username, "🔒", client_ip, True)
 
     return Token(access_token=create_admin_token(form_data.username, dbadmin.is_sudo))

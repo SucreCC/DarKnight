@@ -41,8 +41,8 @@ database:
 xray:
   json: ./xray_config.json
   fallbacks_inbound_tag: ""    # 兼容旧名 XRAY_FALLBACK_INBOUND_TAG
-  executable_path: /usr/local/bin/xray
-  assets_path: /usr/local/share/xray
+  executable_path: ./xray/xray.exe   # Linux 可用 ./xray/xray；不存在时回退到项目内 xray 目录
+  assets_path: ./xray                # geoip.dat / geosite.dat 所在目录
   exclude_inbound_tags: []
   subscription_url_prefix: ""
   subscription_path: sub

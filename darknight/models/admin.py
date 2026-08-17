@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 
 from darknight.db import Session, crud, get_db
 from darknight.utils.jwt import get_admin_payload
-from config import SUDOERS
+from darknight.services.config.settings import get_app_config
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/admin/token")  # Admin view url
@@ -42,7 +42,8 @@ class Admin(BaseModel):
         if not payload:
             return
 
-        if payload['username'] in SUDOERS and payload['is_sudo'] is True:
+        sudo = get_app_config().auth.sudo
+        if sudo.username and payload['username'] == sudo.username and payload['is_sudo'] is True:
             return cls(username=payload['username'], is_sudo=True)
 
         dbadmin = crud.get_admin(db, payload['username'])

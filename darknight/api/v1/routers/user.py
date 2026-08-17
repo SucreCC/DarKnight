@@ -1,14 +1,14 @@
-from datetime import datetime, timedelta, timezone
+﻿from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Union
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.exc import IntegrityError
 
-from app import logger, xray
-from app.db import Session, crud, get_db
-from app.dependencies import get_expired_users_list, get_validated_user, validate_dates
-from app.models.admin import Admin
-from app.models.user import (
+from darknight import logger, xray
+from darknight.db import Session, crud, get_db
+from darknight.api.v1.dependencies import get_expired_users_list, get_validated_user, validate_dates
+from darknight.models.admin import Admin
+from darknight.models.user import (
     UserCreate,
     UserModify,
     UserResponse,
@@ -17,7 +17,7 @@ from app.models.user import (
     UsersUsagesResponse,
     UserUsagesResponse,
 )
-from app.utils import report, responses
+from darknight.utils import report, responses
 
 router = APIRouter(tags=["User"], prefix="/api", responses={401: responses._401})
 

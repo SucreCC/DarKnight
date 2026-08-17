@@ -4,16 +4,16 @@ from typing import TYPE_CHECKING, Dict, Sequence
 from darknight.models.proxy import ProxyHostSecurity
 from darknight.utils.store import DictStorage
 from darknight.utils.system import check_port
-from darknight.xray import operations
+from darknight.services.config.settings import get_app_config
 from darknight.xray.config import XRayConfig
 from darknight.xray.core import XRayCore
 from darknight.xray.node import XRayNode
-from config import XRAY_ASSETS_PATH, XRAY_EXECUTABLE_PATH, XRAY_JSON
 from xray_api import XRay as XRayAPI
 from xray_api import exceptions, types
 from xray_api import exceptions as exc
 
-core = XRayCore(XRAY_EXECUTABLE_PATH, XRAY_ASSETS_PATH)
+_xray = get_app_config().xray
+core = XRayCore(_xray.executable_path, _xray.assets_path)
 
 # Search for a free API port
 try:
@@ -21,7 +21,7 @@ try:
         if not check_port(api_port):
             break
 finally:
-    config = XRayConfig(XRAY_JSON, api_port=api_port)
+    config = XRayConfig(_xray.json, api_port=api_port)
     del api_port
 
 api = XRayAPI(config.api_host, config.api_port)
@@ -66,6 +66,8 @@ def hosts(storage: dict):
                 } for host in inbound_hosts if not host.is_disabled
             ]
 
+
+from darknight.xray import operations  # noqa: E402
 
 __all__ = [
     "config",

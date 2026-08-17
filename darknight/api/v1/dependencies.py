@@ -2,7 +2,7 @@ from typing import Optional, Union
 from darknight.models.admin import AdminInDB, AdminValidationResult, Admin
 from darknight.models.user import UserResponse, UserStatus
 from darknight.db import Session, crud, get_db
-from config import SUDOERS
+from darknight.services.config.settings import get_app_config
 from fastapi import Depends, HTTPException
 from datetime import datetime, timezone, timedelta
 from darknight.utils.jwt import get_subscription_payload
@@ -10,7 +10,8 @@ from darknight.utils.jwt import get_subscription_payload
 
 def validate_admin(db: Session, username: str, password: str) -> Optional[AdminValidationResult]:
     """Validate admin credentials with environment variables or database."""
-    if SUDOERS.get(username) == password:
+    sudo = get_app_config().auth.sudo
+    if sudo.username and sudo.password and username == sudo.username and password == sudo.password:
         return AdminValidationResult(username=username, is_sudo=True)
 
     dbadmin = crud.get_admin(db, username)

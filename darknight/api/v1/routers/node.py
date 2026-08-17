@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import time
 from typing import List
 
@@ -6,11 +6,11 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, WebSocke
 from sqlalchemy.exc import IntegrityError
 from starlette.websockets import WebSocketDisconnect
 
-from app import logger, xray
-from app.db import Session, crud, get_db
-from app.dependencies import get_dbnode, validate_dates
-from app.models.admin import Admin
-from app.models.node import (
+from darknight import logger, xray
+from darknight.db import Session, crud, get_db
+from darknight.api.v1.dependencies import get_dbnode, validate_dates
+from darknight.models.admin import Admin
+from darknight.models.node import (
     NodeCreate,
     NodeModify,
     NodeResponse,
@@ -18,8 +18,8 @@ from app.models.node import (
     NodeStatus,
     NodesUsageResponse,
 )
-from app.models.proxy import ProxyHost
-from app.utils import responses
+from darknight.models.proxy import ProxyHost
+from darknight.utils import responses
 
 router = APIRouter(
     tags=["Node"], prefix="/api", responses={401: responses._401, 403: responses._403}

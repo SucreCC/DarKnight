@@ -69,10 +69,18 @@ class APIWorker:
         self._register_lifecycle(app)
         self._register_exception_handlers(app)
         self._register_jobs(app)
+        self._register_telegram(app)
 
         return app
 
+    def _register_telegram(self, app: FastAPI) -> None:
+        from darknight.telegram import register as register_telegram
+
+        register_telegram(app)
+
     def _register_jobs(self, app: FastAPI) -> None:
+        import darknight.xray as xray_module
+
         from darknight.jobs import JobManager, register_all_jobs
 
         self.job_manager = JobManager(
@@ -80,7 +88,7 @@ class APIWorker:
             scheduler=self.scheduler,
             logger=self.logger,
             config=self.app_config,
-            xray=getattr(self, "xray", None),
+            xray=xray_module,
         )
         register_all_jobs(self.job_manager)
 

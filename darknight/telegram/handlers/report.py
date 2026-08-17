@@ -1,25 +1,27 @@
-import datetime
+﻿import datetime
 
-from app import logger
-from app.db.models import User
-from app.telegram import bot
+from darknight import logger
+from darknight.db.models import User
+from darknight.telegram import bot
 from telebot.apihelper import ApiTelegramException
 from datetime import datetime
-from app.telegram.utils.keyboard import BotKeyboard
-from app.utils.system import readable_size
-from config import TELEGRAM_ADMIN_ID, TELEGRAM_LOGGER_CHANNEL_ID
+from darknight.telegram.utils.keyboard import BotKeyboard
+from darknight.utils.system import readable_size
+from darknight.services.config.settings import get_app_config
+
+_telegram = get_app_config().telegram
 from telebot.formatting import escape_html
-from app.models.admin import Admin
-from app.models.user import UserDataLimitResetStrategy
+from darknight.models.admin import Admin
+from darknight.models.user import UserDataLimitResetStrategy
 
 
 def report(text: str, chat_id: int = None, parse_mode="html", keyboard=None):
-    if bot and (TELEGRAM_ADMIN_ID or TELEGRAM_LOGGER_CHANNEL_ID):
+    if bot and (_telegram.admin_id or _telegram.logger_channel_id):
         try:
-            if TELEGRAM_LOGGER_CHANNEL_ID:
-                bot.send_message(TELEGRAM_LOGGER_CHANNEL_ID, text, parse_mode=parse_mode)
+            if _telegram.logger_channel_id:
+                bot.send_message(_telegram.logger_channel_id, text, parse_mode=parse_mode)
             else:
-                for admin in TELEGRAM_ADMIN_ID:
+                for admin in _telegram.admin_id:
                     bot.send_message(admin, text, parse_mode=parse_mode, reply_markup=keyboard)
             if chat_id:
                 bot.send_message(chat_id, text, parse_mode=parse_mode)

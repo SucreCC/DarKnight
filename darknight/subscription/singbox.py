@@ -1,27 +1,24 @@
-import copy
+﻿import copy
 import json
 from random import choice
 
-from app.utils.helpers import UUIDEncoder
+from darknight.utils.helpers import UUIDEncoder
 from jinja2.exceptions import TemplateNotFound
 
-from app.subscription.funcs import get_grpc_gun
-from app.templates import render_template
-from config import (
-    MUX_TEMPLATE,
-    SINGBOX_SETTINGS_TEMPLATE,
-    SINGBOX_SUBSCRIPTION_TEMPLATE,
-    USER_AGENT_TEMPLATE
-)
+from darknight.services.config.settings import get_app_config
+from darknight.subscription.funcs import get_grpc_gun
+from darknight.templates import render_template
+
+_templates = get_app_config().templates
 
 
 class SingBoxConfiguration(str):
 
     def __init__(self):
         self.proxy_remarks = []
-        self.config = json.loads(render_template(SINGBOX_SUBSCRIPTION_TEMPLATE))
-        self.mux_template = render_template(MUX_TEMPLATE)
-        user_agent_data = json.loads(render_template(USER_AGENT_TEMPLATE))
+        self.config = json.loads(render_template(_templates.singbox.subscription))
+        self.mux_template = render_template(_templates.mux)
+        user_agent_data = json.loads(render_template(_templates.user_agent.default))
 
         if 'list' in user_agent_data and isinstance(user_agent_data['list'], list):
             self.user_agent_list = user_agent_data['list']
@@ -29,7 +26,7 @@ class SingBoxConfiguration(str):
             self.user_agent_list = []
 
         try:
-            self.settings = json.loads(render_template(SINGBOX_SETTINGS_TEMPLATE))
+            self.settings = json.loads(render_template(_templates.singbox.settings))
         except TemplateNotFound:
             self.settings = {}
 

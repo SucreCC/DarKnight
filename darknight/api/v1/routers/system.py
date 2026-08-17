@@ -1,15 +1,16 @@
-from typing import Dict, List, Union
+﻿from typing import Dict, List, Union
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app import __version__, xray
-from app.db import Session, crud, get_db
-from app.models.admin import Admin
-from app.models.proxy import ProxyHost, ProxyInbound, ProxyTypes
-from app.models.system import SystemStats
-from app.models.user import UserStatus
-from app.utils import responses
-from app.utils.system import cpu_usage, memory_usage, realtime_bandwidth
+from darknight import xray
+from darknight.services.config.settings import get_app_config
+from darknight.db import Session, crud, get_db
+from darknight.models.admin import Admin
+from darknight.models.proxy import ProxyHost, ProxyInbound, ProxyTypes
+from darknight.models.system import SystemStats
+from darknight.models.user import UserStatus
+from darknight.utils import responses
+from darknight.utils.system import cpu_usage, memory_usage, realtime_bandwidth
 
 router = APIRouter(tags=["System"], prefix="/api", responses={401: responses._401})
 
@@ -44,7 +45,7 @@ def get_system_stats(
     realtime_bandwidth_stats = realtime_bandwidth()
 
     return SystemStats(
-        version=__version__,
+        version=get_app_config().project.version,
         mem_total=mem.total,
         mem_used=mem.used,
         cpu_cores=cpu.cores,

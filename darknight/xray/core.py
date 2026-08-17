@@ -7,7 +7,7 @@ from collections import deque
 from contextlib import contextmanager
 
 from darknight.xray.config import XRayConfig
-from config import DEBUG
+from darknight.services.config.settings import get_app_config
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +79,7 @@ class XRayCore:
                 elif not self.process or self.process.poll() is not None:
                     break
 
-        if DEBUG:
+        if get_app_config().web.debug:
             threading.Thread(target=capture_and_debug_log).start()
         else:
             threading.Thread(target=capture_only).start()

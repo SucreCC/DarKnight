@@ -1,13 +1,13 @@
-from typing import List
+﻿from typing import List
 
 from sqlalchemy.exc import IntegrityError
 from fastapi import Depends, HTTPException, APIRouter
 
-from app.db import Session, crud, get_db
-from app.models.admin import Admin
-from app.models.user_template import (UserTemplateCreate, UserTemplateModify,
+from darknight.db import Session, crud, get_db
+from darknight.models.admin import Admin
+from darknight.models.user_template import (UserTemplateCreate, UserTemplateModify,
                                       UserTemplateResponse)
-from app.dependencies import get_user_template
+from darknight.api.v1.dependencies import get_user_template
 
 router = APIRouter(tags=['User Template'], prefix='/api')
 

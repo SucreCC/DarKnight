@@ -42,8 +42,8 @@ from darknight.models.user import (
     UserUsageResponse,
 )
 from darknight.models.user_template import UserTemplateCreate, UserTemplateModify
+from darknight.services.config.settings import get_app_config
 from darknight.utils.helpers import calculate_expiration_days, calculate_usage_percent
-from config import NOTIFY_DAYS_LEFT, NOTIFY_REACHED_USAGE_PERCENT, USERS_AUTODELETE_DAYS
 
 
 def add_default_host(db: Session, inbound: ProxyInbound):
@@ -471,6 +471,8 @@ def update_user(db: Session, dbuser: User, modify: UserModify) -> User:
     if modify.status is not None:
         dbuser.status = modify.status
 
+    notifications = get_app_config().notifications
+
     if modify.data_limit is not None:
         dbuser.data_limit = (modify.data_limit or None)
         if dbuser.status not in (UserStatus.expired, UserStatus.disabled):
@@ -478,7 +480,7 @@ def update_user(db: Session, dbuser: User, modify: UserModify) -> User:
                 if dbuser.status != UserStatus.on_hold:
                     dbuser.status = UserStatus.active
 
-                for percent in sorted(NOTIFY_REACHED_USAGE_PERCENT, reverse=True):
+                for percent in sorted(notifications.reached_usage_percent, reverse=True):
                     if not dbuser.data_limit or (calculate_usage_percent(
                             dbuser.used_traffic, dbuser.data_limit) < percent):
                         reminder = get_notification_reminder(db, dbuser.id, ReminderType.data_usage, threshold=percent)
@@ -493,7 +495,7 @@ def update_user(db: Session, dbuser: User, modify: UserModify) -> User:
         if dbuser.status in (UserStatus.active, UserStatus.expired):
             if not dbuser.expire or dbuser.expire > datetime.utcnow().timestamp():
                 dbuser.status = UserStatus.active
-                for days_left in sorted(NOTIFY_DAYS_LEFT):
+                for days_left in sorted(notifications.days_left):
                     if not dbuser.expire or (calculate_expiration_days(
                             dbuser.expire) > days_left):
                         reminder = get_notification_reminder(
@@ -734,7 +736,7 @@ def autodelete_expired_users(db: Session,
         else [UserStatus.expired, UserStatus.limited]
     )
 
-    auto_delete = coalesce(User.auto_delete_in_days, USERS_AUTODELETE_DAYS)
+    auto_delete = coalesce(User.auto_delete_in_days, get_app_config().users.autodelete_days)
 
     query = db.query(
         User, auto_delete,  # Use global auto-delete days as fallback

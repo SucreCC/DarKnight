@@ -1,4 +1,4 @@
-import base64
+﻿import base64
 import random
 import secrets
 from collections import defaultdict
@@ -8,21 +8,17 @@ from typing import TYPE_CHECKING, List, Literal, Union
 
 from jdatetime import date as jd
 
-from app import xray
-from app.utils.system import get_public_ip, get_public_ipv6, readable_size
+from darknight import xray
+from darknight.utils.system import get_public_ip, get_public_ipv6, readable_size
 
 from . import *
 
-if TYPE_CHECKING:
-    from app.models.user import UserResponse
+from darknight.services.config.settings import get_app_config
 
-from config import (
-    ACTIVE_STATUS_TEXT,
-    DISABLED_STATUS_TEXT,
-    EXPIRED_STATUS_TEXT,
-    LIMITED_STATUS_TEXT,
-    ONHOLD_STATUS_TEXT,
-)
+if TYPE_CHECKING:
+    from darknight.models.user import UserResponse
+
+_status_text = get_app_config().status_text
 
 SERVER_IP = get_public_ip()
 SERVER_IPV6 = get_public_ipv6()
@@ -36,11 +32,11 @@ STATUS_EMOJIS = {
 }
 
 STATUS_TEXTS = {
-    "active": ACTIVE_STATUS_TEXT,
-    "expired": EXPIRED_STATUS_TEXT,
-    "limited": LIMITED_STATUS_TEXT,
-    "disabled": DISABLED_STATUS_TEXT,
-    "on_hold": ONHOLD_STATUS_TEXT,
+    "active": _status_text.active,
+    "expired": _status_text.expired,
+    "limited": _status_text.limited,
+    "disabled": _status_text.disabled,
+    "on_hold": _status_text.on_hold,
 }
 
 
@@ -155,7 +151,7 @@ def format_time_left(seconds_left: int) -> str:
 
 
 def setup_format_variables(extra_data: dict) -> dict:
-    from app.models.user import UserStatus
+    from darknight.models.user import UserStatus
 
     user_status = extra_data.get("status")
     expire_timestamp = extra_data.get("expire")

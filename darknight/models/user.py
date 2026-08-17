@@ -10,8 +10,8 @@ import darknight.xray as xray
 from darknight.models.admin import Admin
 from darknight.models.proxy import ProxySettings, ProxyTypes
 from darknight.subscription.share import generate_v2ray_links
+from darknight.services.config.settings import get_app_config
 from darknight.utils.jwt import create_subscription_token
-from config import XRAY_SUBSCRIPTION_PATH, XRAY_SUBSCRIPTION_URL_PREFIX
 
 USERNAME_REGEXP = re.compile(r"^(?=\w{3,32}\b)[a-zA-Z0-9-_@.]+(?:_[a-zA-Z0-9-_@.]+)*$")
 
@@ -304,10 +304,11 @@ class UserResponse(User):
     @model_validator(mode="after")
     def validate_subscription_url(self):
         if not self.subscription_url:
+            xray_cfg = get_app_config().xray
             salt = secrets.token_hex(8)
-            url_prefix = (XRAY_SUBSCRIPTION_URL_PREFIX).replace('*', salt)
+            url_prefix = xray_cfg.subscription_url_prefix.replace('*', salt)
             token = create_subscription_token(self.username)
-            self.subscription_url = f"{url_prefix}/{XRAY_SUBSCRIPTION_PATH}/{token}"
+            self.subscription_url = f"{url_prefix}/{xray_cfg.subscription_path}/{token}"
         return self
 
     @field_validator("proxies", mode="before")

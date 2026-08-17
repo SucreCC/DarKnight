@@ -1,4 +1,4 @@
-import copy
+﻿import copy
 import json
 from random import choice
 from uuid import UUID
@@ -6,15 +6,12 @@ from uuid import UUID
 import yaml
 from jinja2.exceptions import TemplateNotFound
 
-from app.subscription.funcs import get_grpc_gun
-from app.templates import render_template
-from app.utils.helpers import yml_uuid_representer
-from config import (
-    CLASH_SETTINGS_TEMPLATE,
-    CLASH_SUBSCRIPTION_TEMPLATE,
-    MUX_TEMPLATE,
-    USER_AGENT_TEMPLATE,
-)
+from darknight.services.config.settings import get_app_config
+from darknight.subscription.funcs import get_grpc_gun
+from darknight.templates import render_template
+from darknight.utils.helpers import yml_uuid_representer
+
+_templates = get_app_config().templates
 
 
 class ClashConfiguration(object):
@@ -26,8 +23,8 @@ class ClashConfiguration(object):
             'rules': []
         }
         self.proxy_remarks = []
-        self.mux_template = render_template(MUX_TEMPLATE)
-        user_agent_data = json.loads(render_template(USER_AGENT_TEMPLATE))
+        self.mux_template = render_template(_templates.mux)
+        user_agent_data = json.loads(render_template(_templates.user_agent.default))
 
         if 'list' in user_agent_data and isinstance(user_agent_data['list'], list):
             self.user_agent_list = user_agent_data['list']
@@ -35,7 +32,7 @@ class ClashConfiguration(object):
             self.user_agent_list = []
 
         try:
-            self.settings = yaml.load(render_template(CLASH_SETTINGS_TEMPLATE), Loader=yaml.SafeLoader)
+            self.settings = yaml.load(render_template(_templates.clash.settings), Loader=yaml.SafeLoader)
         except TemplateNotFound:
             self.settings = {}
 
@@ -49,7 +46,7 @@ class ClashConfiguration(object):
         return yaml.dump(
             yaml.load(
                 render_template(
-                    CLASH_SUBSCRIPTION_TEMPLATE,
+                    _templates.clash.subscription,
                     {"conf": self.data, "proxy_remarks": self.proxy_remarks}
                 ),
                 Loader=yaml.SafeLoader

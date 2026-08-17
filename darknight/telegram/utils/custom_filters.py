@@ -1,9 +1,10 @@
-from app.telegram import bot
+﻿from darknight.services.config.settings import get_app_config
+from darknight.telegram import bot
 
 from telebot import types
 from telebot.custom_filters import AdvancedCustomFilter
 
-from config import TELEGRAM_ADMIN_ID
+_telegram = get_app_config().telegram
 
 
 class IsAdminFilter(AdvancedCustomFilter):
@@ -14,8 +15,8 @@ class IsAdminFilter(AdvancedCustomFilter):
         :meta private:
         """
         if isinstance(message, types.CallbackQuery):
-            return message.from_user.id in TELEGRAM_ADMIN_ID
-        return message.chat.id in TELEGRAM_ADMIN_ID
+            return message.from_user.id in _telegram.admin_id
+        return message.chat.id in _telegram.admin_id
 
 
 def cb_query_equals(text: str):

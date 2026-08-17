@@ -1,11 +1,11 @@
-from datetime import datetime
-from app.db import GetDB, crud
-from app.models.user import UserResponse
-from app.telegram import bot
+﻿from datetime import datetime
+from darknight.db import GetDB, crud
+from darknight.models.user import UserResponse
+from darknight.telegram import bot
 from telebot.custom_filters import ChatFilter
 from telebot.util import extract_arguments
 
-from app.utils.system import readable_size
+from darknight.utils.system import readable_size
 
 bot.add_custom_filter(ChatFilter())
 

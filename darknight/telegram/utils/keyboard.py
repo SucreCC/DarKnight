@@ -1,11 +1,11 @@
-from datetime import datetime as dt
+﻿from datetime import datetime as dt
 from itertools import islice
 from typing import Dict, List, Literal
 
 from telebot import types  # noqa
 
-from app import xray
-from app.utils.system import readable_size
+from darknight import xray
+from darknight.utils.system import readable_size
 
 
 def chunk_dict(data: dict, size: int = 2):

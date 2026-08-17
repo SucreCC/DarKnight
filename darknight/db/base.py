@@ -1,23 +1,22 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
-from config import (
-    SQLALCHEMY_DATABASE_URL,
-    SQLALCHEMY_POOL_SIZE,
-    SQLIALCHEMY_MAX_OVERFLOW,
-)
 
-IS_SQLITE = SQLALCHEMY_DATABASE_URL.startswith('sqlite')
+from darknight.services.config.settings import get_app_config
+
+_database = get_app_config().database
+
+IS_SQLITE = _database.url.startswith('sqlite')
 
 if IS_SQLITE:
     engine = create_engine(
-        SQLALCHEMY_DATABASE_URL,
+        _database.url,
         connect_args={"check_same_thread": False}
     )
 else:
     engine = create_engine(
-        SQLALCHEMY_DATABASE_URL,
-        pool_size=SQLALCHEMY_POOL_SIZE,
-        max_overflow=SQLIALCHEMY_MAX_OVERFLOW,
+        _database.url,
+        pool_size=_database.pool_size,
+        max_overflow=_database.max_overflow,
         pool_recycle=3600,
         pool_timeout=10
     )
