@@ -8,7 +8,7 @@ from math import ceil
 from typing import Union
 
 
-from darknight.services.config.settings import get_app_config
+from config import JWT_ACCESS_TOKEN_EXPIRE_MINUTES
 
 
 @lru_cache(maxsize=None)

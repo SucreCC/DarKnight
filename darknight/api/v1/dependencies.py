@@ -2,7 +2,7 @@ from typing import Optional, Union
 from darknight.models.admin import AdminInDB, AdminValidationResult, Admin
 from darknight.models.user import UserResponse, UserStatus
 from darknight.db import Session, crud, get_db
-from darknight.services.config.settings import get_app_config
+from config import SUDOERS
 from fastapi import Depends, HTTPException
 from datetime import datetime, timezone, timedelta
 from darknight.utils.jwt import get_subscription_payload

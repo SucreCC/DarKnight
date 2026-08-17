@@ -14,13 +14,22 @@ from darknight.utils.notification import (Notification, ReachedDaysLeft,
                                     UserUpdated, notify)
 from darknight import discord
 
-from darknight.services.config.settings import get_app_config
+from config import (
+    NOTIFY_STATUS_CHANGE,
+    NOTIFY_USER_CREATED,
+    NOTIFY_USER_UPDATED,
+    NOTIFY_USER_DELETED,
+    NOTIFY_USER_DATA_USED_RESET,
+    NOTIFY_USER_SUB_REVOKED,
+    NOTIFY_IF_DATA_USAGE_PERCENT_REACHED,
+    NOTIFY_IF_DAYS_LEFT_REACHED,
+    NOTIFY_LOGIN
+)
 
 
 def status_change(
         username: str, status: UserStatus, user: UserResponse, user_admin: Admin = None, by: Admin = None) -> None:
-    notifications = get_app_config().notifications
-    if notifications.status_change:
+    if NOTIFY_STATUS_CHANGE:
         try:
             telegram.report_status_change(username, status, user_admin)
         except Exception:
@@ -40,7 +49,7 @@ def status_change(
 
 
 def user_created(user: UserResponse, user_id: int, by: Admin, user_admin: Admin = None) -> None:
-    if get_app_config().notifications.user_created:
+    if NOTIFY_USER_CREATED:
         try:
             telegram.report_new_user(
                 user_id=user_id,
@@ -72,7 +81,7 @@ def user_created(user: UserResponse, user_id: int, by: Admin, user_admin: Admin 
 
 
 def user_updated(user: UserResponse, by: Admin, user_admin: Admin = None) -> None:
-    if get_app_config().notifications.user_updated:
+    if NOTIFY_USER_UPDATED:
         try:
             telegram.report_user_modification(
                 username=user.username,
@@ -103,7 +112,7 @@ def user_updated(user: UserResponse, by: Admin, user_admin: Admin = None) -> Non
 
 
 def user_deleted(username: str, by: Admin, user_admin: Admin = None) -> None:
-    if get_app_config().notifications.user_deleted:
+    if NOTIFY_USER_DELETED:
         try:
             telegram.report_user_deletion(username=username, by=by.username, admin=user_admin)
         except Exception:
@@ -116,7 +125,7 @@ def user_deleted(username: str, by: Admin, user_admin: Admin = None) -> None:
 
 
 def user_data_usage_reset(user: UserResponse, by: Admin, user_admin: Admin = None) -> None:
-    if get_app_config().notifications.user_data_used_reset:
+    if NOTIFY_USER_DATA_USED_RESET:
         try:
             telegram.report_user_usage_reset(
                 username=user.username,
@@ -137,7 +146,7 @@ def user_data_usage_reset(user: UserResponse, by: Admin, user_admin: Admin = Non
 
 
 def user_data_reset_by_next(user: UserResponse, user_admin: Admin = None) -> None:
-    if get_app_config().notifications.user_data_used_reset:
+    if NOTIFY_USER_DATA_USED_RESET:
         try:
             telegram.report_user_data_reset_by_next(
                 user=user,
@@ -156,7 +165,7 @@ def user_data_reset_by_next(user: UserResponse, user_admin: Admin = None) -> Non
 
 
 def user_subscription_revoked(user: UserResponse, by: Admin, user_admin: Admin = None) -> None:
-    if get_app_config().notifications.user_sub_revoked:
+    if NOTIFY_USER_SUB_REVOKED:
         try:
             telegram.report_user_subscription_revoked(
                 username=user.username,
@@ -179,7 +188,7 @@ def user_subscription_revoked(user: UserResponse, by: Admin, user_admin: Admin =
 
 def data_usage_percent_reached(
         db: Session, percent: float, user: UserResponse, user_id: int, expire: Optional[int] = None, threshold: Optional[int] = None) -> None:
-    if get_app_config().notifications.if_data_usage_percent_reached:
+    if NOTIFY_IF_DATA_USAGE_PERCENT_REACHED:
         notify(ReachedUsagePercent(username=user.username, user=user, used_percent=percent))
         create_notification_reminder(db, ReminderType.data_usage,
                                      expires_at=dt.utcfromtimestamp(expire) if expire else None, user_id=user_id, threshold=threshold)

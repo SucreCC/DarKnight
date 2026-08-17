@@ -5,7 +5,7 @@ from typing import Type
 
 from pydantic import BaseModel
 
-from darknight.services.config.settings import get_app_config
+from config import WEBHOOK_ADDRESS
 from darknight.models.admin import Admin
 from darknight.models.user import UserResponse
 

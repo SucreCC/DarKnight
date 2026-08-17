@@ -10,8 +10,8 @@ import darknight.xray as xray
 from darknight.models.admin import Admin
 from darknight.models.proxy import ProxySettings, ProxyTypes
 from darknight.subscription.share import generate_v2ray_links
-from darknight.services.config.settings import get_app_config
 from darknight.utils.jwt import create_subscription_token
+from config import XRAY_SUBSCRIPTION_PATH, XRAY_SUBSCRIPTION_URL_PREFIX
 
 USERNAME_REGEXP = re.compile(r"^(?=\w{3,32}\b)[a-zA-Z0-9-_@.]+(?:_[a-zA-Z0-9-_@.]+)*$")
 
