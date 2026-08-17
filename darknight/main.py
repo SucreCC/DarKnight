@@ -145,7 +145,7 @@ def main() -> None:
     # multi-workers support isn't implemented yet for APScheduler and XRay module
     try:
         uvicorn.run(
-            "darknight.app:app",
+            "darknight.api.v1.api_worker:app",
             **bind_args,
             workers=1,
             reload=debug,
