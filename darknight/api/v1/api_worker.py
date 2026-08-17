@@ -40,7 +40,7 @@ class APIWorker:
             {"apscheduler.job_defaults.max_instances": 20},
             timezone="UTC",
         )
-        self.logger = logging.getLogger(f"{app_config.logging.namespace}.api")
+        self.logger = logging.getLogger(__name__)
         self.app = self._create_app()
 
     def _create_app(self) -> FastAPI:
