@@ -19,7 +19,6 @@ if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 import click
-import uvicorn
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 
@@ -128,6 +127,7 @@ Then, navigate to {click.style(f"http://127.0.0.1:{server.port}", bold=True)} on
 
 
 def main() -> None:
+    from darknight.api.v1.api_worker import APIWorker
     from darknight.logging import configure_logging
     from darknight.services.config.settings import get_app_config
 
@@ -143,17 +143,12 @@ def main() -> None:
 
     # Do NOT change workers count for now
     # multi-workers support isn't implemented yet for APScheduler and XRay module
-    try:
-        uvicorn.run(
-            "darknight.api.v1.api_worker:app",
-            **bind_args,
-            workers=1,
-            reload=debug,
-            log_level=uvicorn_log_level,
-        )
-    except FileNotFoundError:
-        # Prevent error on removing unix sock
-        pass
+    worker = APIWorker(app_config)
+    worker.run(
+        bind_args,
+        reload=debug,
+        log_level=uvicorn_log_level,
+    )
 
 
 if __name__ == "__main__":
