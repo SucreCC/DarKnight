@@ -4,7 +4,7 @@ import traceback
 from darknight.db import GetDB, crud
 from darknight.models.node import NodeStatus
 from darknight.jobs.manager import JobManager
-from darknight.jobs._runtime import mgr
+from darknight.jobs.manager import mgr
 from xray_api import exc as xray_exc
 
 

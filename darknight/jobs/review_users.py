@@ -10,7 +10,7 @@ from darknight.utils import report
 from darknight.utils.helpers import (calculate_expiration_days,
                                calculate_usage_percent)
 from darknight.jobs.manager import JobManager
-from darknight.jobs._runtime import mgr
+from darknight.jobs.manager import mgr
 
 if TYPE_CHECKING:
     from darknight.db.models import User

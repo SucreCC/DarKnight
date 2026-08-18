@@ -92,7 +92,7 @@ class APIWorker:
     def _register_jobs(self, app: FastAPI) -> None:
         import darknight.xray as xray_module
 
-        from darknight.jobs import JobManager, register_all_jobs
+        from darknight.jobs import JobManager
 
         self.job_manager = JobManager(
             app=app,
@@ -100,8 +100,7 @@ class APIWorker:
             logger=self.logger,
             config=self.app_config,
             xray=xray_module,
-        )
-        register_all_jobs(self.job_manager)
+        ).register_all()
 
     def _register_lifecycle(self, app: FastAPI) -> None:
         """注册 FastAPI 启动/关闭钩子。

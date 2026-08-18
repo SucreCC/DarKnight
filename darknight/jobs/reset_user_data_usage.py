@@ -3,7 +3,7 @@ from datetime import datetime
 from darknight.db import crud, GetDB, get_users
 from darknight.models.user import UserDataLimitResetStrategy, UserStatus
 from darknight.jobs.manager import JobManager
-from darknight.jobs._runtime import mgr
+from darknight.jobs.manager import mgr
 
 reset_strategy_to_days = {
     UserDataLimitResetStrategy.day.value: 1,

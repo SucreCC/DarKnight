@@ -9,7 +9,7 @@ from darknight.db import GetDB
 from darknight.db.models import NotificationReminder
 from darknight.utils.notification import queue
 from darknight.jobs.manager import JobManager
-from darknight.jobs._runtime import mgr
+from darknight.jobs.manager import mgr
 
 session = Session()
 

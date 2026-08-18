@@ -12,7 +12,7 @@ from sqlalchemy.sql.dml import Insert
 from darknight.db import GetDB
 from darknight.db.models import Admin, NodeUsage, NodeUserUsage, System, User
 from darknight.jobs.manager import JobManager
-from darknight.jobs._runtime import mgr
+from darknight.jobs.manager import mgr
 from xray_api import XRay as XRayAPI
 from xray_api import exc as xray_exc
 
