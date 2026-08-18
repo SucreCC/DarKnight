@@ -19,7 +19,7 @@ from darknight.models.user import (
 )
 from darknight.utils import report, responses
 
-router = APIRouter(tags=["User"], prefix="/api", responses={401: responses._401})
+router = APIRouter(tags=["User"], responses={401: responses._401})
 
 
 @router.post("/user", response_model=UserResponse, responses={400: responses._400, 409: responses._409})

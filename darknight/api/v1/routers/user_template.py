@@ -9,7 +9,7 @@ from darknight.models.user_template import (UserTemplateCreate, UserTemplateModi
                                       UserTemplateResponse)
 from darknight.api.v1.dependencies import get_user_template
 
-router = APIRouter(tags=['User Template'], prefix='/api')
+router = APIRouter(tags=['User Template'])
 
 @router.post("/user_template", response_model=UserTemplateResponse)
 def add_user_template(

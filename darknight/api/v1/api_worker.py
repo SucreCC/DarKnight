@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 
-from darknight.api.v1.api_router import api_router
+from darknight.api.v1.api_router import api_router, home, subscription
 from darknight.runtime.banner import print_startup_banner
 from darknight.runtime.server import build_bind_args, resolve_uvicorn_log_level
 from darknight.services.config.models import AppConfig
@@ -64,6 +64,8 @@ class APIWorker:
         )
 
         app.include_router(api_router)
+        app.include_router(home.router)
+        app.include_router(subscription.router)
 
         from darknight.dashboard import register_dashboard
 
@@ -97,6 +99,7 @@ class APIWorker:
         register_all_jobs(self.job_manager)
 
     def _register_lifecycle(self, app: FastAPI) -> None:
+        api_version = self.app_config.project.api_version
         subscription_path = self.app_config.xray.subscription_path
         app_title = app.title
         scheduler = self.scheduler
@@ -105,7 +108,7 @@ class APIWorker:
         @app.on_event("startup")
         def on_startup() -> None:
             paths = [f"{route.path}/" for route in app.routes]
-            paths.append("/api/")
+            paths.append(f"{api_version.rstrip('/')}/")
             if f"/{subscription_path}/" in paths:
                 raise ValueError(
                     f"you can't use /{subscription_path}/ as subscription path "

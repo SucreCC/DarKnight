@@ -21,8 +21,8 @@ server:
 web:
   dashboard_path: /dashboard/
   debug: false
-  # DEBUG=true 且未显式设置时，会自动变为 http://127.0.0.1:{port}/api/
-  vite_base_api: /api/
+  # DEBUG=true 且未显式设置时，会自动变为 http://127.0.0.1:{port}/api/v1/
+  # vite_base_api: /api/v1/
 
 logging:
   namespace: darknight       # logger 命名空间（darknight.xxx）
@@ -106,8 +106,8 @@ users:
 
 auth:
   sudo:
-    username: ""
-    password: ""
+    username: "admin"
+    password: "admin"
 
 webhook:
   addresses: []                # 逗号分隔的 webhook 地址列表

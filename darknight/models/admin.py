@@ -10,7 +10,9 @@ from darknight.utils.jwt import get_admin_payload
 from darknight.services.config.settings import get_app_config
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/admin/token")  # Admin view url
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl=f"{get_app_config().project.api_version}/admin/token"
+)
 
 
 class Token(BaseModel):

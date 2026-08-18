@@ -12,7 +12,7 @@ from darknight.services.config.settings import get_app_config
 from darknight.utils import report, responses
 from darknight.utils.jwt import create_admin_token
 
-router = APIRouter(tags=["Admin"], prefix="/api", responses={401: responses._401})
+router = APIRouter(tags=["Admin"], responses={401: responses._401})
 
 
 def get_client_ip(request: Request) -> str:

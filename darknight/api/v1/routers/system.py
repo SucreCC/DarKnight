@@ -12,7 +12,7 @@ from darknight.models.user import UserStatus
 from darknight.utils import responses
 from darknight.utils.system import cpu_usage, memory_usage, realtime_bandwidth
 
-router = APIRouter(tags=["System"], prefix="/api", responses={401: responses._401})
+router = APIRouter(tags=["System"], responses={401: responses._401})
 
 
 @router.get("/system", response_model=SystemStats)

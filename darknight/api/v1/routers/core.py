@@ -13,7 +13,7 @@ from darknight.models.core import CoreStats
 from darknight.services.config.settings import get_app_config
 from darknight.utils import responses
 
-router = APIRouter(tags=["Core"], prefix="/api", responses={401: responses._401})
+router = APIRouter(tags=["Core"], responses={401: responses._401})
 
 
 @router.websocket("/core/logs")

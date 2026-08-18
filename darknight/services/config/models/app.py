@@ -51,11 +51,16 @@ class AppConfig:
 
         data = raw or {}
         server = ServerConfig.from_dict(section(data, "server"))
+        project = ProjectConfig.from_dict(section(data, "project"))
         log_dir = str(get_runtime_data_root() / "logs")
         return cls(
-            project=ProjectConfig.from_dict(section(data, "project")),
+            project=project,
             server=server,
-            web=WebConfig.from_dict(section(data, "web"), server_port=server.port),
+            web=WebConfig.from_dict(
+                section(data, "web"),
+                server_port=server.port,
+                api_version=project.api_version,
+            ),
             database=DatabaseConfig.from_dict(section(data, "database")),
             xray=XrayConfig.from_dict(section(data, "xray")),
             telegram=TelegramConfig.from_dict(section(data, "telegram")),
