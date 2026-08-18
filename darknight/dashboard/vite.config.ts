@@ -1,8 +1,9 @@
-import react from "@vitejs/plugin-react";
-import { defineConfig, splitVendorChunkPlugin } from "vite";
-import svgr from "vite-plugin-svgr";
-import { visualizer } from "rollup-plugin-visualizer";
-import tsconfigPaths from "vite-tsconfig-paths";
+import vue from "@vitejs/plugin-vue";
+import AutoImport from "unplugin-auto-import/vite";
+import Components from "unplugin-vue-components/vite";
+import { ElementPlusResolver } from "unplugin-vue-components/resolvers";
+import { fileURLToPath, URL } from "node:url";
+import { defineConfig } from "vite";
 
 const apiProxyTarget =
   process.env.VITE_API_PROXY_TARGET || "http://127.0.0.1:33100";
@@ -10,14 +11,26 @@ const apiProxyTarget =
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    tsconfigPaths(),
-    react({
-      include: "**/*.tsx",
+    vue(),
+    AutoImport({
+      imports: ["vue", "vue-router", "vue-i18n", "pinia"],
+      resolvers: [ElementPlusResolver({ importStyle: false })],
+      dts: "src/auto-imports.d.ts",
     }),
-    svgr(),
-    visualizer(),
-    splitVendorChunkPlugin(),
+    Components({
+      resolvers: [ElementPlusResolver({ importStyle: false })],
+      dts: "src/components.d.ts",
+    }),
   ],
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+    },
+  },
+  build: {
+    outDir: "build",
+    assetsDir: "statics",
+  },
   server: {
     port: 3000,
     proxy: {
