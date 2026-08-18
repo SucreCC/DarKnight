@@ -15,6 +15,14 @@ export const $fetch = ohMyFetch.create({
   baseURL: resolveBaseURL(),
 });
 
+function normalizeRequestURL(url: string): string {
+  if (/^https?:\/\//i.test(url) || url.startsWith("//")) {
+    return url;
+  }
+  // ofetch treats "/path" as site-root absolute and ignores baseURL prefix.
+  return url.replace(/^\/+/, "");
+}
+
 export const fetcher = <T = any>(
   url: string,
   ops: FetchOptions<"json"> = {}
@@ -26,7 +34,7 @@ export const fetcher = <T = any>(
       Authorization: `Bearer ${getAuthToken()}`,
     };
   }
-  return $fetch<T>(url, ops);
+  return $fetch<T>(normalizeRequestURL(url), ops);
 };
 
 export const fetch = fetcher;
