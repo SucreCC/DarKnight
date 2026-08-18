@@ -22,6 +22,11 @@ APP_IMPORT_PATH = "darknight.api.v1.api_worker:app"
 
 
 def use_route_names_as_operation_ids(app: FastAPI) -> None:
+    """将 OpenAPI operationId 设为路由处理函数名。
+
+    FastAPI 默认生成的 operationId 较长（如 read_users_users__get），
+    改为 endpoint 函数名后，Swagger 文档与 OpenAPI 客户端生成更易读。
+    """
     for route in app.routes:
         if isinstance(route, APIRoute):
             route.operation_id = route.name
@@ -99,6 +104,11 @@ class APIWorker:
         register_all_jobs(self.job_manager)
 
     def _register_lifecycle(self, app: FastAPI) -> None:
+        """注册 FastAPI 启动/关闭钩子。
+
+        startup：校验订阅路径不与已有路由冲突，并启动 APScheduler。
+        shutdown：停止调度器。
+        """
         api_version = self.app_config.project.api_version
         subscription_path = self.app_config.xray.subscription_path
         app_title = app.title
@@ -107,6 +117,7 @@ class APIWorker:
 
         @app.on_event("startup")
         def on_startup() -> None:
+            # 订阅路径为系统保留，不能与 API 前缀或其他路由重复
             paths = [f"{route.path}/" for route in app.routes]
             paths.append(f"{api_version.rstrip('/')}/")
             if f"/{subscription_path}/" in paths:
