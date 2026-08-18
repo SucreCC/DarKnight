@@ -12,6 +12,7 @@ from darknight.models.admin import Admin
 from darknight.models.core import CoreStats
 from darknight.services.config.settings import get_app_config
 from darknight.utils import responses
+from darknight.xray import XRayConfig
 
 router = APIRouter(tags=["Core"], responses={401: responses._401})
 
