@@ -43,7 +43,10 @@ function logout() {
 <template>
   <el-container class="layout">
     <el-aside width="220px" class="layout-aside">
-      <div class="layout-brand">DarKnight</div>
+      <div class="layout-brand">
+        <img src="/statics/logo.png" class="brand-logo" alt="DarKnight" />
+        <span class="brand-text">DarKnight</span>
+      </div>
       <el-menu :default-active="activeMenu" @select="onSelect">
         <el-menu-item index="users">
           <el-icon><UserIcon /></el-icon>
@@ -103,9 +106,20 @@ function logout() {
   border-right: none;
 }
 .layout-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+}
+.brand-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+.brand-text {
   font-size: 20px;
   font-weight: 700;
-  padding: 18px 20px;
 }
 .layout-header {
   display: flex;

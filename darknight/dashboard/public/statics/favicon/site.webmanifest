@@ -1,19 +1,19 @@
 {
-    "name": "",
-    "short_name": "",
+    "name": "DarKnight VPN",
+    "short_name": "DarKnight",
     "icons": [
         {
-            "src": "/favicon/android-chrome-192x192.png",
+            "src": "/statics/favicon/android-chrome-192x192.png",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "/favicon/android-chrome-512x512.png",
+            "src": "/statics/favicon/android-chrome-512x512.png",
             "sizes": "512x512",
             "type": "image/png"
         }
     ],
-    "theme_color": "#ffffff",
+    "theme_color": "#8b3ff2",
     "background_color": "#ffffff",
     "display": "standalone"
 }

@@ -60,7 +60,9 @@ async function onSubmit() {
     </div>
     <div class="login-center">
       <el-card class="login-card">
-        <div class="login-title">DarKnight</div>
+        <div class="login-logo-wrap">
+          <img src="/statics/logo.png" class="login-logo" alt="DarKnight VPN" />
+        </div>
         <div class="login-heading">{{ t("login.loginYourAccount") }}</div>
         <div class="login-sub">{{ t("login.welcomeBack") }}</div>
         <el-form
@@ -130,11 +132,16 @@ async function onSubmit() {
 .login-card {
   width: 360px;
 }
-.login-title {
-  font-size: 28px;
-  font-weight: 700;
-  text-align: center;
-  margin-bottom: 8px;
+.login-logo-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.login-logo {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  border-radius: 16px;
 }
 .login-heading {
   font-size: 18px;
