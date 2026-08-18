@@ -1,40 +1,74 @@
-# Dashboard UI for marzban
+# DarKnight Dashboard
 
-## Requirements
+DarKnight 管理面板前端，基于 **Vue 3 + Vite + Element Plus**。
 
-For development, you will only need Node.js installed on your environement.
+## 技术栈
 
-### Node
+- Vue 3（`<script setup>` + TypeScript）
+- Vite（构建 / 开发服务器）
+- Element Plus（UI 组件库）
+- Pinia（状态管理）
+- Vue Router（hash 模式）
+- @tanstack/vue-query（服务端数据）
+- vue-i18n（国际化：en / zh / ru / fa）
 
-[Node](http://nodejs.org/) is really easy to install & now include [NPM](https://npmjs.org/).
-This project has been developed on the Nodejs v16.17.0 so if you faced any issue during installation that may related to the node version, install Node with version >= v16.17.0.
+## 环境要求
 
-## Install
+- Node.js >= 18（推荐 20+）
+- npm
 
-    git clone https://github.com/gozargah/marz-manager.git
-    cd marz-manager
-    yarn install
+## 安装
 
-### Configure app
+```bash
+cd darknight/dashboard
+npm install
+```
 
-Copy `example.env` to `.env` then set the backend api address:
+## 配置
 
-    VITE_BASE_API=https://somewhere.com/
+复制 `example.env` 为 `.env`，设置后端 API 地址：
 
-#### Environment variables
+```
+VITE_BASE_API=/api/v1/
+```
 
-| Name          | Description                                                                          |
-| ------------- | ------------------------------------------------------------------------------------ |
-| VITE_BASE_API | The api url of the deployed backend ([Marzban](https://github.com/gozargah/Marzban)) |
+| 变量 | 说明 |
+| --- | --- |
+| `VITE_BASE_API` | 后端 API 基础路径，默认 `/api/v1/` |
+| `VITE_API_PROXY_TARGET` | 开发环境下 `/api/v1` 代理目标，默认 `http://127.0.0.1:33100` |
 
-## Start development server
+## 开发
 
-    yarn dev
+```bash
+npm run dev
+```
 
-## Simple build for production
+开发服务器运行在 `http://localhost:3000`，`/api/v1` 请求会代理到后端。
 
-    yarn build
+## 构建
 
-## Contribution
+```bash
+npm run build
+```
 
-Feel free to contribute. Go on and fork the project. After commiting the changes, make a PR. It means a lot to us.
+产物输出到 `build/`（资源在 `build/statics/`），由后端 `darknight/dashboard/__init__.py` 作为静态文件托管。
+
+## 类型检查
+
+```bash
+npm run type-check
+```
+
+## 目录结构
+
+```
+src/
+├── app/          # 路由、i18n
+├── layouts/      # 布局外壳
+├── pages/        # 路由级页面
+├── features/     # 业务模块（users / nodes / hosts / settings）
+├── components/   # 通用组件
+├── shared/       # http、工具、stores、类型
+├── locales/      # 语言包
+└── styles/       # 全局样式
+```

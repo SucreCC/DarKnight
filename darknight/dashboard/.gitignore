@@ -23,5 +23,5 @@ node_modules
 
 .env
 
-stats.html
-yarn.lock
+# build output (served by backend)
+build
