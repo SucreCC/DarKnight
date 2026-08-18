@@ -1,5 +1,6 @@
 import atexit
 import logging
+import os
 import re
 import subprocess
 import threading
@@ -28,7 +29,8 @@ class XRayCore:
         self._on_start_funcs = []
         self._on_stop_funcs = []
         self._env = {
-            "XRAY_LOCATION_ASSET": assets_path
+            **os.environ,
+            "XRAY_LOCATION_ASSET": assets_path,
         }
 
         atexit.register(lambda: self.stop() if self.started else None)
