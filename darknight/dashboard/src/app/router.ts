@@ -7,7 +7,7 @@ const router = createRouter({
     {
       path: "/login",
       name: "login",
-      component: () => import("@/pages/LoginPage.vue"),
+      component: () => import("@/components/login/LoginPage.vue"),
       meta: { public: true },
     },
     {
@@ -18,22 +18,22 @@ const router = createRouter({
         {
           path: "users",
           name: "users",
-          component: () => import("@/pages/UsersPage.vue"),
+          component: () => import("@/components/users/UsersPage.vue"),
         },
         {
           path: "nodes",
           name: "nodes",
-          component: () => import("@/pages/NodesPage.vue"),
+          component: () => import("@/components/nodes/NodesPage.vue"),
         },
         {
           path: "hosts",
           name: "hosts",
-          component: () => import("@/pages/HostsPage.vue"),
+          component: () => import("@/components/hosts/HostsPage.vue"),
         },
         {
           path: "settings",
           name: "settings",
-          component: () => import("@/pages/SettingsPage.vue"),
+          component: () => import("@/components/settings/SettingsPage.vue"),
         },
       ],
     },

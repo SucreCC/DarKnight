@@ -46,11 +46,16 @@ declare module 'vue' {
     ElTableColumn: typeof import('element-plus/es')['ElTableColumn']
     ElTag: typeof import('element-plus/es')['ElTag']
     ElTooltip: typeof import('element-plus/es')['ElTooltip']
+    HostsPage: typeof import('./components/hosts/HostsPage.vue')['default']
     LanguageSwitch: typeof import('./components/LanguageSwitch.vue')['default']
+    LoginPage: typeof import('./components/login/LoginPage.vue')['default']
+    NodesPage: typeof import('./components/nodes/NodesPage.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SettingsPage: typeof import('./components/settings/SettingsPage.vue')['default']
     Statistics: typeof import('./components/Statistics.vue')['default']
     ThemeToggle: typeof import('./components/ThemeToggle.vue')['default']
+    UsersPage: typeof import('./components/users/UsersPage.vue')['default']
   }
   export interface GlobalDirectives {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']

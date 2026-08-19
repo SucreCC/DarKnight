@@ -22,6 +22,7 @@ export default defineConfig({
       dts: "src/components.d.ts",
     }),
   ],
+  publicDir: fileURLToPath(new URL("./src/public", import.meta.url)),
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
