@@ -215,12 +215,12 @@ async function onSubmit() {
   try {
     if (isEditing.value) await updateUser.mutateAsync(body)
     else await createUser.mutateAsync(body)
+    emit('update:modelValue', false)
     ElMessage.success(
       t(isEditing.value ? 'userDialog.userEdited' : 'userDialog.userCreated', {
         username: form.username
       })
     )
-    emit('update:modelValue', false)
   } catch (err: unknown) {
     const detail = extractErrorDetail(err)
     errorMsg.value =
