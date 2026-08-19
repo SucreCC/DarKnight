@@ -1,0 +1,6 @@
+/node_modules/**
+/dist/
+/dist*
+/public/*
+/types/auto-imports.d.ts
+/types/auto-components.d.ts

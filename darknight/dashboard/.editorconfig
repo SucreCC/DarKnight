@@ -1,0 +1,22 @@
+root = true
+
+# 注意：EditorConfig 规范不支持行内注释，注释必须独占一行。
+[*.{js,mjs,ts,tsx,vue,scss,css,json}]
+# 文件字符集
+charset = utf-8
+# 换行类型（lf | cr | crlf）
+end_of_line = lf
+# 始终在文件末尾插入一个换行
+insert_final_newline = true
+# 缩进风格（tab | space）
+indent_style = space
+# 缩进大小
+indent_size = 2
+# 最大行长度，与 prettier 的 printWidth 保持一致
+max_line_length = 100
+
+[*.md]
+# 关闭最大行长度限制
+max_line_length = off
+# 关闭末尾空格修剪（md 用两个空格表示换行）
+trim_trailing_whitespace = false

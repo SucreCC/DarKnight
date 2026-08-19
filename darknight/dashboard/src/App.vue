@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { ElConfigProvider } from "element-plus";
-import { useThemeStore } from "@/shared/stores/theme";
-import { useI18n } from "vue-i18n";
+import { computed } from 'vue'
+import { ElConfigProvider } from 'element-plus'
+import { useThemeStore } from '@/store/modules/theme'
+import { useI18n } from 'vue-i18n'
 
 // Ensure theme store is initialized (applies dark class on load).
-useThemeStore();
-const { locale } = useI18n();
-const rtl = computed(() => (locale.value === "fa" ? "rtl" : "ltr"));
+useThemeStore()
+const { locale } = useI18n()
+const rtl = computed(() => (locale.value === 'fa' ? 'rtl' : 'ltr'))
 </script>
 
 <template>
@@ -20,6 +20,7 @@ const rtl = computed(() => (locale.value === "fa" ? "rtl" : "ltr"));
 
 <style scoped>
 .dk-app {
+  width: 100%;
   height: 100%;
 }
 </style>
