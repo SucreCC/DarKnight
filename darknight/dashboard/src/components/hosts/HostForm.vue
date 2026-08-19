@@ -6,7 +6,7 @@ import {
   FINGERPRINT_OPTIONS,
   HOST_SECURITY_OPTIONS,
   type HostEntry,
-} from "../types";
+} from "./types";
 
 const host = defineModel<HostEntry>({ required: true });
 defineEmits<{ remove: [] }>();

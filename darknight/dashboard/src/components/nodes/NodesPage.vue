@@ -3,11 +3,11 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Plus } from "@element-plus/icons-vue";
-import { useNodesStore } from "@/features/nodes/store";
-import { useNodesQuery, useNodeMutations } from "@/features/nodes/api";
-import type { NodeType } from "@/features/nodes/types";
-import NodesTable from "@/features/nodes/components/NodesTable.vue";
-import NodeDialog from "@/features/nodes/dialogs/NodeDialog.vue";
+import { useNodesStore } from "./store";
+import { useNodesQuery, useNodeMutations } from "./api";
+import type { NodeType } from "./types";
+import NodesTable from "./NodesTable.vue";
+import NodeDialog from "./NodeDialog.vue";
 
 const { t } = useI18n();
 const store = useNodesStore();

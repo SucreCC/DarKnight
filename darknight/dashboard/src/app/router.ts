@@ -12,7 +12,7 @@ const router = createRouter({
     },
     {
       path: "/",
-      component: () => import("@/layouts/DashboardLayout.vue"),
+      component: () => import("@/components/layout/DashboardLayout.vue"),
       redirect: { name: "users" },
       children: [
         {

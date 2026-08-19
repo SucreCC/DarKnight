@@ -8,6 +8,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    DashboardLayout: typeof import('./components/layout/DashboardLayout.vue')['default']
     ElAlert: typeof import('element-plus/es')['ElAlert']
     ElAside: typeof import('element-plus/es')['ElAside']
     ElButton: typeof import('element-plus/es')['ElButton']
@@ -46,16 +47,23 @@ declare module 'vue' {
     ElTableColumn: typeof import('element-plus/es')['ElTableColumn']
     ElTag: typeof import('element-plus/es')['ElTag']
     ElTooltip: typeof import('element-plus/es')['ElTooltip']
+    HostForm: typeof import('./components/hosts/HostForm.vue')['default']
     HostsPage: typeof import('./components/hosts/HostsPage.vue')['default']
     LanguageSwitch: typeof import('./components/LanguageSwitch.vue')['default']
     LoginPage: typeof import('./components/login/LoginPage.vue')['default']
+    NodeDialog: typeof import('./components/nodes/NodeDialog.vue')['default']
     NodesPage: typeof import('./components/nodes/NodesPage.vue')['default']
+    NodesTable: typeof import('./components/nodes/NodesTable.vue')['default']
+    QRCodeDialog: typeof import('./components/users/QRCodeDialog.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SettingsPage: typeof import('./components/settings/SettingsPage.vue')['default']
-    Statistics: typeof import('./components/Statistics.vue')['default']
+    Statistics: typeof import('./components/users/Statistics.vue')['default']
     ThemeToggle: typeof import('./components/ThemeToggle.vue')['default']
+    UserDialog: typeof import('./components/users/UserDialog.vue')['default']
+    UserFilters: typeof import('./components/users/UserFilters.vue')['default']
     UsersPage: typeof import('./components/users/UsersPage.vue')['default']
+    UsersTable: typeof import('./components/users/UsersTable.vue')['default']
   }
   export interface GlobalDirectives {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']

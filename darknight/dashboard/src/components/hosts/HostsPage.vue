@@ -3,9 +3,9 @@ import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { ElMessage } from "element-plus";
 import { Plus } from "@element-plus/icons-vue";
-import { useHostsQuery, useSaveHosts } from "@/features/hosts/api";
-import { defaultHost, type HostEntry, type HostsSchema } from "@/features/hosts/types";
-import HostForm from "@/features/hosts/components/HostForm.vue";
+import { useHostsQuery, useSaveHosts } from "./api";
+import { defaultHost, type HostEntry, type HostsSchema } from "./types";
+import HostForm from "./HostForm.vue";
 
 const { t } = useI18n();
 const { data, isFetching } = useHostsQuery();

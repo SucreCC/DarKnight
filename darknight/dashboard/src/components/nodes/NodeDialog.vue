@@ -2,8 +2,8 @@
 import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { ElMessage, type FormInstance, type FormRules } from "element-plus";
-import { useNodeMutations } from "../api";
-import { defaultNode, type NodeType } from "../types";
+import { useNodeMutations } from "./api";
+import { defaultNode, type NodeType } from "./types";
 
 const props = defineProps<{ modelValue: boolean; node: NodeType | null }>();
 const emit = defineEmits<{ "update:modelValue": [value: boolean] }>();

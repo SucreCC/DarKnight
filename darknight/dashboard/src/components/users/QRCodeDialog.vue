@@ -3,8 +3,8 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import QrcodeVue from "qrcode.vue";
 import { ElMessage } from "element-plus";
-import type { User } from "../types";
-import { absoluteSubscriptionUrl } from "../helpers";
+import type { User } from "./types";
+import { absoluteSubscriptionUrl } from "./helpers";
 
 const props = defineProps<{
   modelValue: boolean;

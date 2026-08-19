@@ -8,7 +8,7 @@ import {
   useCoreQuery,
   useRestartCore,
   useUpdateConfig,
-} from "@/features/settings/api";
+} from "./api";
 
 const { t } = useI18n();
 const { data: core } = useCoreQuery();

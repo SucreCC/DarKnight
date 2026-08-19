@@ -3,14 +3,14 @@ import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { ElMessage, type FormInstance, type FormRules } from "element-plus";
 import { Refresh } from "@element-plus/icons-vue";
-import { useInboundsQuery, useUserMutations } from "../api";
+import { useInboundsQuery, useUserMutations } from "./api";
 import {
   RESET_STRATEGIES,
   type Inbounds,
   type ProxyKey,
   type User,
   type UserCreate,
-} from "../types";
+} from "./types";
 
 const props = defineProps<{
   modelValue: boolean;

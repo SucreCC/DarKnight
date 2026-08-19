@@ -3,7 +3,7 @@ import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useDebounceFn } from "@vueuse/core";
 import { Plus, Search } from "@element-plus/icons-vue";
-import type { UserFilters } from "../types";
+import type { UserFilters } from "./types";
 
 const props = defineProps<{
   search: string;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import { Connection, Delete, Edit } from "@element-plus/icons-vue";
-import { NODE_STATUS_TAG, type NodeStatus, type NodeType } from "../types";
+import { NODE_STATUS_TAG, type NodeStatus, type NodeType } from "./types";
 
 defineProps<{ nodes: NodeType[]; loading: boolean }>();
 const emit = defineEmits<{

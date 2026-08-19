@@ -2,14 +2,14 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { useUsersStore } from "@/features/users/store";
-import { useUsersQuery, useUserMutations } from "@/features/users/api";
-import type { User } from "@/features/users/types";
-import UserFilters from "@/features/users/components/UserFilters.vue";
-import UsersTable from "@/features/users/components/UsersTable.vue";
-import UserDialog from "@/features/users/dialogs/UserDialog.vue";
-import QRCodeDialog from "@/features/users/dialogs/QRCodeDialog.vue";
-import Statistics from "@/components/Statistics.vue";
+import { useUsersStore } from "./store";
+import { useUsersQuery, useUserMutations } from "./api";
+import type { User } from "./types";
+import UserFilters from "./UserFilters.vue";
+import UsersTable from "./UsersTable.vue";
+import UserDialog from "./UserDialog.vue";
+import QRCodeDialog from "./QRCodeDialog.vue";
+import Statistics from "./Statistics.vue";
 
 const { t } = useI18n();
 const store = useUsersStore();

@@ -11,13 +11,13 @@ import {
 import { ElMessage } from "element-plus";
 import { formatBytes } from "@/shared/lib/format";
 import { relativeExpiry, isExpired } from "@/shared/lib/date";
-import { STATUS_TAG_TYPE, type User } from "../types";
+import { STATUS_TAG_TYPE, type User } from "./types";
 import {
   absoluteSubscriptionUrl,
   isUnlimited,
   usagePercentage,
   usageTotalText,
-} from "../helpers";
+} from "./helpers";
 
 const props = defineProps<{
   users: User[];
