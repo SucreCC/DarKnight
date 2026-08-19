@@ -109,6 +109,15 @@ auth:
     username: "admin"
     password: "admin"
 
+email:
+  smtp_host: ""
+  smtp_port: 587
+  smtp_user: ""
+  smtp_password: ""
+  from_address: ""
+  use_tls: true
+  dev_log_only: true
+
 webhook:
   addresses: []                # 逗号分隔的 webhook 地址列表
   secret: null

@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from darknight.api.v1.routers import (
     admin,
+    auth,
     core,
     home,
     node,
@@ -16,6 +17,7 @@ api_prefix = get_app_config().project.api_version
 api_router = APIRouter(prefix=api_prefix)
 
 for router in (
+    auth.router,
     admin.router,
     core.router,
     node.router,

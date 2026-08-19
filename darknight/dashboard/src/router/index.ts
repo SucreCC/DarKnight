@@ -1,16 +1,18 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
+import { portalRoutes } from './portal'
 
 export const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'login',
     component: () => import('@/views/Login/index.vue'),
-    meta: { public: true }
+    meta: { public: true, authType: 'admin' }
   },
   {
     path: '/',
     component: () => import('@/layout/index.vue'),
+    meta: { authType: 'admin' },
     redirect: { name: 'users' },
     children: [
       {
@@ -39,6 +41,7 @@ export const routes: RouteRecordRaw[] = [
       }
     ]
   },
+  ...portalRoutes,
   { path: '/:pathMatch(.*)*', redirect: { name: 'users' } }
 ]
 

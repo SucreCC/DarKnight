@@ -1,6 +1,7 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosRequestConfig } from 'axios'
 import { formatToken, getAccessToken, removeToken } from '@/utils/auth'
+import { getUserToken, isPortalRoute, removeUserToken } from '@/utils/userAuth'
 
 const DEFAULT_API_BASE = '/api/v1'
 
@@ -21,7 +22,7 @@ const instance: AxiosInstance = axios.create({
 })
 
 instance.interceptors.request.use((config) => {
-  const token = getAccessToken()
+  const token = isPortalRoute() ? getUserToken() : getAccessToken()
   if (token) {
     config.headers.Authorization = formatToken(token)
   }
@@ -32,9 +33,16 @@ instance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error?.response?.status === 401) {
-      removeToken()
-      if (!window.location.hash.startsWith('#/login')) {
-        window.location.hash = '#/login'
+      if (isPortalRoute()) {
+        removeUserToken()
+        if (!window.location.hash.startsWith('#/portal/login')) {
+          window.location.hash = '#/portal/login'
+        }
+      } else {
+        removeToken()
+        if (!window.location.hash.startsWith('#/login')) {
+          window.location.hash = '#/login'
+        }
       }
     }
     return Promise.reject(error)

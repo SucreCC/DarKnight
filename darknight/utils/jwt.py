@@ -28,6 +28,16 @@ def create_admin_token(username: str, is_sudo=False) -> str:
     return encoded_jwt
 
 
+def create_user_token(username: str) -> str:
+    data = {"sub": username, "access": "user", "iat": datetime.utcnow()}
+    expire_minutes = get_app_config().jwt.access_token_expire_minutes
+    if expire_minutes > 0:
+        expire = datetime.utcnow() + timedelta(minutes=expire_minutes)
+        data["exp"] = expire
+    encoded_jwt = jwt.encode(data, get_secret_key(), algorithm="HS256")
+    return encoded_jwt
+
+
 def get_admin_payload(token: str) -> Union[dict, None]:
     try:
         payload = jwt.decode(token, get_secret_key(), algorithms=["HS256"])
@@ -41,6 +51,22 @@ def get_admin_payload(token: str) -> Union[dict, None]:
             created_at = None
 
         return {"username": username, "is_sudo": access == "sudo", "created_at": created_at}
+    except jwt.exceptions.PyJWTError:
+        return
+
+
+def get_user_payload(token: str) -> Union[dict, None]:
+    try:
+        payload = jwt.decode(token, get_secret_key(), algorithms=["HS256"])
+        username: str = payload.get("sub")
+        access: str = payload.get("access")
+        if not username or access != "user":
+            return
+        try:
+            created_at = datetime.utcfromtimestamp(payload["iat"])
+        except KeyError:
+            created_at = None
+        return {"username": username, "created_at": created_at}
     except jwt.exceptions.PyJWTError:
         return
 

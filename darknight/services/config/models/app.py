@@ -6,6 +6,7 @@ from typing import Any
 from .auth import AuthConfig
 from .database import DatabaseConfig
 from .discord import DiscordConfig
+from .email import EmailConfig
 from .features import FeaturesConfig
 from .jobs import JobsConfig
 from .jwt import JwtConfig
@@ -44,6 +45,7 @@ class AppConfig:
     jobs: JobsConfig = field(default_factory=JobsConfig)
     features: FeaturesConfig = field(default_factory=FeaturesConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
+    email: EmailConfig = field(default_factory=EmailConfig)
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any] | None = None) -> AppConfig:
@@ -76,6 +78,7 @@ class AppConfig:
             jobs=JobsConfig.from_dict(section(data, "jobs")),
             features=FeaturesConfig.from_dict(section(data, "features")),
             logging=LoggingConfig.from_dict(section(data, "logging"), log_dir=log_dir),
+            email=EmailConfig.from_dict(section(data, "email")),
         )
 
 

@@ -2,6 +2,7 @@ from .app import AppConfig
 from .auth import AuthConfig, SudoConfig
 from .database import DatabaseConfig
 from .discord import DiscordConfig
+from .email import EmailConfig
 from .features import FeaturesConfig
 from .jobs import JobsConfig
 from .jwt import JwtConfig
@@ -23,6 +24,7 @@ __all__ = [
     "AuthConfig",
     "DatabaseConfig",
     "DiscordConfig",
+    "EmailConfig",
     "FeaturesConfig",
     "JobsConfig",
     "JwtConfig",

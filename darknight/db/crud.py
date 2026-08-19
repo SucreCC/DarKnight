@@ -11,6 +11,7 @@ from sqlalchemy.orm import Query, Session, joinedload
 from sqlalchemy.sql.functions import coalesce
 
 from darknight.db.models import (
+    EmailVerificationCode,
     JWT,
     TLS,
     Admin,
@@ -193,6 +194,10 @@ def get_user(db: Session, username: str) -> Optional[User]:
     return get_user_queryset(db).filter(User.username == username).first()
 
 
+def get_user_by_email(db: Session, email: str) -> Optional[User]:
+    return get_user_queryset(db).filter(User.email == email).first()
+
+
 def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
     """
     Retrieves a user by user ID.
@@ -354,7 +359,15 @@ def get_users_count(db: Session, status: UserStatus = None, admin: Admin = None)
     return query.count()
 
 
-def create_user(db: Session, user: UserCreate, admin: Admin = None) -> User:
+def create_user(
+    db: Session,
+    user: UserCreate,
+    admin: Admin = None,
+    *,
+    email: Optional[str] = None,
+    hashed_password: Optional[str] = None,
+    email_verified_at: Optional[datetime] = None,
+) -> User:
     """
     Creates a new user with provided details.
 
@@ -380,6 +393,9 @@ def create_user(db: Session, user: UserCreate, admin: Admin = None) -> User:
 
     dbuser = User(
         username=user.username,
+        email=email,
+        hashed_password=hashed_password,
+        email_verified_at=email_verified_at,
         proxies=proxies,
         status=user.status,
         data_limit=(user.data_limit or None),
@@ -1500,3 +1516,36 @@ def count_online_users(db: Session, hours: int = 24):
     query = db.query(func.count(User.id)).filter(User.online_at.isnot(
         None), User.online_at >= twenty_four_hours_ago)
     return query.scalar()
+
+
+def save_email_verification_code(
+    db: Session,
+    email: str,
+    code: str,
+    expires_at: datetime,
+) -> EmailVerificationCode:
+    db.query(EmailVerificationCode).filter(EmailVerificationCode.email == email).delete()
+    record = EmailVerificationCode(
+        email=email,
+        code=code,
+        expires_at=expires_at,
+        created_at=datetime.utcnow(),
+    )
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+def get_latest_verification_code(db: Session, email: str) -> Optional[EmailVerificationCode]:
+    return (
+        db.query(EmailVerificationCode)
+        .filter(EmailVerificationCode.email == email)
+        .order_by(EmailVerificationCode.created_at.desc())
+        .first()
+    )
+
+
+def delete_verification_codes(db: Session, email: str) -> None:
+    db.query(EmailVerificationCode).filter(EmailVerificationCode.email == email).delete()
+    db.commit()

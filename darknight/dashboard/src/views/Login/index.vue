@@ -102,6 +102,9 @@ async function onSubmit() {
           >
             {{ t('login') }}
           </el-button>
+          <div class="login-portal-link">
+            <router-link :to="{ name: 'portal-login' }">{{ t('portal.userPortalEntry') }}</router-link>
+          </div>
         </el-form>
       </el-card>
     </div>
@@ -155,5 +158,16 @@ async function onSubmit() {
   margin-bottom: 20px;
   color: var(--el-text-color-secondary);
   text-align: center;
+}
+
+.login-portal-link {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.login-portal-link a {
+  color: #20a397;
+  font-size: 14px;
+  text-decoration: none;
 }
 </style>
