@@ -11,7 +11,7 @@ export const portalRoutes: RouteRecordRaw[] = [
     path: '/portal/register',
     name: 'portal-register',
     component: () => import('@/views/portal/Register/index.vue'),
-    meta: { public: true, zone: 'portal', authType: 'user' }
+    meta: { public: true, zone: 'auth', authType: 'user' }
   },
   {
     path: '/portal',
@@ -24,6 +24,18 @@ export const portalRoutes: RouteRecordRaw[] = [
         name: 'portal-dashboard',
         component: () => import('@/views/portal/Dashboard/index.vue'),
         meta: { title: 'portal.menu.dashboard', icon: 'Odometer', authType: 'user' }
+      },
+      {
+        path: 'docs',
+        name: 'portal-docs',
+        component: () => import('@/views/portal/Docs/index.vue'),
+        meta: { title: 'portal.menu.docs', icon: 'Document', authType: 'user' }
+      },
+      {
+        path: 'docs/:id',
+        name: 'portal-docs-detail',
+        component: () => import('@/views/portal/Docs/Detail.vue'),
+        meta: { title: 'portal.menu.docs', authType: 'user', hideInMenu: true }
       },
       {
         path: 'buy',

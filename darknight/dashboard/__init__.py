@@ -7,6 +7,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from darknight.services.config.models import AppConfig
@@ -53,6 +54,14 @@ def register_dashboard(app: FastAPI, app_config: AppConfig) -> None:
     if not build_dir.is_dir() or not (build_dir / "index.html").exists():
         logger.info("Building dashboard (first run, may take a minute)...")
         build_dashboard(web.vite_base_api)
+
+    if dashboard_path != "/":
+        legacy_path = "/dashboard/"
+
+        @app.get(legacy_path, include_in_schema=False)
+        @app.get(legacy_path.rstrip("/"), include_in_schema=False)
+        def legacy_dashboard_redirect() -> RedirectResponse:
+            return RedirectResponse(url=dashboard_path, status_code=301)
 
     app.mount(
         dashboard_path,

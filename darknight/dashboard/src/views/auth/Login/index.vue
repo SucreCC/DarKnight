@@ -39,6 +39,10 @@ function resolveRedirect(access: string): string {
   return requested
 }
 
+function goRegister() {
+  router.push({ name: 'portal-register' })
+}
+
 async function onSubmit() {
   if (!formRef.value) return
   const valid = await formRef.value.validate().catch(() => false)
@@ -119,10 +123,10 @@ async function onSubmit() {
           >
             {{ t('login') }}
           </el-button>
-          <div class="login-portal-link">
-            <router-link :to="{ name: 'portal-register' }">{{ t('portal.goRegister') }}</router-link>
-          </div>
         </el-form>
+        <div class="login-portal-link">
+          <el-button link type="primary" @click="goRegister">{{ t('portal.goRegister') }}</el-button>
+        </div>
       </el-card>
     </div>
   </div>
@@ -182,9 +186,8 @@ async function onSubmit() {
   text-align: center;
 }
 
-.login-portal-link a {
+.login-portal-link .el-button {
   font-size: 14px;
   color: #20a397;
-  text-decoration: none;
 }
 </style>

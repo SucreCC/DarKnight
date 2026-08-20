@@ -6,7 +6,7 @@ from typing import Any
 
 @dataclass(frozen=True)
 class WebConfig:
-    dashboard_path: str = "/dashboard/"
+    dashboard_path: str = "/"
     debug: bool = False
     vite_base_api: str = "/api/v1/"
 

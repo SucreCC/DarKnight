@@ -17,7 +17,7 @@ const article = computed(() => getDocById(String(route.params.id || '')))
 
 onMounted(async () => {
   if (!article.value) {
-    router.replace({ name: 'site-docs' })
+    router.replace({ name: 'portal-docs' })
     return
   }
   try {

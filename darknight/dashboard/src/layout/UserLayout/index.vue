@@ -9,6 +9,7 @@ import { fetchPortalMe } from '@/api/portal'
 import type { PortalUser } from '@/api/portal/types'
 import { removeUserToken } from '@/utils/userAuth'
 import LanguageSwitch from '@/components/LanguageSwitch/index.vue'
+import { getDocById } from '@/views/portal/Docs/articles'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -52,9 +53,21 @@ const menuGroups = computed<MenuGroup[]>(() => {
   return groups
 })
 
-const activeMenu = computed(() => route.name as string)
+const activeMenu = computed(() => {
+  if (String(route.name).startsWith('portal-docs')) return 'portal-docs'
+  return route.name as string
+})
 
 const pageTitle = computed(() => {
+  if (route.name === 'portal-docs-detail') {
+    const article = getDocById(String(route.params.id || ''))
+    if (article) {
+      return t('portal.docs.headerTitle', {
+        title: t(article.titleKey),
+        date: article.updatedAt
+      })
+    }
+  }
   const current = menuChildren.value.find((item) => item.name === route.name)
   return current?.meta?.title ? t(current.meta.title as string) : t('portal.menu.dashboard')
 })
@@ -73,7 +86,7 @@ function onSelect(index: string) {
 
 function logout() {
   removeUserToken()
-  router.push({ name: 'portal-login' })
+  router.push({ name: 'site-home' })
 }
 </script>
 

@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 
-from darknight.api.v1.api_router import api_router, home, subscription
+from darknight.api.v1.api_router import api_router, subscription
 from darknight.runtime.banner import print_startup_banner
 from darknight.runtime.server import build_bind_args, resolve_uvicorn_log_level
 from darknight.services.config.models import AppConfig
@@ -69,7 +69,6 @@ class APIWorker:
         )
 
         app.include_router(api_router)
-        app.include_router(home.router)
         app.include_router(subscription.router)
 
         from darknight.dashboard import register_dashboard

@@ -19,7 +19,7 @@ server:
     - "*"
 
 web:
-  dashboard_path: /dashboard/
+  dashboard_path: /
   debug: false
   # DEBUG=true 且未显式设置时，会自动变为 http://127.0.0.1:{port}/api/v1/
   # vite_base_api: /api/v1/

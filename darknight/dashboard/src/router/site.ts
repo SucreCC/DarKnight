@@ -11,18 +11,6 @@ export const siteRoutes: RouteRecordRaw[] = [
         name: 'site-home',
         component: () => import('@/views/site/Home/index.vue'),
         meta: { title: 'site.menu.home', public: true, zone: 'site' }
-      },
-      {
-        path: 'docs',
-        name: 'site-docs',
-        component: () => import('@/views/site/Docs/index.vue'),
-        meta: { title: 'site.menu.docs', public: true, zone: 'site' }
-      },
-      {
-        path: 'docs/:id',
-        name: 'site-docs-detail',
-        component: () => import('@/views/site/Docs/Detail.vue'),
-        meta: { title: 'site.menu.docs', public: true, zone: 'site', hideInMenu: true }
       }
     ]
   }

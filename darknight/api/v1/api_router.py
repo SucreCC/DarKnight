@@ -4,7 +4,6 @@ from darknight.api.v1.routers import (
     admin,
     auth,
     core,
-    home,
     node,
     subscription,
     system,
@@ -27,4 +26,4 @@ for router in (
 ):
     api_router.include_router(router)
 
-__all__ = ["api_router", "home", "subscription"]
+__all__ = ["api_router", "subscription"]

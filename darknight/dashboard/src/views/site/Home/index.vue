@@ -34,8 +34,8 @@ const features = [
         <el-button type="primary" size="large" @click="router.push({ name: 'portal-register' })">
           {{ t('site.home.getStarted') }}
         </el-button>
-        <el-button size="large" @click="router.push({ name: 'site-docs' })">
-          {{ t('site.home.viewDocs') }}
+        <el-button size="large" @click="router.push({ name: 'login' })">
+          {{ t('site.home.login') }}
         </el-button>
       </div>
     </div>
