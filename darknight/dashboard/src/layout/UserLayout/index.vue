@@ -55,6 +55,8 @@ const menuGroups = computed<MenuGroup[]>(() => {
 
 const activeMenu = computed(() => {
   if (String(route.name).startsWith('portal-docs')) return 'portal-docs'
+  if (String(route.name).startsWith('portal-buy')) return 'portal-buy'
+  if (String(route.name).startsWith('portal-order')) return 'portal-orders'
   return route.name as string
 })
 
@@ -67,6 +69,12 @@ const pageTitle = computed(() => {
         date: article.updatedAt
       })
     }
+  }
+  if (route.name === 'portal-buy-configure') {
+    return t('portal.buy.configureTitle')
+  }
+  if (route.name === 'portal-order-detail') {
+    return t('portal.buy.orderDetailTitle')
   }
   const current = menuChildren.value.find((item) => item.name === route.name)
   return current?.meta?.title ? t(current.meta.title as string) : t('portal.menu.dashboard')

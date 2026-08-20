@@ -40,12 +40,22 @@ export const portalRoutes: RouteRecordRaw[] = [
       {
         path: 'buy',
         name: 'portal-buy',
-        component: () => import('@/views/portal/Placeholder/index.vue'),
+        component: () => import('@/views/portal/Buy/index.vue'),
         meta: {
           title: 'portal.menu.buySubscription',
           icon: 'ShoppingCart',
           authType: 'user',
           group: 'portal.menu.subscription'
+        }
+      },
+      {
+        path: 'buy/:planId',
+        name: 'portal-buy-configure',
+        component: () => import('@/views/portal/Buy/Configure.vue'),
+        meta: {
+          title: 'portal.buy.configureTitle',
+          authType: 'user',
+          hideInMenu: true
         }
       },
       {
@@ -68,6 +78,16 @@ export const portalRoutes: RouteRecordRaw[] = [
           icon: 'List',
           authType: 'user',
           group: 'portal.menu.finance'
+        }
+      },
+      {
+        path: 'orders/:orderId',
+        name: 'portal-order-detail',
+        component: () => import('@/views/portal/Orders/Detail.vue'),
+        meta: {
+          title: 'portal.buy.orderDetailTitle',
+          authType: 'user',
+          hideInMenu: true
         }
       },
       {
