@@ -31,10 +31,11 @@ onMounted(() => {
 function resolveRedirect(access: string): string {
   const requested = (route.query.redirect as string) || ''
   const isUser = access === 'user'
-  const fallback = isUser ? '/portal/dashboard' : '/'
+  const fallback = isUser ? '/portal/dashboard' : '/admin/users'
   if (!requested) return fallback
   if (isUser && !requested.startsWith('/portal')) return fallback
   if (!isUser && requested.startsWith('/portal')) return fallback
+  if (isUser && requested.startsWith('/admin')) return fallback
   return requested
 }
 

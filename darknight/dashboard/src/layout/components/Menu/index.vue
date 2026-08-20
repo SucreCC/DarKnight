@@ -14,7 +14,7 @@ const appStore = useAppStore()
 
 /** 菜单项来自路由表 children，避免菜单与路由两处维护 */
 const menuItems = computed(() => {
-  const root = routes.find((r) => r.path === '/')
+  const root = routes.find((r) => r.path === '/admin')
   return (root?.children ?? []).filter((child) => child.meta?.title)
 })
 

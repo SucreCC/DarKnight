@@ -3,8 +3,9 @@ import { getAccessToken } from '@/utils/auth'
 import { getUserToken } from '@/utils/userAuth'
 
 router.beforeEach((to) => {
+  const zone = to.meta.zone as 'site' | 'auth' | 'portal' | 'admin' | undefined
   const authType = (to.meta.authType as 'admin' | 'user' | undefined) ?? 'admin'
-  const isPublic = to.meta.public === true
+  const isPublic = to.meta.public === true || zone === 'site' || zone === 'auth'
   const hasToken = !!getAccessToken()
   const hasUserToken = !!getUserToken()
 

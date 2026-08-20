@@ -22,7 +22,7 @@ const groups = computed(() => {
 })
 
 function openArticle(id: string) {
-  router.push({ name: 'portal-docs-detail', params: { id } })
+  router.push({ name: 'site-docs-detail', params: { id } })
 }
 </script>
 

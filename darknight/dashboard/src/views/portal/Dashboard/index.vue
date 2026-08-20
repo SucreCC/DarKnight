@@ -22,7 +22,7 @@ const shortcuts = [
     title: 'portal.dashboard.shortcutDocs',
     desc: 'portal.dashboard.shortcutDocsDesc',
     icon: Reading,
-    route: 'portal-docs'
+    route: 'site-docs'
   },
   {
     title: 'portal.dashboard.shortcutSubscribe',
