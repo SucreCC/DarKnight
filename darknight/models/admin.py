@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -18,6 +18,7 @@ oauth2_scheme = OAuth2PasswordBearer(
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    access: Literal["user", "admin", "sudo"]
 
 
 class Admin(BaseModel):

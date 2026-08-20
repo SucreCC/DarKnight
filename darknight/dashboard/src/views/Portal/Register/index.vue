@@ -193,7 +193,7 @@ async function onSubmit() {
           </el-button>
         </el-form>
         <div class="portal-auth-footer">
-          <router-link :to="{ name: 'portal-login' }">{{ t('portal.backToLogin') }}</router-link>
+          <router-link :to="{ name: 'login' }">{{ t('portal.backToLogin') }}</router-link>
         </div>
       </div>
     </div>

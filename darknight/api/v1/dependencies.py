@@ -1,11 +1,11 @@
 from typing import Optional, Union
-from darknight.models.admin import AdminInDB, AdminValidationResult, Admin
+from darknight.models.admin import AdminInDB, AdminValidationResult, Admin, Token
 from darknight.models.user import UserResponse, UserStatus
 from darknight.db import Session, crud, get_db
 from darknight.services.config.settings import get_app_config
 from fastapi import Depends, HTTPException
 from datetime import datetime, timezone, timedelta
-from darknight.utils.jwt import get_subscription_payload
+from darknight.utils.jwt import create_admin_token, create_user_token, get_subscription_payload
 
 
 def validate_admin(db: Session, username: str, password: str) -> Optional[AdminValidationResult]:
@@ -19,6 +19,30 @@ def validate_admin(db: Session, username: str, password: str) -> Optional[AdminV
         return AdminValidationResult(username=dbadmin.username, is_sudo=dbadmin.is_sudo)
 
     return None
+
+
+def authenticate_login(db: Session, username: str, password: str) -> Optional[Token]:
+    """Authenticate an admin or portal user and issue the matching token."""
+    identifier = username.strip()
+    if not identifier:
+        return None
+
+    dbadmin = validate_admin(db, identifier, password)
+    if dbadmin:
+        return Token(
+            access_token=create_admin_token(dbadmin.username, dbadmin.is_sudo),
+            access="sudo" if dbadmin.is_sudo else "admin",
+        )
+
+    dbuser = crud.get_user_by_email(db, identifier.lower()) or crud.get_user(db, identifier)
+    if not dbuser or not dbuser.hashed_password:
+        return None
+
+    from darknight.models.portal_auth import verify_password
+
+    if not verify_password(password, dbuser.hashed_password):
+        return None
+    return Token(access_token=create_user_token(dbuser.username), access="user")
 
 
 def get_admin_by_username(username: str, db: Session = Depends(get_db)):

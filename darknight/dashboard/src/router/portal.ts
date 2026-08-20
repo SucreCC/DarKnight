@@ -4,7 +4,7 @@ export const portalRoutes: RouteRecordRaw[] = [
   {
     path: '/portal/login',
     name: 'portal-login',
-    component: () => import('@/views/Portal/Login/index.vue'),
+    redirect: (to) => ({ name: 'login', query: to.query }),
     meta: { public: true, authType: 'user' }
   },
   {

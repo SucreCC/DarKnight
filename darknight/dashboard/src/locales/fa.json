@@ -100,6 +100,7 @@
   "login.fieldRequired": "این فیلد باید پر شود!",
   "login.loginYourAccount": "وارد حساب خود شوید",
   "login.welcomeBack": "خوش آمدید, لطفا اطلاعات خود را وارد کنید",
+  "login.accountPlaceholder": "نام کاربری یا ایمیل",
   "memoryUsage": "مصرف حافظه",
   "next": "بعدی",
   "nodes.addHostForEveryInbound": "استفاده از این گره به عنوان میزبان تمام ورودی‌ها",

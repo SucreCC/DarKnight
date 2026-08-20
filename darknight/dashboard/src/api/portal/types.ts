@@ -1,3 +1,11 @@
+export type LoginAccess = 'user' | 'admin' | 'sudo'
+
+export interface LoginToken {
+  access_token: string
+  token_type?: string
+  access: LoginAccess
+}
+
 export interface PortalUser {
   username: string
   email: string

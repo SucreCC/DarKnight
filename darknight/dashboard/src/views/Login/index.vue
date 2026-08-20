@@ -3,8 +3,10 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import type { FormInstance, FormRules } from 'element-plus'
-import { extractErrorDetail, http } from '@/config/axios'
+import { extractErrorDetail } from '@/config/axios'
+import { loginAccount } from '@/api/portal'
 import { removeToken, setToken } from '@/utils/auth'
+import { removeUserToken, setUserToken } from '@/utils/userAuth'
 import LanguageSwitch from '@/components/LanguageSwitch/index.vue'
 
 const { t } = useI18n()
@@ -23,7 +25,18 @@ const rules: FormRules = {
 
 onMounted(() => {
   removeToken()
+  removeUserToken()
 })
+
+function resolveRedirect(access: string): string {
+  const requested = (route.query.redirect as string) || ''
+  const isUser = access === 'user'
+  const fallback = isUser ? '/portal/dashboard' : '/'
+  if (!requested) return fallback
+  if (isUser && !requested.startsWith('/portal')) return fallback
+  if (!isUser && requested.startsWith('/portal')) return fallback
+  return requested
+}
 
 async function onSubmit() {
   if (!formRef.value) return
@@ -32,18 +45,17 @@ async function onSubmit() {
 
   errorMsg.value = ''
   loading.value = true
-  const formData = new FormData()
-  formData.append('username', form.username)
-  formData.append('password', form.password)
-  formData.append('grant_type', 'password')
   try {
-    const res = await http<{ access_token: string }>('/admin/token', {
-      method: 'POST',
-      body: formData
-    })
-    setToken(res.access_token)
-    const redirect = (route.query.redirect as string) || '/'
-    router.push(redirect)
+    const res = await loginAccount(form.username.trim(), form.password)
+    const access = res.access ?? 'user'
+    if (access === 'user') {
+      setUserToken(res.access_token)
+      removeToken()
+    } else {
+      setToken(res.access_token)
+      removeUserToken()
+    }
+    router.push(resolveRedirect(access))
   } catch (err: unknown) {
     const detail = extractErrorDetail(err)
     errorMsg.value = typeof detail === 'string' ? detail : String(err)
@@ -73,7 +85,11 @@ async function onSubmit() {
           @submit.prevent="onSubmit"
         >
           <el-form-item prop="username">
-            <el-input v-model="form.username" :placeholder="t('username')" size="large" />
+            <el-input
+              v-model="form.username"
+              :placeholder="t('login.accountPlaceholder')"
+              size="large"
+            />
           </el-form-item>
           <el-form-item prop="password">
             <el-input
@@ -103,7 +119,7 @@ async function onSubmit() {
             {{ t('login') }}
           </el-button>
           <div class="login-portal-link">
-            <router-link :to="{ name: 'portal-login' }">{{ t('portal.userPortalEntry') }}</router-link>
+            <router-link :to="{ name: 'portal-register' }">{{ t('portal.goRegister') }}</router-link>
           </div>
         </el-form>
       </el-card>
@@ -125,8 +141,8 @@ async function onSubmit() {
 }
 
 .login-center {
-  flex: 1;
   display: flex;
+  flex: 1;
   align-items: center;
   justify-content: center;
 }
@@ -166,8 +182,8 @@ async function onSubmit() {
 }
 
 .login-portal-link a {
-  color: #20a397;
   font-size: 14px;
+  color: #20a397;
   text-decoration: none;
 }
 </style>

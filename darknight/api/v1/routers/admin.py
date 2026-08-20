@@ -6,11 +6,10 @@ from sqlalchemy.exc import IntegrityError
 
 from darknight import xray
 from darknight.db import Session, crud, get_db
-from darknight.api.v1.dependencies import get_admin_by_username, validate_admin
+from darknight.api.v1.dependencies import authenticate_login, get_admin_by_username
 from darknight.models.admin import Admin, AdminCreate, AdminModify, Token
 from darknight.services.config.settings import get_app_config
 from darknight.utils import report, responses
-from darknight.utils.jwt import create_admin_token
 
 router = APIRouter(tags=["Admin"], responses={401: responses._401})
 
@@ -31,11 +30,11 @@ def admin_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
-    """Authenticate an admin and issue a token."""
+    """Authenticate an admin or portal user and issue a token."""
     client_ip = get_client_ip(request)
 
-    dbadmin = validate_admin(db, form_data.username, form_data.password)
-    if not dbadmin:
+    token = authenticate_login(db, form_data.username, form_data.password)
+    if not token:
         report.login(form_data.username, form_data.password, client_ip, False)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -43,10 +42,10 @@ def admin_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    if client_ip not in get_app_config().features.login_notify_white_list:
+    if token.access != "user" and client_ip not in get_app_config().features.login_notify_white_list:
         report.login(form_data.username, "🔒", client_ip, True)
 
-    return Token(access_token=create_admin_token(form_data.username, dbadmin.is_sudo))
+    return token
 
 
 @router.post(

@@ -35,8 +35,8 @@ instance.interceptors.response.use(
     if (error?.response?.status === 401) {
       if (isPortalRoute()) {
         removeUserToken()
-        if (!window.location.hash.startsWith('#/portal/login')) {
-          window.location.hash = '#/portal/login'
+        if (!window.location.hash.startsWith('#/login')) {
+          window.location.hash = '#/login'
         }
       } else {
         removeToken()

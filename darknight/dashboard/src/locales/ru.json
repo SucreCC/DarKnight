@@ -95,6 +95,7 @@
   "login.fieldRequired": "Это поле обязательно для заполнения",
   "login.loginYourAccount": "Войдите в свой аккаунт",
   "login.welcomeBack": "Пожалуйста, введите свои данные",
+  "login.accountPlaceholder": "Имя пользователя или email",
   "memoryUsage": "Память",
   "next": "Вперед",
   "nodes.addHostForEveryInbound": "Добавить этот узел, как новый хост для каждого inbound",
