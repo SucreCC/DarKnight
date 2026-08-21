@@ -55,6 +55,7 @@ COPY --from=build /usr/local/bin /usr/local/bin
 COPY --from=build /usr/local/share/xray /usr/local/share/xray
 
 COPY alembic.ini pyproject.toml requirements.txt /app/
+COPY xray_config.json /app/xray_config.json
 COPY darknight/ /app/darknight/
 COPY xray_api/ /app/xray_api/
 COPY --from=dashboard /build/dist /app/darknight/dashboard/dist
@@ -78,6 +79,10 @@ RUN printf '%s\n' \
       'set -e' \
       'cd /app' \
       'mkdir -p /app/data/logs' \
+      'if [ ! -f /app/data/xray_config.json ]; then' \
+      '  echo "[docker] seeding /app/data/xray_config.json from default"' \
+      '  cp /app/xray_config.json /app/data/xray_config.json' \
+      'fi' \
       'echo "[docker] running database migrations..."' \
       'alembic upgrade head' \
       'echo "[docker] starting DarKnight..."' \
