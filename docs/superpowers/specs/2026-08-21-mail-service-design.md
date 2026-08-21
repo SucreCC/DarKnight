@@ -1,7 +1,7 @@
 # 多账号事务邮件发送服务 — 设计文档
 
 - 日期：2026-08-21
-- 状态：待评审
+- 状态：已实现
 - 范围：`darknight/services/mail/`、`darknight/services/config/models/email.py`、`darknight/config.yaml`、`darknight/db`（新增 `email_outbox`）、`darknight/utils/email_sender.py`、`darknight/api/v1/routers/auth.py`
 
 ## 1. 背景与目标

@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { nextTick, onMounted, onBeforeUnmount, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import type { FormInstance, FormRules } from 'element-plus'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { extractErrorDetail } from '@/config/axios'
 import { registerUser, sendVerificationCode } from '@/api/portal'
 import { removeUserToken, setUserToken } from '@/utils/userAuth'
 import LanguageSwitch from '@/components/LanguageSwitch/index.vue'
+import SlideCaptchaDialog from './components/SlideCaptchaDialog.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -23,8 +24,15 @@ const loading = ref(false)
 const sending = ref(false)
 const countdown = ref(0)
 const errorMsg = ref('')
+const captchaVisible = ref(false)
+
+/** 未聚焦前只读，阻止浏览器把邮箱/密码灌进验证码框 */
+const codeReadonly = ref(true)
+const passwordReadonly = ref(true)
+const confirmReadonly = ref(true)
 
 let timer: ReturnType<typeof setInterval> | null = null
+let clearTimers: ReturnType<typeof setTimeout>[] = []
 
 const rules: FormRules = {
   email: [
@@ -48,8 +56,44 @@ const rules: FormRules = {
   ]
 }
 
+function unlockField(field: 'code' | 'password' | 'confirm') {
+  if (field === 'code') codeReadonly.value = false
+  if (field === 'password') passwordReadonly.value = false
+  if (field === 'confirm') confirmReadonly.value = false
+}
+
+/** 浏览器常把邮箱误填进验证码框，发现 @ 就清掉 */
+function sanitizeCodeInput() {
+  // 浏览器误把邮箱填进验证码框时清掉
+  if (form.code.includes('@')) {
+    form.code = ''
+  }
+}
+
+function purgeAutofillNoise() {
+  sanitizeCodeInput()
+  // 页面刚打开时密码框若被自动填充且邮箱为空，视为误填
+  if (!form.email && form.password) {
+    form.password = ''
+    form.confirmPassword = ''
+  }
+}
+
 onMounted(() => {
   removeUserToken()
+  form.code = ''
+  form.password = ''
+  form.confirmPassword = ''
+  // Chrome 自动填充是异步的，延迟再清几次
+  for (const ms of [50, 200, 500, 1000]) {
+    clearTimers.push(window.setTimeout(purgeAutofillNoise, ms))
+  }
+})
+
+onBeforeUnmount(() => {
+  clearTimers.forEach((id) => clearTimeout(id))
+  clearTimers = []
+  if (timer) clearInterval(timer)
 })
 
 function startCountdown() {
@@ -64,18 +108,30 @@ function startCountdown() {
 }
 
 async function onSendCode() {
-  if (!form.email.trim()) {
-    errorMsg.value = t('portal.emailRequiredFirst')
-    return
-  }
+  if (!formRef.value || sending.value || countdown.value > 0) return
+  const emailOk = await formRef.value.validateField('email').then(
+    () => true,
+    () => false
+  )
+  if (!emailOk) return
+  captchaVisible.value = true
+}
+
+async function onCaptchaSuccess() {
   errorMsg.value = ''
   sending.value = true
   try {
     await sendVerificationCode(form.email.trim())
     startCountdown()
+    ElMessage.success(t('portal.codeSent'))
+    await nextTick()
+    form.code = ''
+    codeReadonly.value = true
   } catch (err: unknown) {
     const detail = extractErrorDetail(err)
-    errorMsg.value = typeof detail === 'string' ? detail : String(err)
+    const msg = typeof detail === 'string' ? detail : String(err)
+    errorMsg.value = msg
+    ElMessage.error(msg)
   } finally {
     sending.value = false
   }
@@ -120,12 +176,21 @@ async function onSubmit() {
           :model="form"
           :rules="rules"
           label-position="top"
+          autocomplete="off"
           @submit.prevent="onSubmit"
         >
+          <!-- 诱饵字段：吸收浏览器自动填充，避免灌进验证码/密码框 -->
+          <div class="autofill-trap" aria-hidden="true">
+            <input type="text" tabindex="-1" autocomplete="username" />
+            <input type="password" tabindex="-1" autocomplete="current-password" />
+          </div>
+
           <el-form-item prop="email">
             <el-input
               v-model="form.email"
               type="email"
+              name="email"
+              autocomplete="email"
               :placeholder="t('portal.email')"
               size="large"
             />
@@ -134,8 +199,16 @@ async function onSubmit() {
             <div class="code-row">
               <el-input
                 v-model="form.code"
+                name="one_time_code"
+                type="text"
+                inputmode="numeric"
+                maxlength="8"
+                autocomplete="one-time-code"
+                :readonly="codeReadonly"
                 :placeholder="t('portal.verificationCode')"
                 size="large"
+                @focus="unlockField('code')"
+                @input="sanitizeCodeInput"
               />
               <el-button
                 type="primary"
@@ -153,23 +226,33 @@ async function onSubmit() {
             <el-input
               v-model="form.password"
               type="password"
+              name="new-password"
+              autocomplete="new-password"
+              :readonly="passwordReadonly"
               show-password
               :placeholder="t('portal.password')"
               size="large"
+              @focus="unlockField('password')"
             />
           </el-form-item>
           <el-form-item prop="confirmPassword">
             <el-input
               v-model="form.confirmPassword"
               type="password"
+              name="confirm-new-password"
+              autocomplete="new-password"
+              :readonly="confirmReadonly"
               show-password
               :placeholder="t('portal.confirmPassword')"
               size="large"
+              @focus="unlockField('confirm')"
             />
           </el-form-item>
           <el-form-item>
             <el-input
               v-model="form.inviteCode"
+              name="invite_code"
+              autocomplete="off"
               :placeholder="t('portal.inviteCodeOptional')"
               size="large"
             />
@@ -199,6 +282,8 @@ async function onSubmit() {
         </div>
       </div>
     </div>
+
+    <SlideCaptchaDialog v-model="captchaVisible" @success="onCaptchaSuccess" />
   </div>
 </template>
 
@@ -243,6 +328,18 @@ async function onSubmit() {
   margin: 8px 0 24px;
   color: #909399;
   text-align: center;
+}
+
+.autofill-trap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .code-row {
@@ -290,5 +387,16 @@ async function onSubmit() {
 :deep(.el-input__wrapper) {
   background: #f5f7fa;
   box-shadow: none;
+}
+
+/* 盖掉 Chrome 自动填充的浅蓝色底 */
+:deep(input.el-input__inner:-webkit-autofill),
+:deep(input.el-input__inner:-webkit-autofill:hover),
+:deep(input.el-input__inner:-webkit-autofill:focus),
+:deep(input.el-input__inner:-webkit-autofill:active) {
+  -webkit-text-fill-color: #303133 !important;
+  caret-color: #303133;
+  transition: background-color 99999s ease-out;
+  box-shadow: 0 0 0 1000px #f5f7fa inset !important;
 }
 </style>

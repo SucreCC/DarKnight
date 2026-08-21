@@ -13,6 +13,7 @@ from sqlalchemy import (
     Integer,
     String,
     Table,
+    Text,
     UniqueConstraint,
     func,
 )
@@ -66,6 +67,25 @@ class EmailVerificationCode(Base):
     code = Column(String(8), nullable=False)
     expires_at = Column(DateTime, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class EmailOutbox(Base):
+    __tablename__ = "email_outbox"
+
+    id = Column(Integer, primary_key=True)
+    account = Column(String(64), nullable=False)
+    template = Column(String(128), nullable=False)
+    to_address = Column(String(255), index=True, nullable=False)
+    subject = Column(String(512), nullable=False)
+    body_text = Column(Text, nullable=False)
+    body_html = Column(Text, nullable=True)
+    status = Column(String(32), index=True, nullable=False, default="pending")
+    attempts = Column(Integer, nullable=False, default=0)
+    max_attempts = Column(Integer, nullable=False, default=3)
+    last_error = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    sent_at = Column(DateTime, nullable=True)
 
 
 class User(Base):

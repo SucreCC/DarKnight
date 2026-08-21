@@ -110,13 +110,23 @@ auth:
     password: "admin"
 
 email:
-  smtp_host: ""
+  smtp_host: mail.darkight.com
   smtp_port: 587
-  smtp_user: ""
-  smtp_password: ""
-  from_address: ""
-  use_tls: true
-  dev_log_only: true
+  use_tls: true                 # STARTTLS
+  dev_log_only: false
+  default_account: noreply
+  max_attempts: 3
+  accounts:
+    noreply:
+      smtp_user: noreply@darkight.com
+      smtp_password: "1136482445"           # 填入密码或应用密码
+      from_address: noreply@darkight.com
+      from_name: Darkight
+    support:
+      smtp_user: support@darkight.com
+      smtp_password: "Dk.1136482445"           # 填入密码或应用密码
+      from_address: support@darkight.com
+      from_name: Darkight Support
 
 webhook:
   addresses: []                # 逗号分隔的 webhook 地址列表
