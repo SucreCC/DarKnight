@@ -8,6 +8,8 @@ services:
     restart: unless-stopped
     environment:
       PROJECT_HOME: /app
+      # 无 TLS 时默认只监听 127.0.0.1；Docker 端口映射需绑定 0.0.0.0
+      UVICORN_HOST: 0.0.0.0
     ports:
       - "33100:33100"
     volumes:

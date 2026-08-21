@@ -82,13 +82,25 @@ def build_bind_args(app_config: AppConfig, logger: logging.Logger) -> dict[str, 
         if server.uds:
             bind_args["uds"] = server.uds
         else:
-            logger.warning(
-                f"""
+            env_host = os.environ.get("UVICORN_HOST")
+            env_port = os.environ.get("UVICORN_PORT")
+            if env_host:
+                bind_args["host"] = env_host
+                bind_args["port"] = int(env_port) if env_port else server.port
+                logger.warning(
+                    f"{project_name} is binding to {bind_args['host']}:{bind_args['port']} "
+                    "without TLS (UVICORN_HOST). Use a reverse proxy with HTTPS in production."
+                )
+            else:
+                logger.warning(
+                    f"""
 {click.style("IMPORTANT!", blink=True, bold=True, fg="yellow")}
 You're running {project_name} without specifying {click.style("server.ssl.certfile", italic=True, fg="magenta")} and {click.style("server.ssl.keyfile", italic=True, fg="magenta")}.
 The application will only be accessible through localhost. This means that {click.style(f"{project_name} and subscription URLs will not be accessible externally", bold=True)}.
 
 If you need external access, please provide the SSL files to allow the server to bind to 0.0.0.0. Alternatively, you can run the server on localhost or a Unix socket and use a reverse proxy, such as Nginx or Caddy, to handle SSL termination and provide external access.
+
+For Docker or reverse-proxy deployments, set {click.style("UVICORN_HOST=0.0.0.0", italic=True, fg="cyan")} to listen on all interfaces over plain HTTP.
 
 If you wish to continue without SSL, you can use SSH port forwarding to access the application from your machine. Note that in this case, subscription functionality will not work.
 
@@ -97,11 +109,11 @@ Use the following command:
 {click.style(f"ssh -L {server.port}:localhost:{server.port} user@server", italic=True, fg="cyan")}
 
 Then, navigate to {click.style(f"http://127.0.0.1:{server.port}", bold=True)} on your computer.
-            """
-            )
+                    """
+                )
 
-            bind_args["host"] = "127.0.0.1"
-            bind_args["port"] = server.port
+                bind_args["host"] = "127.0.0.1"
+                bind_args["port"] = server.port
 
     if debug:
         bind_args["uds"] = None
