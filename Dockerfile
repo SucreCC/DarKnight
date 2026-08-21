@@ -57,11 +57,33 @@ COPY --from=build /usr/local/share/xray /usr/local/share/xray
 COPY alembic.ini pyproject.toml requirements.txt /app/
 COPY darknight/ /app/darknight/
 COPY xray_api/ /app/xray_api/
-COPY docker/config.yaml /app/darknight/config.yaml
-COPY docker/entrypoint.sh /entrypoint.sh
 COPY --from=dashboard /build/dist /app/darknight/dashboard/dist
 
-RUN chmod +x /entrypoint.sh \
+# Docker 运行时路径（不依赖仓库外的 docker/ 目录）
+RUN sed -i \
+      's|url: sqlite:///db.sqlite3|url: sqlite:////app/data/db.sqlite3|' \
+      /app/darknight/config.yaml \
+    && sed -i \
+      's|json: ./xray_config.json|json: ./data/xray_config.json|' \
+      /app/darknight/config.yaml \
+    && sed -i \
+      's|executable_path: ./xray/xray.exe|executable_path: /usr/local/bin/xray|' \
+      /app/darknight/config.yaml \
+    && sed -i \
+      's|assets_path: ./xray|assets_path: /usr/local/share/xray|' \
+      /app/darknight/config.yaml
+
+RUN printf '%s\n' \
+      '#!/bin/sh' \
+      'set -e' \
+      'cd /app' \
+      'mkdir -p /app/data/logs' \
+      'echo "[docker] running database migrations..."' \
+      'alembic upgrade head' \
+      'echo "[docker] starting DarKnight..."' \
+      'exec python -m darknight.main' \
+      > /entrypoint.sh \
+    && chmod +x /entrypoint.sh \
     && mkdir -p /app/data/logs
 
 EXPOSE 33100

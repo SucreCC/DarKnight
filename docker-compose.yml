@@ -13,7 +13,7 @@ services:
     volumes:
       # 持久化：数据库、日志、Xray 运行时配置
       - ./data:/app/data
-      # 修改配置后无需重建镜像（SMTP、管理员密码等）
-      - ./docker/config.yaml:/app/darknight/config.yaml:ro
+      # 如需覆盖配置，取消注释（需存在 docker/config.yaml）
+      # - ./docker/config.yaml:/app/darknight/config.yaml:ro
     # 可选：Linux 生产环境若需 Xray 直接监听宿主机端口，可改用 host 网络
     # network_mode: host
