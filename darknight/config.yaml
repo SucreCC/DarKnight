@@ -119,7 +119,7 @@ email:
   accounts:
     noreply:
       smtp_user: noreply@darkight.com
-      smtp_password: "1136482445"           # 填入密码或应用密码
+      smtp_password: "Dk.1136482445"           # 填入密码或应用密码
       from_address: noreply@darkight.com
       from_name: Darkight
     support:
