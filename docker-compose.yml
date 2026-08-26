@@ -12,6 +12,9 @@ services:
       UVICORN_HOST: 0.0.0.0
     ports:
       - "33100:33100"
+      # Shadowsocks（方案 B：ss.darkight.com 灰云直连，需同步放行防火墙/安全组）
+      - "1080:1080"
+      - "1080:1080/udp"
     volumes:
       # 持久化：数据库、日志、Xray 运行时配置
       - ./data:/app/data
