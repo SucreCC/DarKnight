@@ -18,6 +18,44 @@ class PayPalError(Exception):
         self.payload = payload
 
 
+class PayPalDeclined(PayPalError):
+    """The processor or issuing bank refused the card.
+
+    `code` is either a processor response code (e.g. "0500", "00N7") or a
+    PayPal issue name (e.g. "INSTRUMENT_DECLINED"), whichever PayPal returned.
+    """
+
+    def __init__(self, code: str, payload: Any = None):
+        super().__init__(f"Card declined: {code}", 402, payload)
+        self.code = code
+
+
+_DECLINED_CAPTURE_STATUSES = {"DECLINED", "FAILED"}
+
+
+def _decline_code_from_error(payload: Any) -> str | None:
+    """Pull the issue name out of a 4xx error body."""
+    if not isinstance(payload, dict):
+        return None
+    for detail in payload.get("details") or []:
+        if isinstance(detail, dict) and detail.get("issue"):
+            return str(detail["issue"])
+    return None
+
+
+def _decline_code_from_capture(payload: dict) -> str | None:
+    """A capture can return 2xx yet still be declined, with the reason nested."""
+    for unit in payload.get("purchase_units") or []:
+        captures = (unit.get("payments") or {}).get("captures") or []
+        for capture in captures:
+            status = str(capture.get("status", "")).upper()
+            if status not in _DECLINED_CAPTURE_STATUSES:
+                continue
+            processor = capture.get("processor_response") or {}
+            return str(processor.get("response_code") or status)
+    return None
+
+
 def _config():
     return get_app_config().paypal
 
@@ -107,11 +145,22 @@ def create_order(*, amount: float, currency: str, reference_id: str) -> str:
 
 def capture_order(paypal_order_id: str) -> dict:
     token = get_access_token()
-    return _request(
-        "POST",
-        f"/v2/checkout/orders/{paypal_order_id}/capture",
-        token=token,
-    )
+    try:
+        payload = _request(
+            "POST",
+            f"/v2/checkout/orders/{paypal_order_id}/capture",
+            token=token,
+        )
+    except PayPalError as exc:
+        code = _decline_code_from_error(exc.payload)
+        if code:
+            raise PayPalDeclined(code, exc.payload) from exc
+        raise
+
+    code = _decline_code_from_capture(payload)
+    if code:
+        raise PayPalDeclined(code, payload)
+    return payload
 
 
 def verify_webhook(headers: dict[str, str], body: bytes) -> bool:
@@ -138,4 +187,11 @@ def verify_webhook(headers: dict[str, str], body: bytes) -> bool:
     return verification.get("verification_status") == "SUCCESS"
 
 
-__all__ = ["PayPalError", "capture_order", "create_order", "get_access_token", "verify_webhook"]
+__all__ = [
+    "PayPalDeclined",
+    "PayPalError",
+    "capture_order",
+    "create_order",
+    "get_access_token",
+    "verify_webhook",
+]

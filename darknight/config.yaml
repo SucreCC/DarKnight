@@ -30,8 +30,12 @@ logging:
   level: INFO                # DEBUG, INFO, WARNING, ERROR
   save_to_file: true         # 写入 data/user/logs/darknight.jsonl
   console_output: true       # 输出到终端
-  max_bytes: 10485760        # 单文件上限 10MB
-  backup_count: 5            # 轮转保留份数
+  backup_count: 30           # 按天轮转，保留 30 天（历史文件为 darknight-2026-08-27.jsonl）
+  routes:                    # 把吵闹的第三方 logger 分流到独立文件
+    - filename: jobs         # 落到 data/user/logs/jobs.jsonl
+      loggers: [apscheduler] # 含 apscheduler.scheduler / executors / jobstores
+      level: INFO            # 分流文件收多细
+      main_log_floor: WARNING  # 主日志和控制台只放行这个级别以上，job 异常仍可见
 
 database:
   url: sqlite:///db.sqlite3  # SQLALCHEMY_DATABASE_URL

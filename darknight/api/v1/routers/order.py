@@ -21,7 +21,13 @@ from darknight.models.portal_auth import PortalUser
 from darknight.services.config.settings import get_app_config
 from darknight.services.payment.coupons import CouponError, resolve_discount
 from darknight.services.payment.fulfillment import fulfill_portal_order, try_mark_order_paid
-from darknight.services.payment.paypal import PayPalError, capture_order, create_order, verify_webhook
+from darknight.services.payment.paypal import (
+    PayPalDeclined,
+    PayPalError,
+    capture_order,
+    create_order,
+    verify_webhook,
+)
 from darknight.services.payment.plans import get_plan_cycle, group_plan_catalog
 from darknight.utils import responses
 
@@ -146,6 +152,7 @@ def create_portal_order(
 @router.post("/orders/{order_id}/prepare-payment", response_model=OrderResponse)
 def prepare_order_payment(
     order_id: str,
+    refresh: bool = False,
     portal_user: PortalUser = Depends(PortalUser.get_current),
     db: Session = Depends(get_db),
 ):
@@ -155,7 +162,9 @@ def prepare_order_payment(
     if order.status != PortalOrderStatus.pending:
         raise HTTPException(status_code=400, detail="Order is not payable")
 
-    if order.paypal_order_id:
+    # 一张卡提交过之后 PayPal 订单就不可再用，重试必须换一个新的，
+    # 否则前端会反复对着已作废的订单提交。
+    if order.paypal_order_id and not refresh:
         return OrderResponse.model_validate(order)
 
     cfg = get_app_config().paypal
@@ -229,6 +238,12 @@ def capture_portal_order(
 
     try:
         capture_order(order.paypal_order_id)
+    except PayPalDeclined as exc:
+        # A refused card is recoverable: keep the order payable and drop the spent
+        # PayPal order so the next page load prepares a fresh one for another card.
+        logger.warning(f"PayPal declined order {order_id}: {exc.code}")
+        crud.update_portal_order(db, order, paypal_order_id=None)
+        raise HTTPException(status_code=402, detail=f"PAYPAL_DECLINED:{exc.code}") from exc
     except PayPalError as exc:
         logger.error(f"PayPal capture failed for {order_id}: {exc}")
         crud.update_portal_order(db, order, status=PortalOrderStatus.failed)

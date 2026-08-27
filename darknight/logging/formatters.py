@@ -23,6 +23,24 @@ class ContextFilter(logging.Filter):
         return True
 
 
+class LoggerLevelFloorFilter(logging.Filter):
+    """按 logger 名前缀抬高级别门槛，用于压制已分流到独立文件的第三方心跳日志。
+
+    前缀按长度倒序匹配，所以 {"apscheduler": WARNING, "apscheduler.jobstores": ERROR}
+    这类嵌套规则会命中更具体的那条。
+    """
+
+    def __init__(self, floors: dict[str, int]) -> None:
+        super().__init__()
+        self._floors = tuple(sorted(floors.items(), key=lambda item: -len(item[0])))
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        for prefix, floor in self._floors:
+            if record.name == prefix or record.name.startswith(f"{prefix}."):
+                return record.levelno >= floor
+        return True
+
+
 class JsonlFormatter(logging.Formatter):
     """One structured JSON object per line."""
 

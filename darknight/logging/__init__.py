@@ -2,6 +2,7 @@
 
 from .configure import (
     LoggingConfig,
+    LogRouteConfig,
     configure_logging,
     get_default_log_dir,
     get_global_log_level,
@@ -13,6 +14,7 @@ from .stats import MODEL_PRICING, LLMCall, LLMStats, estimate_tokens, get_pricin
 
 __all__ = [
     "LOG_CONTEXT_FIELDS",
+    "LogRouteConfig",
     "LoggingConfig",
     "configure_logging",
     "bind_log_context",

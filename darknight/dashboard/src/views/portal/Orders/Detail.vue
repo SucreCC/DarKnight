@@ -53,11 +53,11 @@ async function loadOrder() {
   }
 }
 
-async function ensurePaymentReady() {
+async function ensurePaymentReady(refresh = false) {
   preparingPayment.value = true
   paymentError.value = ''
   try {
-    order.value = await preparePortalOrderPayment(orderId.value)
+    order.value = await preparePortalOrderPayment(orderId.value, { refresh })
   } catch (err) {
     paymentError.value = resolvePortalApiError(err, t)
   } finally {
@@ -91,8 +91,19 @@ function onPaymentSuccess(paid: PortalOrder) {
   ElMessage.success(t('portal.buy.paymentSuccess'))
 }
 
-function onPaymentError(message: string) {
+async function onPaymentError(message: string) {
   ElMessage.error(message)
+
+  // 失败的那次尝试已经把 PayPal 订单用掉了，必须换一个新的，
+  // 否则下一次提交是对着作废订单打，永远失败。
+  try {
+    order.value = await fetchPortalOrder(orderId.value)
+  } catch {
+    return
+  }
+  if (order.value.status === 'pending') {
+    await ensurePaymentReady(true)
+  }
 }
 </script>
 
@@ -168,7 +179,7 @@ function onPaymentError(message: string) {
           />
           <div v-else-if="paymentError" class="payment-error">
             <el-alert type="error" :title="paymentError" show-icon :closable="false" />
-            <el-button class="retry-btn" @click="ensurePaymentReady">
+            <el-button class="retry-btn" @click="ensurePaymentReady(true)">
               {{ t('portal.buy.retryPayment') }}
             </el-button>
           </div>

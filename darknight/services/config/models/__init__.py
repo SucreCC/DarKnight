@@ -7,7 +7,7 @@ from .email import EmailAccountConfig, EmailConfig
 from .features import FeaturesConfig
 from .jobs import JobsConfig
 from .jwt import JwtConfig
-from .logging import LoggingConfig
+from .logging import LoggingConfig, LogRouteConfig
 from .notifications import NotificationsConfig, RecurrentNotificationConfig
 from .paypal import PayPalConfig
 from .project import ProjectConfig
@@ -33,6 +33,7 @@ __all__ = [
     "FeaturesConfig",
     "JobsConfig",
     "JwtConfig",
+    "LogRouteConfig",
     "LoggingConfig",
     "NotificationsConfig",
     "PayPalConfig",

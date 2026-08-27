@@ -80,8 +80,12 @@ export function closePortalOrder(orderId: string) {
   return http<PortalOrder>(`/orders/${orderId}/close`, { method: 'POST' })
 }
 
-export function preparePortalOrderPayment(orderId: string) {
-  return http<PortalOrder>(`/orders/${orderId}/prepare-payment`, { method: 'POST' })
+/** refresh 用于失败重试：丢弃已作废的 PayPal 订单，重新创建一个 */
+export function preparePortalOrderPayment(orderId: string, options: { refresh?: boolean } = {}) {
+  return http<PortalOrder>(`/orders/${orderId}/prepare-payment`, {
+    method: 'POST',
+    query: options.refresh ? { refresh: true } : undefined
+  })
 }
 
 export function capturePortalOrder(orderId: string) {

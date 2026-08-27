@@ -3,7 +3,7 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { loadScript, type PayPalCardFieldsComponent } from '@paypal/paypal-js'
 import { capturePortalOrder, fetchPayPalConfig, type PortalOrder } from '@/api/portal/orders'
-import { resolvePortalApiError } from '@/utils/portalError'
+import { resolvePayPalSdkError, resolvePortalApiError } from '@/utils/portalError'
 import { currencySymbol, formatPrice } from '../plans'
 
 const props = defineProps<{
@@ -31,6 +31,7 @@ let destroyed = false
  */
 let settled = false
 let errorNotified = false
+let renderedFields: { close: () => void }[] = []
 
 function reportError(message: string) {
   if (settled || destroyed || errorNotified) return
@@ -38,10 +39,41 @@ function reportError(message: string) {
   emit('error', message)
 }
 
+function reportPayPalError(err: unknown) {
+  // 原始错误体比映射后的文案信息量大得多，排查时需要。
+  console.error('[PayPal] card payment failed', err)
+  reportError(resolvePayPalSdkError(err, t))
+}
+
+const FIELD_SELECTORS = [
+  '#paypal-card-name',
+  '#paypal-card-number',
+  '#paypal-card-expiry',
+  '#paypal-card-cvv'
+]
+
+/** 换新 PayPal 订单时会重新 render，先拆掉上一轮的 iframe 免得叠加。 */
+function teardownFields() {
+  for (const field of renderedFields) {
+    try {
+      field.close()
+    } catch {
+      // SDK 已卸载时 close 会抛，此时容器清空即可。
+    }
+  }
+  renderedFields = []
+  for (const selector of FIELD_SELECTORS) {
+    const host = document.querySelector(selector)
+    if (host) host.innerHTML = ''
+  }
+  cardFields.value = null
+}
+
 async function initCardFields() {
   loading.value = true
   ready.value = false
   errorNotified = false
+  teardownFields()
 
   try {
     const config = await fetchPayPalConfig()
@@ -72,10 +104,10 @@ async function initCardFields() {
           reportError(resolvePortalApiError(err, t))
         }
       },
-      onError: () => {
+      onError: (err: unknown) => {
         if (settled) return
         paying.value = false
-        reportError(t('portal.buy.paymentFailed'))
+        reportPayPalError(err)
       }
     })
 
@@ -85,12 +117,14 @@ async function initCardFields() {
     }
 
     cardFields.value = fields
-    await Promise.all([
-      fields.NameField({}).render('#paypal-card-name'),
-      fields.NumberField({}).render('#paypal-card-number'),
-      fields.ExpiryField({}).render('#paypal-card-expiry'),
-      fields.CVVField({}).render('#paypal-card-cvv')
-    ])
+    const instances = [
+      fields.NameField({}),
+      fields.NumberField({}),
+      fields.ExpiryField({}),
+      fields.CVVField({})
+    ]
+    renderedFields = instances
+    await Promise.all(instances.map((field, i) => field.render(FIELD_SELECTORS[i])))
 
     if (!destroyed) {
       ready.value = true
@@ -110,10 +144,10 @@ async function submitPayment() {
   errorNotified = false
   try {
     await cardFields.value.submit()
-  } catch {
+  } catch (err) {
     if (settled) return
     paying.value = false
-    reportError(t('portal.buy.paymentFailed'))
+    reportPayPalError(err)
   }
 }
 
@@ -134,6 +168,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   destroyed = true
+  teardownFields()
 })
 
 defineExpose({ submitPayment })
