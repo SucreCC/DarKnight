@@ -1,27 +1,36 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Check } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { Check } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 import { previewCoupon } from '@/api/portal/orders'
 import { resolvePortalApiError } from '@/utils/portalError'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Separator } from '@/components/ui/separator'
+import { cn } from '@/lib/utils'
 import { currencySymbol, formatPrice, getCycleLabelKey, getPlanMeta } from '../plans'
 import { usePlanCatalog } from '../usePlanCatalog'
 
-const props = defineProps<{
-  planId: string
-  cycleId: string
-  coupon?: string
-  submitLabel: string
-  loading?: boolean
-  /** 订单页传入下单时锁定的金额；不传则取当前价目表 */
-  amount?: number
-  /** 订单页传入下单时锁定的折扣 */
-  discount?: number
-  currency?: string
-  hideSubmit?: boolean
-  readonlyCoupon?: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    planId: string
+    cycleId: string
+    coupon?: string
+    submitLabel: string
+    loading?: boolean
+    /** 订单页传入下单时锁定的金额；不传则取当前价目表 */
+    amount?: number
+    /** 订单页传入下单时锁定的折扣 */
+    discount?: number
+    currency?: string
+    hideSubmit?: boolean
+    readonlyCoupon?: boolean
+    /** panel：结算页左栏，无外框；aside：配置页右侧卡片 */
+    variant?: 'panel' | 'aside'
+  }>(),
+  { variant: 'aside' }
+)
 
 const emit = defineEmits<{
   'update:coupon': [value: string]
@@ -55,7 +64,14 @@ const total = computed(() => {
   return Math.round((listPrice.value - discount.value) * 100) / 100
 })
 
-const summaryLine = computed(() => `${planName.value} x ${t(getCycleLabelKey(props.cycleId))}`)
+const cycleLabel = computed(() => t(getCycleLabelKey(props.cycleId)))
+// 价目表还没加载时 durationDays 拿不到，此时宁可不显示描述，也不要显示「0 天」。
+const durationDays = computed(() => getCycle(props.planId, props.cycleId)?.durationDays ?? 0)
+const planDescription = computed(() =>
+  durationDays.value > 0
+    ? t('portal.buy.planDescription', { plan: planName.value, days: durationDays.value })
+    : ''
+)
 
 // 换套餐或换周期后旧折扣不再适用，重新校验前先清掉。
 watch([() => props.planId, () => props.cycleId], () => {
@@ -80,13 +96,13 @@ async function verifyCoupon() {
     })
     verifiedDiscount.value = preview.discount
     emit('update:coupon', preview.coupon)
-    ElMessage.success(
+    toast.success(
       t('portal.buy.couponApplied', { amount: symbol.value + formatPrice(preview.discount) })
     )
   } catch (err) {
     verifiedDiscount.value = 0
     emit('update:coupon', '')
-    ElMessage.error(resolvePortalApiError(err, t))
+    toast.error(resolvePortalApiError(err, t))
   } finally {
     verifying.value = false
   }
@@ -94,132 +110,77 @@ async function verifyCoupon() {
 </script>
 
 <template>
-  <aside class="order-summary">
-    <div v-if="!readonlyCoupon" class="coupon-box">
-      <el-input
-        v-model="couponInput"
-        :placeholder="t('portal.buy.couponPlaceholder')"
-        @keyup.enter="verifyCoupon"
-      />
-      <el-button
-        type="primary"
-        class="coupon-btn"
-        :loading="verifying"
-        @click="verifyCoupon"
-      >
-        {{ t('portal.buy.verifyCoupon') }}
-      </el-button>
+  <aside
+    :class="
+      cn(
+        'flex flex-col gap-6',
+        variant === 'aside'
+          ? 'w-full shrink-0 rounded-xl border border-border bg-card p-6 lg:w-80'
+          : 'h-full bg-muted/40 p-8'
+      )
+    "
+  >
+    <div class="space-y-4">
+      <p class="text-sm font-medium text-muted-foreground">{{ t('portal.buy.orderOverview') }}</p>
+      <p class="text-4xl font-bold tracking-tight text-primary">
+        {{ total === undefined ? '--' : symbol + formatPrice(total) }}
+      </p>
+      <div class="space-y-1">
+        <p class="text-base font-semibold text-foreground">{{ planName }} · {{ cycleLabel }}</p>
+        <p v-if="planDescription" class="text-sm leading-relaxed text-muted-foreground">
+          {{ planDescription }}
+        </p>
+      </div>
     </div>
 
-    <el-card shadow="never" class="summary-card">
-      <div class="summary-title">{{ t('portal.buy.orderTotal') }}</div>
-      <div class="summary-line">
-        <span>{{ summaryLine }}</span>
-        <span>{{ listPrice === undefined ? '--' : symbol + formatPrice(listPrice) }}</span>
+    <Separator />
+
+    <div class="space-y-3 text-sm">
+      <div class="flex items-center justify-between">
+        <span class="text-muted-foreground">{{ t('portal.buy.subtotal') }}</span>
+        <span class="font-medium text-foreground">
+          {{ listPrice === undefined ? '--' : symbol + formatPrice(listPrice) }}
+        </span>
       </div>
-      <div v-if="discount > 0" class="summary-line discount-line">
-        <span>{{ coupon || t('portal.buy.verifyCoupon') }}</span>
-        <span>-{{ symbol }}{{ formatPrice(discount) }}</span>
+
+      <div v-if="!readonlyCoupon" class="flex items-center gap-2">
+        <Input
+          v-model="couponInput"
+          :placeholder="t('portal.buy.couponPlaceholder')"
+          class="h-9"
+          @keyup.enter="verifyCoupon"
+        />
+        <Button variant="outline" size="sm" :disabled="verifying" @click="verifyCoupon">
+          {{ t('portal.buy.verifyCoupon') }}
+        </Button>
       </div>
-      <div class="summary-total">
-        <span>{{ symbol }}</span>
-        <strong>{{ total === undefined ? '--' : formatPrice(total) }}</strong>
-        <small>{{ currencyCode }}</small>
+
+      <div v-if="discount > 0" class="flex items-center justify-between">
+        <span class="text-muted-foreground">{{ coupon || t('portal.buy.discount') }}</span>
+        <span class="font-medium text-primary">-{{ symbol }}{{ formatPrice(discount) }}</span>
       </div>
-      <el-button
-        v-if="!hideSubmit"
-        type="primary"
-        class="submit-btn"
-        :loading="loading"
-        :disabled="total === undefined"
-        @click="emit('submit')"
-      >
-        <el-icon v-if="!loading"><Check /></el-icon>
-        {{ submitLabel }}
-      </el-button>
-    </el-card>
+    </div>
+
+    <Separator />
+
+    <div class="flex items-baseline justify-between">
+      <span class="text-sm font-medium text-muted-foreground">{{
+        t('portal.buy.grandTotal')
+      }}</span>
+      <span class="text-xl font-bold text-foreground">
+        {{ total === undefined ? '--' : symbol + formatPrice(total) }}
+        <span class="ms-1 text-xs font-normal text-muted-foreground">{{ currencyCode }}</span>
+      </span>
+    </div>
+
+    <Button
+      v-if="!hideSubmit"
+      class="mt-auto h-11 w-full"
+      :disabled="loading || total === undefined"
+      @click="emit('submit')"
+    >
+      <Check v-if="!loading" class="me-2 size-4" />
+      {{ submitLabel }}
+    </Button>
   </aside>
 </template>
-
-<style scoped>
-.order-summary {
-  width: 320px;
-  flex-shrink: 0;
-}
-
-.coupon-box {
-  display: flex;
-  padding: 16px;
-  margin-bottom: 16px;
-  background: #fff;
-  border-radius: 8px;
-  gap: 8px;
-}
-
-.coupon-btn {
-  flex-shrink: 0;
-  background: #20a397;
-  border-color: #20a397;
-}
-
-.summary-card {
-  padding: 4px;
-}
-
-.summary-title {
-  margin-bottom: 16px;
-  font-size: 16px;
-  font-weight: 700;
-  color: #303133;
-}
-
-.summary-line {
-  display: flex;
-  margin-bottom: 20px;
-  font-size: 14px;
-  color: #606266;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.discount-line {
-  margin-top: -12px;
-  color: #20a397;
-}
-
-.summary-total {
-  display: flex;
-  margin-bottom: 20px;
-  align-items: baseline;
-  gap: 4px;
-}
-
-.summary-total span {
-  font-size: 20px;
-  font-weight: 600;
-}
-
-.summary-total strong {
-  font-size: 36px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.summary-total small {
-  font-size: 14px;
-  color: #909399;
-}
-
-.submit-btn {
-  width: 100%;
-  height: 44px;
-  background: #20a397;
-  border-color: #20a397;
-}
-
-@media (width <= 960px) {
-  .order-summary {
-    width: 100%;
-  }
-}
-</style>
