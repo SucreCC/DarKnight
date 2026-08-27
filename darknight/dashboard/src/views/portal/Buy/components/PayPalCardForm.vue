@@ -4,7 +4,12 @@ import { useI18n } from 'vue-i18n'
 import { loadScript, type PayPalCardFieldsComponent } from '@paypal/paypal-js'
 import { capturePortalOrder, fetchPayPalConfig, type PortalOrder } from '@/api/portal/orders'
 import { resolvePayPalSdkError, resolvePortalApiError } from '@/utils/portalError'
+import { useThemeStore } from '@/store/modules/theme'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import LoadingOverlay from '@/components/LoadingOverlay/index.vue'
 import { currencySymbol, formatPrice } from '../plans'
+import { readPayPalFieldStyle } from './paypalFieldStyle'
 
 const props = defineProps<{
   orderId: string
@@ -19,6 +24,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const theme = useThemeStore()
 const loading = ref(true)
 const paying = ref(false)
 const ready = ref(false)
@@ -91,6 +97,7 @@ async function initCardFields() {
     if (!paypal?.CardFields || destroyed) return
 
     const fields = paypal.CardFields({
+      style: readPayPalFieldStyle(),
       createOrder: () => Promise.resolve(props.paypalOrderId),
       onApprove: async () => {
         paying.value = true
@@ -160,6 +167,16 @@ watch(
   }
 )
 
+// iframe 内的样式在初始化时就固定了，切主题必须重建。
+// 重建会清空已填的卡号，所以支付进行中一律跳过，等这一轮结束。
+watch(
+  () => theme.mode,
+  () => {
+    if (!props.paypalOrderId || paying.value || settled || destroyed) return
+    initCardFields()
+  }
+)
+
 onMounted(() => {
   if (props.paypalOrderId) {
     initCardFields()
@@ -175,80 +192,45 @@ defineExpose({ submitPayment })
 </script>
 
 <template>
-  <div v-loading="loading" class="paypal-card-form">
-    <div class="field-group">
-      <label>{{ t('portal.buy.cardNumber') }}</label>
-      <div id="paypal-card-number" class="paypal-field" />
-    </div>
-    <div class="field-group">
-      <label>{{ t('portal.buy.cardName') }}</label>
-      <div id="paypal-card-name" class="paypal-field" />
-    </div>
-    <div class="field-row">
-      <div class="field-group">
-        <label>{{ t('portal.buy.cardExpiry') }}</label>
-        <div id="paypal-card-expiry" class="paypal-field" />
+  <LoadingOverlay :loading="loading">
+    <div class="space-y-4">
+      <div class="space-y-2">
+        <Label for="paypal-card-number">{{ t('portal.buy.cardNumber') }}</Label>
+        <div
+          id="paypal-card-number"
+          class="h-11 rounded-md border border-input bg-background px-3 py-2 transition-colors focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/30"
+        />
       </div>
-      <div class="field-group">
-        <label>{{ t('portal.buy.cardCvv') }}</label>
-        <div id="paypal-card-cvv" class="paypal-field" />
+      <div class="space-y-2">
+        <Label for="paypal-card-name">{{ t('portal.buy.cardName') }}</Label>
+        <div
+          id="paypal-card-name"
+          class="h-11 rounded-md border border-input bg-background px-3 py-2 transition-colors focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/30"
+        />
       </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="space-y-2">
+          <Label for="paypal-card-expiry">{{ t('portal.buy.cardExpiry') }}</Label>
+          <div
+            id="paypal-card-expiry"
+            class="h-11 rounded-md border border-input bg-background px-3 py-2 transition-colors focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/30"
+          />
+        </div>
+        <div class="space-y-2">
+          <Label for="paypal-card-cvv">{{ t('portal.buy.cardCvv') }}</Label>
+          <div
+            id="paypal-card-cvv"
+            class="h-11 rounded-md border border-input bg-background px-3 py-2 transition-colors focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/30"
+          />
+        </div>
+      </div>
+
+      <Button class="h-11 w-full text-base" :disabled="!ready || paying" @click="submitPayment">
+        {{ t('portal.buy.payAmount', { amount: currencySymbol(currency) + formatPrice(amount) }) }}
+      </Button>
+      <p class="text-center text-xs text-muted-foreground">
+        {{ t('portal.buy.poweredByPayPal') }}
+      </p>
     </div>
-    <el-button
-      type="primary"
-      class="pay-btn"
-      :disabled="!ready || paying"
-      :loading="paying"
-      @click="submitPayment"
-    >
-      {{ t('portal.buy.payAmount', { amount: currencySymbol(currency) + formatPrice(amount) }) }}
-    </el-button>
-    <p class="powered-by">{{ t('portal.buy.poweredByPayPal') }}</p>
-  </div>
+  </LoadingOverlay>
 </template>
-
-<style scoped>
-.paypal-card-form {
-  min-height: 220px;
-}
-
-.field-group {
-  margin-bottom: 16px;
-}
-
-.field-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 14px;
-  color: #606266;
-}
-
-.field-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.paypal-field {
-  min-height: 44px;
-  padding: 4px 12px;
-  background: #fff;
-  border: 1px solid #dcdfe6;
-  border-radius: 8px;
-}
-
-.pay-btn {
-  width: 100%;
-  height: 44px;
-  margin-top: 8px;
-  background: #20a397;
-  border-color: #20a397;
-}
-
-.powered-by {
-  margin: 12px 0 0;
-  font-size: 12px;
-  color: #909399;
-  text-align: center;
-}
-</style>
