@@ -3,12 +3,14 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { Check } from '@element-plus/icons-vue'
-import { filterPlans, formatPrice, getCycle, type PlanFilter } from './plans'
+import { currencySymbol, formatPrice, type PlanFilter } from './plans'
+import { usePlanCatalog, type PricedPlan } from './usePlanCatalog'
 
 const { t } = useI18n()
 const router = useRouter()
 
 const activeFilter = ref<PlanFilter>('all')
+const { currency, filterPlans, isLoading, isError } = usePlanCatalog()
 
 const filters: { id: PlanFilter; labelKey: string }[] = [
   { id: 'all', labelKey: 'portal.buy.filter.all' },
@@ -18,14 +20,8 @@ const filters: { id: PlanFilter; labelKey: string }[] = [
 
 const plans = computed(() => filterPlans(activeFilter.value))
 
-function displayPrice(plan: (typeof plans.value)[number]) {
-  const cycle = getCycle(plan, plan.displayCycleId)
-  return cycle ? formatPrice(cycle.price) : '--'
-}
-
-function displayCycleLabel(plan: (typeof plans.value)[number]) {
-  const cycle = getCycle(plan, plan.displayCycleId)
-  return cycle ? t(cycle.labelKey) : ''
+function displayCycle(plan: PricedPlan) {
+  return plan.cycles.find((cycle) => cycle.id === plan.displayCycleId) ?? plan.cycles[0]
 }
 
 function subscribe(planId: string) {
@@ -50,13 +46,22 @@ function subscribe(planId: string) {
       </button>
     </div>
 
-    <div class="plan-grid">
+    <el-alert
+      v-if="isError"
+      type="error"
+      :title="t('portal.buy.plansLoadFailed')"
+      show-icon
+      :closable="false"
+      class="plans-alert"
+    />
+
+    <div v-loading="isLoading" class="plan-grid">
       <el-card v-for="plan in plans" :key="plan.id" shadow="never" class="plan-card">
         <div class="plan-name">{{ plan.name }}</div>
         <div class="plan-price">
-          <span class="currency">¥</span>
-          <span class="amount">{{ displayPrice(plan) }}</span>
-          <span class="cycle">{{ displayCycleLabel(plan) }}</span>
+          <span class="currency">{{ currencySymbol(currency) }}</span>
+          <span class="amount">{{ formatPrice(displayCycle(plan).price) }}</span>
+          <span class="cycle">{{ t(displayCycle(plan).labelKey) }}</span>
         </div>
         <ul class="plan-features">
           <li v-for="key in plan.featureKeys" :key="key">
@@ -82,6 +87,10 @@ function subscribe(planId: string) {
   font-size: 22px;
   font-weight: 700;
   color: #303133;
+}
+
+.plans-alert {
+  margin-bottom: 16px;
 }
 
 .buy-filters {

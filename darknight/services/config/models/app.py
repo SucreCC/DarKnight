@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .auth import AuthConfig
+from .coupons import CouponsConfig
 from .database import DatabaseConfig
 from .discord import DiscordConfig
 from .email import EmailConfig
@@ -20,6 +21,7 @@ from .telegram import TelegramConfig
 from .templates import TemplatesConfig
 from .users import UsersConfig
 from .web import WebConfig
+from .paypal import PayPalConfig
 from .webhook import WebhookConfig
 from .xray import XrayConfig
 from ._helpers import section
@@ -46,6 +48,8 @@ class AppConfig:
     features: FeaturesConfig = field(default_factory=FeaturesConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
     email: EmailConfig = field(default_factory=EmailConfig)
+    paypal: PayPalConfig = field(default_factory=PayPalConfig)
+    coupons: CouponsConfig = field(default_factory=CouponsConfig)
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any] | None = None) -> AppConfig:
@@ -79,6 +83,8 @@ class AppConfig:
             features=FeaturesConfig.from_dict(section(data, "features")),
             logging=LoggingConfig.from_dict(section(data, "logging"), log_dir=log_dir),
             email=EmailConfig.from_dict(section(data, "email")),
+            paypal=PayPalConfig.from_dict(section(data, "paypal")),
+            coupons=CouponsConfig.from_dict(section(data, "coupons")),
         )
 
 

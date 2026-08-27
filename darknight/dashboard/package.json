@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
+    "@paypal/paypal-js": "^11.0.0",
     "@tanstack/vue-query": "^5.101.4",
     "@vueuse/core": "^12.5.0",
     "axios": "^1.19.0",

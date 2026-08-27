@@ -6,7 +6,9 @@ const DETAIL_I18N_KEYS: Record<string, string> = {
   'Verification code expired': 'portal.codeExpired',
   'Invalid verification code': 'portal.codeInvalid',
   'Email service is not configured': 'portal.emailServiceUnavailable',
-  'Registration failed, please try again': 'portal.registrationFailed'
+  'Registration failed, please try again': 'portal.registrationFailed',
+  'PayPal payment is not configured': 'portal.buy.paypalNotConfigured',
+  'Failed to create PayPal order': 'portal.buy.paypalOrderFailed'
 }
 
 export function resolvePortalApiError(

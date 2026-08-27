@@ -1,5 +1,6 @@
 from .app import AppConfig
 from .auth import AuthConfig, SudoConfig
+from .coupons import CouponConfig, CouponsConfig
 from .database import DatabaseConfig
 from .discord import DiscordConfig
 from .email import EmailAccountConfig, EmailConfig
@@ -8,6 +9,7 @@ from .jobs import JobsConfig
 from .jwt import JwtConfig
 from .logging import LoggingConfig
 from .notifications import NotificationsConfig, RecurrentNotificationConfig
+from .paypal import PayPalConfig
 from .project import ProjectConfig
 from .server import ServerConfig, SslConfig
 from .status_text import StatusTextConfig
@@ -22,6 +24,8 @@ from .xray import XrayConfig
 __all__ = [
     "AppConfig",
     "AuthConfig",
+    "CouponConfig",
+    "CouponsConfig",
     "DatabaseConfig",
     "DiscordConfig",
     "EmailAccountConfig",
@@ -31,6 +35,7 @@ __all__ = [
     "JwtConfig",
     "LoggingConfig",
     "NotificationsConfig",
+    "PayPalConfig",
     "ProjectConfig",
     "RecurrentNotificationConfig",
     "ServerConfig",

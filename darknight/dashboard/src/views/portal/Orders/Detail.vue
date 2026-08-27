@@ -4,110 +4,205 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import OrderSummary from '../Buy/components/OrderSummary.vue'
-import { closeOrder, formatOrderTime, getOrder, updateOrder } from '../Buy/orders'
-import { PAYMENT_METHODS, getCycle, getPlanById, type PaymentMethodId } from '../Buy/plans'
+import PayPalCardForm from '../Buy/components/PayPalCardForm.vue'
+import {
+  closePortalOrder,
+  fetchPortalOrder,
+  formatOrderTime,
+  preparePortalOrderPayment,
+  type PortalOrder
+} from '@/api/portal/orders'
+import { resolvePortalApiError } from '@/utils/portalError'
+import { getCycleLabelKey, getPlanMeta } from '../Buy/plans'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
 const orderId = computed(() => String(route.params.orderId || ''))
-const order = computed(() => getOrder(orderId.value))
-const plan = computed(() => (order.value ? getPlanById(order.value.planId) : undefined))
-const cycle = computed(() =>
-  plan.value && order.value ? getCycle(plan.value, order.value.cycleId) : undefined
+const order = ref<PortalOrder | null>(null)
+const loading = ref(true)
+const preparingPayment = ref(false)
+const paymentError = ref('')
+
+const planName = computed(() =>
+  order.value ? (getPlanMeta(order.value.plan_id)?.name ?? order.value.plan_id) : ''
 )
-
-const selectedPayment = ref<PaymentMethodId>('alipay_1')
-const checkingOut = ref(false)
-
-watch(
-  order,
-  (value) => {
-    if (value?.paymentMethod) {
-      selectedPayment.value = value.paymentMethod
-    }
-    if (orderId.value && !value) {
-      router.replace({ name: 'portal-buy' })
-    }
-    if (value?.status === 'closed') {
-      router.replace({ name: 'portal-buy' })
-    }
-  },
-  { immediate: true }
+const cycleLabel = computed(() =>
+  order.value ? t(getCycleLabelKey(order.value.cycle_id)) : ''
 )
+const isPaid = computed(() => order.value?.status === 'paid')
 
-async function onCloseOrder() {
-  await ElMessageBox.confirm(t('portal.buy.closeOrderConfirm'), t('portal.buy.closeOrder'), {
-    type: 'warning'
-  })
-  closeOrder(orderId.value)
-  ElMessage.success(t('portal.buy.closeOrderSuccess'))
-  router.push({ name: 'portal-buy' })
+async function loadOrder() {
+  loading.value = true
+  paymentError.value = ''
+  try {
+    order.value = await fetchPortalOrder(orderId.value)
+    if (order.value.status === 'closed') {
+      router.replace({ name: 'portal-orders' })
+      return
+    }
+    if (order.value.status === 'pending' && !order.value.paypal_order_id) {
+      await ensurePaymentReady()
+    }
+  } catch (err) {
+    ElMessage.error(resolvePortalApiError(err, t))
+    router.replace({ name: 'portal-orders' })
+  } finally {
+    loading.value = false
+  }
 }
 
-function checkout() {
-  if (!order.value) return
-  checkingOut.value = true
-  updateOrder(order.value.id, { paymentMethod: selectedPayment.value })
-  ElMessage.info(t('portal.buy.checkoutMock'))
-  checkingOut.value = false
+async function ensurePaymentReady() {
+  preparingPayment.value = true
+  paymentError.value = ''
+  try {
+    order.value = await preparePortalOrderPayment(orderId.value)
+  } catch (err) {
+    paymentError.value = resolvePortalApiError(err, t)
+  } finally {
+    preparingPayment.value = false
+  }
+}
+
+watch(orderId, loadOrder, { immediate: true })
+
+async function onCloseOrder() {
+  try {
+    await ElMessageBox.confirm(t('portal.buy.closeOrderConfirm'), t('portal.buy.closeOrder'), {
+      type: 'warning'
+    })
+  } catch {
+    return
+  }
+
+  try {
+    await closePortalOrder(orderId.value)
+    ElMessage.success(t('portal.buy.closeOrderSuccess'))
+    router.push({ name: 'portal-orders' })
+  } catch (err) {
+    ElMessage.error(resolvePortalApiError(err, t))
+  }
+}
+
+function onPaymentSuccess(paid: PortalOrder) {
+  order.value = paid
+  paymentError.value = ''
+  ElMessage.success(t('portal.buy.paymentSuccess'))
+}
+
+function onPaymentError(message: string) {
+  ElMessage.error(message)
 }
 </script>
 
 <template>
-  <div v-if="order && plan && cycle" class="order-page">
-    <div class="order-main">
-      <el-card shadow="never" class="info-card">
-        <div class="info-title">{{ t('portal.buy.productInfo') }}</div>
-        <div class="info-row">
-          <span>{{ t('portal.buy.productTraffic') }}</span>
-          <strong>{{ plan.name }}</strong>
+  <div v-loading="loading" class="order-wrapper">
+    <div v-if="order" class="order-page">
+      <div class="order-main">
+        <div v-if="isPaid" class="success-card">
+          <el-result
+            icon="success"
+            :title="t('portal.buy.paymentSuccess')"
+            :sub-title="t('portal.buy.paymentSuccessHint', { plan: planName, cycle: cycleLabel })"
+          >
+            <template #extra>
+              <el-button type="primary" @click="router.push({ name: 'portal-dashboard' })">
+                {{ t('portal.buy.goDashboard') }}
+              </el-button>
+              <el-button @click="router.push({ name: 'portal-docs' })">
+                {{ t('portal.buy.goDocs') }}
+              </el-button>
+            </template>
+          </el-result>
         </div>
-      </el-card>
 
-      <el-card shadow="never" class="info-card">
-        <div class="info-head">
-          <div class="info-title">{{ t('portal.buy.orderInfo') }}</div>
-          <el-button size="small" @click="onCloseOrder">{{ t('portal.buy.closeOrder') }}</el-button>
-        </div>
-        <div class="info-row">
-          <span>{{ t('portal.buy.orderNo') }}</span>
-          <strong>{{ order.id }}</strong>
-        </div>
-        <div class="info-row">
-          <span>{{ t('portal.buy.createdAt') }}</span>
-          <strong>{{ formatOrderTime(order.createdAt) }}</strong>
-        </div>
-      </el-card>
+        <el-card shadow="never" class="info-card">
+          <div class="info-title">{{ t('portal.buy.productInfo') }}</div>
+          <div class="info-row">
+            <span>{{ t('portal.buy.productTraffic') }}</span>
+            <strong>{{ planName }}</strong>
+          </div>
+          <div class="info-row">
+            <span>{{ t('portal.buy.paymentCycle') }}</span>
+            <strong>{{ cycleLabel }}</strong>
+          </div>
+        </el-card>
 
-      <el-card shadow="never" class="info-card">
-        <div class="info-title">{{ t('portal.buy.paymentMethod') }}</div>
-        <button
-          v-for="method in PAYMENT_METHODS"
-          :key="method.id"
-          type="button"
-          class="payment-option"
-          :class="{ active: selectedPayment === method.id }"
-          @click="selectedPayment = method.id"
+        <el-card shadow="never" class="info-card">
+          <div class="info-head">
+            <div class="info-title">{{ t('portal.buy.orderInfo') }}</div>
+            <el-button v-if="order.status === 'pending'" size="small" @click="onCloseOrder">
+              {{ t('portal.buy.closeOrder') }}
+            </el-button>
+          </div>
+          <div class="info-row">
+            <span>{{ t('portal.buy.orderNo') }}</span>
+            <strong>{{ order.id }}</strong>
+          </div>
+          <div class="info-row">
+            <span>{{ t('portal.buy.createdAt') }}</span>
+            <strong>{{ formatOrderTime(order.created_at) }}</strong>
+          </div>
+          <div v-if="order.paid_at" class="info-row">
+            <span>{{ t('portal.buy.paidAt') }}</span>
+            <strong>{{ formatOrderTime(order.paid_at) }}</strong>
+          </div>
+        </el-card>
+
+        <el-card
+          v-if="order.status === 'pending'"
+          v-loading="preparingPayment"
+          shadow="never"
+          class="info-card"
         >
-          {{ t(method.labelKey) }}
-        </button>
-      </el-card>
-    </div>
+          <div class="info-title">{{ t('portal.buy.paymentMethod') }}</div>
+          <PayPalCardForm
+            v-if="order.paypal_order_id"
+            :order-id="order.id"
+            :paypal-order-id="order.paypal_order_id"
+            :amount="order.amount"
+            :currency="order.currency"
+            @success="onPaymentSuccess"
+            @error="onPaymentError"
+          />
+          <div v-else-if="paymentError" class="payment-error">
+            <el-alert type="error" :title="paymentError" show-icon :closable="false" />
+            <el-button class="retry-btn" @click="ensurePaymentReady">
+              {{ t('portal.buy.retryPayment') }}
+            </el-button>
+          </div>
+        </el-card>
 
-    <OrderSummary
-      :plan-id="plan.id"
-      :cycle-id="order.cycleId"
-      :coupon="order.coupon"
-      :loading="checkingOut"
-      :submit-label="t('portal.buy.checkout')"
-      @submit="checkout"
-    />
+        <el-alert
+          v-else-if="order.status === 'failed'"
+          type="error"
+          :title="t('portal.buy.paymentFailed')"
+          show-icon
+          :closable="false"
+        />
+      </div>
+
+      <OrderSummary
+        :plan-id="order.plan_id"
+        :cycle-id="order.cycle_id"
+        :coupon="order.coupon || undefined"
+        :amount="order.amount"
+        :discount="order.discount"
+        :currency="order.currency"
+        :submit-label="t('portal.buy.checkout')"
+        hide-submit
+        readonly-coupon
+      />
+    </div>
   </div>
 </template>
 
 <style scoped>
+.order-wrapper {
+  min-height: 200px;
+}
+
 .order-page {
   display: flex;
   gap: 20px;
@@ -117,6 +212,12 @@ function checkout() {
 .order-main {
   flex: 1;
   min-width: 0;
+}
+
+.success-card {
+  margin-bottom: 16px;
+  background: #fff;
+  border-radius: 8px;
 }
 
 .info-card {
@@ -132,9 +233,14 @@ function checkout() {
 }
 
 .info-title {
+  margin-bottom: 16px;
   font-size: 16px;
   font-weight: 700;
   color: #303133;
+}
+
+.info-head .info-title {
+  margin-bottom: 0;
 }
 
 .info-row {
@@ -146,27 +252,11 @@ function checkout() {
   gap: 16px;
 }
 
-.payment-option {
-  display: block;
-  width: 100%;
-  padding: 16px 18px;
-  margin-bottom: 12px;
-  font-size: 15px;
-  color: #303133;
-  text-align: left;
-  cursor: pointer;
-  background: #fff;
-  border: 1px solid #dcdfe6;
-  border-radius: 8px;
-}
-
-.payment-option:last-child {
-  margin-bottom: 0;
-}
-
-.payment-option.active {
-  border-color: #20a397;
-  box-shadow: 0 0 0 1px #20a397 inset;
+.payment-error {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
 }
 
 @media (width <= 960px) {

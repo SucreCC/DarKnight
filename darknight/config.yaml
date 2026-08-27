@@ -140,6 +140,27 @@ subscription:
 discord:
   webhook_url: ""
 
+paypal:
+  enabled: true
+  # 凭证优先读环境变量 PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET / PAYPAL_WEBHOOK_ID / PAYPAL_MODE。
+  # 生产环境请把下面两项留空、改用环境变量，避免密钥进入版本库。
+  client_id: "AbjKKz7XJ7ey-GYCXaKr008CTuJII_LNBdbLOYGrkwkmopnKeUX4EuwE9HF2yVHvtXN6IwB76mtecuAu"
+  client_secret: "EEQOwB7jfHtI-bEoB8wlr9KXfAt0xpQzuR0jSpuAuCDed4YMN_5s5DewQLckI9Zz-dn6EpCH87dqWtbJ"
+  mode: sandbox                # sandbox | live
+  webhook_id: ""               # 留空时 Webhook 一律拒绝，防止伪造回调白拿套餐
+  currency: USD
+  order_timeout_minutes: 30    # 未支付订单多久自动关闭；<=0 表示不自动关闭
+
+# 优惠券：code 不区分大小写。percent_off 与 amount_off 可同时使用（先按比例再减固定额）。
+# 折扣最多把金额降到 0.01，PayPal 无法扣款 0 元订单。
+coupons:
+  WELCOME20:
+    percent_off: 20
+    enabled: true
+  # SAVE1:
+  #   amount_off: 1.00
+  #   expires_at: "2026-12-31"
+
 jobs:
   core_health_check_interval: 10
   record_node_usages_interval: 30

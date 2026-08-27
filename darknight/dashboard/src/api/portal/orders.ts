@@ -1,0 +1,97 @@
+import { http } from '@/config/axios'
+
+export type OrderStatus = 'pending' | 'paid' | 'closed' | 'failed'
+
+export interface PortalOrder {
+  id: string
+  plan_id: string
+  cycle_id: string
+  amount: number
+  currency: string
+  status: OrderStatus
+  payment_provider: string
+  paypal_order_id?: string | null
+  coupon?: string | null
+  discount: number
+  created_at: string
+  paid_at?: string | null
+}
+
+export interface CouponPreview {
+  coupon: string
+  currency: string
+  original_amount: number
+  discount: number
+  amount: number
+}
+
+export function previewCoupon(body: { plan_id: string; cycle_id: string; coupon: string }) {
+  return http<CouponPreview>('/coupons/preview', { method: 'POST', body })
+}
+
+export interface PayPalConfig {
+  client_id: string
+  currency: string
+  enabled: boolean
+}
+
+export interface PlanCycle {
+  cycle_id: string
+  price: number
+  data_limit_gb: number
+  duration_days: number
+}
+
+export interface Plan {
+  plan_id: string
+  cycles: PlanCycle[]
+}
+
+export interface PlanCatalog {
+  currency: string
+  plans: Plan[]
+}
+
+export function fetchPayPalConfig() {
+  return http<PayPalConfig>('/payments/paypal/config')
+}
+
+export function fetchPlanCatalog() {
+  return http<PlanCatalog>('/plans')
+}
+
+export function createPortalOrder(body: {
+  plan_id: string
+  cycle_id: string
+  coupon?: string
+}) {
+  return http<PortalOrder>('/orders', { method: 'POST', body })
+}
+
+export function fetchPortalOrders() {
+  return http<PortalOrder[]>('/orders')
+}
+
+export function fetchPortalOrder(orderId: string) {
+  return http<PortalOrder>(`/orders/${orderId}`)
+}
+
+export function closePortalOrder(orderId: string) {
+  return http<PortalOrder>(`/orders/${orderId}/close`, { method: 'POST' })
+}
+
+export function preparePortalOrderPayment(orderId: string) {
+  return http<PortalOrder>(`/orders/${orderId}/prepare-payment`, { method: 'POST' })
+}
+
+export function capturePortalOrder(orderId: string) {
+  return http<{ order: PortalOrder; detail: string }>(`/orders/${orderId}/capture`, {
+    method: 'POST'
+  })
+}
+
+export function formatOrderTime(iso: string): string {
+  const date = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}

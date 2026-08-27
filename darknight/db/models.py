@@ -24,6 +24,7 @@ from sqlalchemy.sql.expression import select, text
 import darknight.xray as xray
 from darknight.db.base import Base
 from darknight.models.node import NodeStatus
+from darknight.models.order import PortalOrderStatus
 from darknight.models.proxy import (
     ProxyHostALPN,
     ProxyHostFingerprint,
@@ -383,3 +384,22 @@ class NotificationReminder(Base):
     threshold = Column(Integer, nullable=True)
     expires_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class PortalOrder(Base):
+    __tablename__ = "portal_orders"
+
+    id = Column(String(64), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
+    user = relationship("User", backref="portal_orders")
+    plan_id = Column(String(32), nullable=False)
+    cycle_id = Column(String(32), nullable=False)
+    amount = Column(Float, nullable=False)
+    currency = Column(String(8), nullable=False, default="USD")
+    status = Column(Enum(PortalOrderStatus), nullable=False, default=PortalOrderStatus.pending, index=True)
+    payment_provider = Column(String(32), nullable=False, default="paypal")
+    paypal_order_id = Column(String(64), nullable=True, index=True)
+    coupon = Column(String(64), nullable=True)
+    discount = Column(Float, nullable=False, default=0.0)
+    paid_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

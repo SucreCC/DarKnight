@@ -3,17 +3,21 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { Check } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { createPortalOrder } from '@/api/portal/orders'
+import { resolvePortalApiError } from '@/utils/portalError'
 import OrderSummary from './components/OrderSummary.vue'
-import { createOrder } from './orders'
-import type { BillingCycleId } from './plans'
-import { getPlanById } from './plans'
+import { currencySymbol, formatPrice, type BillingCycleId } from './plans'
+import { usePlanCatalog } from './usePlanCatalog'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
+const { currency, getPlan, isLoading, isError } = usePlanCatalog()
+
 const planId = computed(() => String(route.params.planId || ''))
-const plan = computed(() => getPlanById(planId.value))
+const plan = computed(() => getPlan(planId.value))
 const selectedCycleId = ref<BillingCycleId>('yearly')
 const coupon = ref('')
 const submitting = ref(false)
@@ -28,18 +32,24 @@ watch(
   { immediate: true }
 )
 
-watch(planId, () => {
-  if (!plan.value) {
+watch([planId, isLoading], () => {
+  if (!isLoading.value && !plan.value) {
     router.replace({ name: 'portal-buy' })
   }
 })
 
-function placeOrder() {
+async function placeOrder() {
   if (!plan.value) return
   submitting.value = true
   try {
-    const order = createOrder(plan.value.id, selectedCycleId.value, coupon.value)
+    const order = await createPortalOrder({
+      plan_id: plan.value.id,
+      cycle_id: selectedCycleId.value,
+      coupon: coupon.value.trim() || undefined
+    })
     router.push({ name: 'portal-order-detail', params: { orderId: order.id } })
+  } catch (err) {
+    ElMessage.error(resolvePortalApiError(err, t))
   } finally {
     submitting.value = false
   }
@@ -47,7 +57,14 @@ function placeOrder() {
 </script>
 
 <template>
-  <div v-if="plan" class="configure-page">
+  <el-alert
+    v-if="isError"
+    type="error"
+    :title="t('portal.buy.plansLoadFailed')"
+    show-icon
+    :closable="false"
+  />
+  <div v-else-if="plan" class="configure-page">
     <div class="configure-main">
       <el-card shadow="never" class="plan-detail-card">
         <div class="plan-detail-name">{{ plan.name }}</div>
@@ -70,7 +87,7 @@ function placeOrder() {
           @click="selectedCycleId = cycle.id"
         >
           <span>{{ t(cycle.labelKey) }}</span>
-          <span>¥{{ cycle.price.toFixed(2) }}</span>
+          <span>{{ currencySymbol(currency) }}{{ formatPrice(cycle.price) }}</span>
         </button>
       </el-card>
     </div>
@@ -81,7 +98,6 @@ function placeOrder() {
       :coupon="coupon"
       :loading="submitting"
       :submit-label="t('portal.buy.placeOrder')"
-      @update:cycle-id="selectedCycleId = $event"
       @update:coupon="coupon = $event"
       @submit="placeOrder"
     />

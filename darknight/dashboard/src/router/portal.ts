@@ -72,7 +72,7 @@ export const portalRoutes: RouteRecordRaw[] = [
       {
         path: 'orders',
         name: 'portal-orders',
-        component: () => import('@/views/portal/Placeholder/index.vue'),
+        component: () => import('@/views/portal/Orders/index.vue'),
         meta: {
           title: 'portal.menu.orders',
           icon: 'List',

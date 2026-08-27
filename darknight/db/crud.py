@@ -21,6 +21,8 @@ from darknight.db.models import (
     NodeUsage,
     NodeUserUsage,
     NotificationReminder,
+    PortalOrder,
+    PortalOrderStatus,
     Proxy,
     ProxyHost,
     ProxyInbound,
@@ -1549,3 +1551,77 @@ def get_latest_verification_code(db: Session, email: str) -> Optional[EmailVerif
 def delete_verification_codes(db: Session, email: str) -> None:
     db.query(EmailVerificationCode).filter(EmailVerificationCode.email == email).delete()
     db.commit()
+
+
+def create_portal_order(
+    db: Session,
+    *,
+    order_id: str,
+    user_id: int,
+    plan_id: str,
+    cycle_id: str,
+    amount: float,
+    currency: str,
+    paypal_order_id: str | None = None,
+    coupon: str | None = None,
+    discount: float = 0.0,
+) -> PortalOrder:
+    order = PortalOrder(
+        id=order_id,
+        user_id=user_id,
+        plan_id=plan_id,
+        cycle_id=cycle_id,
+        amount=amount,
+        currency=currency,
+        paypal_order_id=paypal_order_id,
+        coupon=coupon,
+        discount=discount,
+        status=PortalOrderStatus.pending,
+        payment_provider="paypal",
+    )
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+    return order
+
+
+def get_portal_order(db: Session, order_id: str) -> Optional[PortalOrder]:
+    return db.query(PortalOrder).filter(PortalOrder.id == order_id).first()
+
+
+def get_portal_order_by_paypal_id(db: Session, paypal_order_id: str) -> Optional[PortalOrder]:
+    return db.query(PortalOrder).filter(PortalOrder.paypal_order_id == paypal_order_id).first()
+
+
+def list_portal_orders_for_user(db: Session, user_id: int) -> list[PortalOrder]:
+    return (
+        db.query(PortalOrder)
+        .filter(PortalOrder.user_id == user_id)
+        .order_by(PortalOrder.created_at.desc())
+        .all()
+    )
+
+
+def update_portal_order(db: Session, order: PortalOrder, **fields) -> PortalOrder:
+    for key, value in fields.items():
+        setattr(order, key, value)
+    db.commit()
+    db.refresh(order)
+    return order
+
+
+def close_stale_portal_orders(db: Session, created_before: datetime) -> int:
+    """Close pending orders that were never paid, returning how many were closed."""
+    closed = (
+        db.query(PortalOrder)
+        .filter(
+            PortalOrder.status == PortalOrderStatus.pending,
+            PortalOrder.created_at < created_before,
+        )
+        .update(
+            {PortalOrder.status: PortalOrderStatus.closed},
+            synchronize_session=False,
+        )
+    )
+    db.commit()
+    return int(closed)
