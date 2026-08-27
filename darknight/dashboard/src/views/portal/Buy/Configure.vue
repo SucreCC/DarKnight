@@ -2,10 +2,12 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { Check } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { Check } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 import { createPortalOrder } from '@/api/portal/orders'
 import { resolvePortalApiError } from '@/utils/portalError'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { cn } from '@/lib/utils'
 import OrderSummary from './components/OrderSummary.vue'
 import { currencySymbol, formatPrice, type BillingCycleId } from './plans'
 import { usePlanCatalog } from './usePlanCatalog'
@@ -49,7 +51,7 @@ async function placeOrder() {
     })
     router.push({ name: 'portal-order-detail', params: { orderId: order.id } })
   } catch (err) {
-    ElMessage.error(resolvePortalApiError(err, t))
+    toast.error(resolvePortalApiError(err, t))
   } finally {
     submitting.value = false
   }
@@ -57,39 +59,51 @@ async function placeOrder() {
 </script>
 
 <template>
-  <el-alert
-    v-if="isError"
-    type="error"
-    :title="t('portal.buy.plansLoadFailed')"
-    show-icon
-    :closable="false"
-  />
-  <div v-else-if="plan" class="configure-page">
-    <div class="configure-main">
-      <el-card shadow="never" class="plan-detail-card">
-        <div class="plan-detail-name">{{ plan.name }}</div>
-        <ul class="plan-detail-features">
-          <li v-for="key in plan.featureKeys" :key="key">
-            <el-icon class="check-icon"><Check /></el-icon>
+  <Alert v-if="isError" variant="destructive">
+    <AlertDescription>{{ t('portal.buy.plansLoadFailed') }}</AlertDescription>
+  </Alert>
+  <div v-else-if="plan" class="flex flex-col items-start gap-5 lg:flex-row">
+    <div class="min-w-0 flex-1 space-y-4">
+      <div class="rounded-xl border border-border bg-card p-7">
+        <p class="mb-4 text-2xl font-bold text-foreground">{{ plan.name }}</p>
+        <ul class="space-y-2.5">
+          <li
+            v-for="key in plan.featureKeys"
+            :key="key"
+            class="flex items-start gap-2 text-sm leading-relaxed text-muted-foreground"
+          >
+            <Check class="mt-0.5 size-4 shrink-0 text-primary" />
             <span>{{ t(key) }}</span>
           </li>
         </ul>
-      </el-card>
+      </div>
 
-      <el-card shadow="never" class="cycle-card">
-        <div class="section-title">{{ t('portal.buy.paymentCycle') }}</div>
-        <button
-          v-for="cycle in plan.cycles"
-          :key="cycle.id"
-          type="button"
-          class="cycle-option"
-          :class="{ active: selectedCycleId === cycle.id }"
-          @click="selectedCycleId = cycle.id"
-        >
-          <span>{{ t(cycle.labelKey) }}</span>
-          <span>{{ currencySymbol(currency) }}{{ formatPrice(cycle.price) }}</span>
-        </button>
-      </el-card>
+      <div class="rounded-xl border border-border bg-card p-7">
+        <p class="mb-4 text-base font-semibold text-foreground">
+          {{ t('portal.buy.paymentCycle') }}
+        </p>
+        <div class="space-y-3">
+          <button
+            v-for="cycle in plan.cycles"
+            :key="cycle.id"
+            type="button"
+            :class="
+              cn(
+                'flex w-full items-center justify-between rounded-lg border px-5 py-4 text-[15px] transition-colors',
+                selectedCycleId === cycle.id
+                  ? 'border-primary bg-primary/5 text-foreground ring-1 ring-primary'
+                  : 'border-border text-foreground hover:border-primary/40'
+              )
+            "
+            @click="selectedCycleId = cycle.id"
+          >
+            <span>{{ t(cycle.labelKey) }}</span>
+            <span class="font-semibold">
+              {{ currencySymbol(currency) }}{{ formatPrice(cycle.price) }}
+            </span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <OrderSummary
@@ -103,85 +117,3 @@ async function placeOrder() {
     />
   </div>
 </template>
-
-<style scoped>
-.configure-page {
-  display: flex;
-  gap: 20px;
-  align-items: flex-start;
-}
-
-.configure-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.plan-detail-card,
-.cycle-card {
-  margin-bottom: 16px;
-}
-
-.plan-detail-name {
-  margin-bottom: 16px;
-  font-size: 28px;
-  font-weight: 700;
-}
-
-.plan-detail-features {
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-.plan-detail-features li {
-  display: flex;
-  padding: 8px 0;
-  font-size: 14px;
-  line-height: 1.5;
-  color: #606266;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.check-icon {
-  margin-top: 3px;
-  color: #20a397;
-  flex-shrink: 0;
-}
-
-.section-title {
-  margin-bottom: 16px;
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.cycle-option {
-  display: flex;
-  width: 100%;
-  padding: 16px 18px;
-  margin-bottom: 12px;
-  font-size: 15px;
-  color: #303133;
-  cursor: pointer;
-  background: #fff;
-  border: 1px solid #dcdfe6;
-  border-radius: 8px;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.cycle-option:last-child {
-  margin-bottom: 0;
-}
-
-.cycle-option.active {
-  border-color: #20a397;
-  box-shadow: 0 0 0 1px #20a397 inset;
-}
-
-@media (width <= 960px) {
-  .configure-page {
-    flex-direction: column;
-  }
-}
-</style>

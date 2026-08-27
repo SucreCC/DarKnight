@@ -2,9 +2,13 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { Check } from '@element-plus/icons-vue'
+import { Check } from 'lucide-vue-next'
 import { currencySymbol, formatPrice, type PlanFilter } from './plans'
 import { usePlanCatalog, type PricedPlan } from './usePlanCatalog'
+import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -30,184 +34,66 @@ function subscribe(planId: string) {
 </script>
 
 <template>
-  <div class="buy-page">
-    <h2 class="buy-title">{{ t('portal.buy.choosePlan') }}</h2>
+  <div class="max-w-6xl">
+    <h2 class="mb-5 text-2xl font-bold tracking-tight text-foreground">
+      {{ t('portal.buy.choosePlan') }}
+    </h2>
 
-    <div class="buy-filters">
+    <div class="mb-6 inline-flex rounded-lg bg-muted p-1">
       <button
         v-for="item in filters"
         :key="item.id"
         type="button"
-        class="filter-btn"
-        :class="{ active: activeFilter === item.id }"
+        :class="
+          cn(
+            'rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
+            activeFilter === item.id
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          )
+        "
         @click="activeFilter = item.id"
       >
         {{ t(item.labelKey) }}
       </button>
     </div>
 
-    <el-alert
-      v-if="isError"
-      type="error"
-      :title="t('portal.buy.plansLoadFailed')"
-      show-icon
-      :closable="false"
-      class="plans-alert"
-    />
+    <Alert v-if="isError" variant="destructive" class="mb-4">
+      <AlertDescription>{{ t('portal.buy.plansLoadFailed') }}</AlertDescription>
+    </Alert>
 
-    <div v-loading="isLoading" class="plan-grid">
-      <el-card v-for="plan in plans" :key="plan.id" shadow="never" class="plan-card">
-        <div class="plan-name">{{ plan.name }}</div>
-        <div class="plan-price">
-          <span class="currency">{{ currencySymbol(currency) }}</span>
-          <span class="amount">{{ formatPrice(displayCycle(plan).price) }}</span>
-          <span class="cycle">{{ t(displayCycle(plan).labelKey) }}</span>
+    <div v-if="isLoading" class="grid gap-5 lg:grid-cols-3">
+      <Skeleton v-for="i in 3" :key="i" class="h-96 rounded-xl" />
+    </div>
+
+    <div v-else class="grid items-stretch gap-5 lg:grid-cols-3">
+      <div
+        v-for="plan in plans"
+        :key="plan.id"
+        class="flex flex-col rounded-xl border border-border bg-card p-7 transition-shadow hover:shadow-lg"
+      >
+        <p class="text-2xl font-bold text-foreground">{{ plan.name }}</p>
+        <div class="mt-3 flex items-baseline gap-1">
+          <span class="text-lg font-semibold text-foreground">{{ currencySymbol(currency) }}</span>
+          <span class="text-4xl font-bold leading-none tracking-tight text-foreground">
+            {{ formatPrice(displayCycle(plan).price) }}
+          </span>
+          <span class="text-sm text-muted-foreground">{{ t(displayCycle(plan).labelKey) }}</span>
         </div>
-        <ul class="plan-features">
-          <li v-for="key in plan.featureKeys" :key="key">
-            <el-icon class="check-icon"><Check /></el-icon>
+        <ul class="mt-6 flex-1 space-y-2.5">
+          <li
+            v-for="key in plan.featureKeys"
+            :key="key"
+            class="flex items-start gap-2 text-sm leading-relaxed text-muted-foreground"
+          >
+            <Check class="mt-0.5 size-4 shrink-0 text-primary" />
             <span>{{ t(key) }}</span>
           </li>
         </ul>
-        <el-button type="primary" class="subscribe-btn" @click="subscribe(plan.id)">
+        <Button class="mt-7 h-11 w-full" @click="subscribe(plan.id)">
           {{ t('portal.buy.subscribeNow') }}
-        </el-button>
-      </el-card>
+        </Button>
+      </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.buy-page {
-  max-width: 1200px;
-}
-
-.buy-title {
-  margin: 0 0 20px;
-  font-size: 22px;
-  font-weight: 700;
-  color: #303133;
-}
-
-.plans-alert {
-  margin-bottom: 16px;
-}
-
-.buy-filters {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 24px;
-}
-
-.filter-btn {
-  padding: 8px 18px;
-  font-size: 14px;
-  color: #606266;
-  cursor: pointer;
-  background: #fff;
-  border: 1px solid #dcdfe6;
-  border-radius: 6px;
-}
-
-.filter-btn.active {
-  color: #fff;
-  background: #20a397;
-  border-color: #20a397;
-}
-
-.plan-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px;
-  align-items: stretch;
-}
-
-.plan-card {
-  display: flex;
-  height: 100%;
-  flex-direction: column;
-}
-
-.plan-card :deep(.el-card__body) {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  height: 100%;
-}
-
-.plan-name {
-  margin-bottom: 12px;
-  font-size: 28px;
-  font-weight: 700;
-  color: #303133;
-}
-
-.plan-price {
-  display: flex;
-  margin-bottom: 20px;
-  align-items: baseline;
-  gap: 4px;
-}
-
-.currency {
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.amount {
-  font-size: 36px;
-  font-weight: 700;
-  line-height: 1;
-  color: #303133;
-}
-
-.cycle {
-  font-size: 14px;
-  color: #909399;
-}
-
-.plan-features {
-  padding: 0;
-  margin: 0;
-  list-style: none;
-  flex: 1;
-}
-
-.plan-features li {
-  display: flex;
-  padding: 6px 0;
-  font-size: 14px;
-  line-height: 1.5;
-  color: #606266;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.check-icon {
-  margin-top: 3px;
-  color: #20a397;
-  flex-shrink: 0;
-}
-
-.subscribe-btn {
-  width: 100%;
-  height: 44px;
-  margin-top: 24px;
-  background: #20a397;
-  border-color: #20a397;
-  flex-shrink: 0;
-}
-
-.subscribe-btn:hover,
-.subscribe-btn:focus {
-  background: #1b8c82;
-  border-color: #1b8c82;
-}
-
-@media (width <= 1100px) {
-  .plan-grid {
-    grid-template-columns: 1fr;
-  }
-}
-</style>
