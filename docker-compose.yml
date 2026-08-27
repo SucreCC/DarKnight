@@ -17,8 +17,7 @@ services:
       - "1080:1080/udp"
     volumes:
       # 持久化：数据库、日志、Xray 运行时配置
+      # 应用配置来自镜像内的 darknight/config.yaml（修改后需 docker compose up -d --build）
       - ./data:/app/data
-      # 如需覆盖配置，取消注释（需存在 docker/config.yaml）
-      # - ./docker/config.yaml:/app/darknight/config.yaml:ro
     # 可选：Linux 生产环境若需 Xray 直接监听宿主机端口，可改用 host 网络
     # network_mode: host
