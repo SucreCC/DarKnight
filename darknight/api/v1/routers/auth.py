@@ -51,10 +51,12 @@ def send_code(
 ):
     email = body.email.lower().strip()
     if crud.get_user_by_email(db, email):
+        logger.info(f'send-code rejected: email already registered ({email})')
         raise HTTPException(status_code=409, detail="Email is already registered")
 
     latest = crud.get_latest_verification_code(db, email)
     if latest and (datetime.utcnow() - latest.created_at).total_seconds() < SEND_CODE_COOLDOWN_SECONDS:
+        logger.info(f"send-code rejected: cooldown active ({email})")
         raise HTTPException(status_code=429, detail="Please wait before requesting another code")
 
     from darknight.services.mail import mail
@@ -68,7 +70,10 @@ def send_code(
     code = _generate_code()
     expires_at = datetime.utcnow() + timedelta(minutes=CODE_EXPIRE_MINUTES)
     crud.save_email_verification_code(db, email, code, expires_at)
-    send_verification_email(email, code, expire_minutes=CODE_EXPIRE_MINUTES, background_tasks=bg)
+    outbox_id = send_verification_email(
+        email, code, expire_minutes=CODE_EXPIRE_MINUTES, background_tasks=bg
+    )
+    logger.info(f"send-code queued: to={email} outbox_id={outbox_id}")
     return {"detail": "Verification code sent"}
 
 

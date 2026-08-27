@@ -136,6 +136,10 @@ class MailService:
                         body_text=body_text,
                         body_html=body_html,
                     )
+                    logger.info(
+                        f"[email] sent id={outbox_id} account={account_name} "
+                        f"to={to_address} subject={subject}"
+                    )
 
                 with GetDB() as db:
                     row = db.query(EmailOutbox).filter(EmailOutbox.id == outbox_id).first()
