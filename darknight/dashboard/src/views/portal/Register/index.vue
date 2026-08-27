@@ -3,8 +3,8 @@ import { nextTick, onMounted, onBeforeUnmount, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import { extractErrorDetail } from '@/config/axios'
 import { registerUser, sendVerificationCode } from '@/api/portal'
+import { isEmailAlreadyRegisteredError, resolvePortalApiError } from '@/utils/portalError'
 import { removeUserToken, setUserToken } from '@/utils/userAuth'
 import LanguageSwitch from '@/components/LanguageSwitch/index.vue'
 import SlideCaptchaDialog from './components/SlideCaptchaDialog.vue'
@@ -128,9 +128,10 @@ async function onCaptchaSuccess() {
     form.code = ''
     codeReadonly.value = true
   } catch (err: unknown) {
-    const detail = extractErrorDetail(err)
-    const msg = typeof detail === 'string' ? detail : String(err)
-    errorMsg.value = msg
+    const msg = resolvePortalApiError(err, t)
+    errorMsg.value = isEmailAlreadyRegisteredError(err)
+      ? t('portal.emailAlreadyRegisteredHint')
+      : msg
     ElMessage.error(msg)
   } finally {
     sending.value = false
@@ -154,8 +155,11 @@ async function onSubmit() {
     setUserToken(res.access_token)
     router.push({ name: 'portal-dashboard' })
   } catch (err: unknown) {
-    const detail = extractErrorDetail(err)
-    errorMsg.value = typeof detail === 'string' ? detail : String(err)
+    const msg = resolvePortalApiError(err, t)
+    errorMsg.value = isEmailAlreadyRegisteredError(err)
+      ? t('portal.emailAlreadyRegisteredHint')
+      : msg
+    ElMessage.error(msg)
   } finally {
     loading.value = false
   }
