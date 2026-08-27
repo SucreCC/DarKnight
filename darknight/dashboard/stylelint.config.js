@@ -30,6 +30,12 @@ export default {
     'selector-pseudo-element-colon-notation': null,
     // scss 方言下由 scss/at-rule-no-unknown 接管。
     'at-rule-no-unknown': null,
+    'scss/at-rule-no-unknown': [
+      true,
+      {
+        ignoreAtRules: ['theme', 'custom-variant', 'apply', 'source', 'utility', 'variant', 'plugin']
+      }
+    ],
     'media-query-no-invalid': null,
     'function-no-unknown': null,
     'scss/function-no-unknown': null,
@@ -226,8 +232,17 @@ export default {
       ]
     ]
   },
-  ignoreFiles: ['**/*.js', '**/*.jsx', '**/*.tsx', '**/*.ts'],
+  ignoreFiles: ['**/*.js', '**/*.jsx', '**/*.tsx', '**/*.ts', 'src/components/ui/**'],
   overrides: [
+    {
+      // Tailwind v4 / shadcn 令牌文件：oklch 数值写法与 spec 一致，不作百分比/deg 改写。
+      files: ['src/assets/css/globals.css'],
+      rules: {
+        'lightness-notation': null,
+        'hue-degree-notation': null,
+        'at-rule-empty-line-before': null
+      }
+    },
     {
       files: ['*.vue', '**/*.vue', '*.html', '**/*.html'],
       extends: ['stylelint-config-recommended-vue', 'stylelint-config-html'],

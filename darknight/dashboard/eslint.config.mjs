@@ -11,7 +11,9 @@ export default tseslint.config(
       'node_modules/',
       'public/',
       'types/auto-imports.d.ts',
-      'types/auto-components.d.ts'
+      'types/auto-components.d.ts',
+      // shadcn-vue 生成的 vendored 组件，按上游风格维护。
+      'src/components/ui/**'
     ]
   },
 
