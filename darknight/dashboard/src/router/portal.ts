@@ -14,6 +14,17 @@ export const portalRoutes: RouteRecordRaw[] = [
     meta: { public: true, zone: 'auth', authType: 'user' }
   },
   {
+    path: '/portal/orders/:orderId',
+    name: 'portal-order-detail',
+    component: () => import('@/views/portal/Orders/Detail.vue'),
+    meta: {
+      title: 'portal.buy.orderDetailTitle',
+      zone: 'portal',
+      authType: 'user',
+      hideInMenu: true
+    }
+  },
+  {
     path: '/portal',
     component: () => import('@/layout/UserLayout/index.vue'),
     meta: { zone: 'portal', authType: 'user' },
@@ -78,16 +89,6 @@ export const portalRoutes: RouteRecordRaw[] = [
           icon: 'List',
           authType: 'user',
           group: 'portal.menu.finance'
-        }
-      },
-      {
-        path: 'orders/:orderId',
-        name: 'portal-order-detail',
-        component: () => import('@/views/portal/Orders/Detail.vue'),
-        meta: {
-          title: 'portal.buy.orderDetailTitle',
-          authType: 'user',
-          hideInMenu: true
         }
       },
       {
