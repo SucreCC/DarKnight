@@ -38,6 +38,10 @@ let destroyed = false
 let settled = false
 let errorNotified = false
 let renderedFields: { close: () => void }[] = []
+/** 丢弃主题切换与 paypalOrderId 并发触发的过期 loadScript / render。 */
+let fieldsGeneration = 0
+/** 支付进行中主题变了：这一轮结束后再重建，避免清空正在提交的卡号。 */
+let themeRebuildDeferred = false
 
 function reportError(message: string) {
   if (settled || destroyed || errorNotified) return
@@ -76,6 +80,8 @@ function teardownFields() {
 }
 
 async function initCardFields() {
+  themeRebuildDeferred = false
+  const generation = ++fieldsGeneration
   loading.value = true
   ready.value = false
   errorNotified = false
@@ -83,6 +89,7 @@ async function initCardFields() {
 
   try {
     const config = await fetchPayPalConfig()
+    if (generation !== fieldsGeneration || destroyed) return
     if (!config.enabled || !config.client_id) {
       reportError(t('portal.buy.paypalNotConfigured'))
       return
@@ -94,7 +101,7 @@ async function initCardFields() {
       currency: config.currency
     })
 
-    if (!paypal?.CardFields || destroyed) return
+    if (generation !== fieldsGeneration || destroyed || !paypal?.CardFields) return
 
     const fields = paypal.CardFields({
       style: readPayPalFieldStyle(),
@@ -118,6 +125,8 @@ async function initCardFields() {
       }
     })
 
+    if (generation !== fieldsGeneration || destroyed) return
+
     if (!fields.isEligible()) {
       reportError(t('portal.buy.cardNotEligible'))
       return
@@ -133,13 +142,13 @@ async function initCardFields() {
     renderedFields = instances
     await Promise.all(instances.map((field, i) => field.render(FIELD_SELECTORS[i])))
 
-    if (!destroyed) {
-      ready.value = true
-    }
+    if (generation !== fieldsGeneration || destroyed) return
+    ready.value = true
   } catch {
+    if (generation !== fieldsGeneration || destroyed) return
     reportError(t('portal.buy.paypalLoadFailed'))
   } finally {
-    if (!destroyed) {
+    if (generation === fieldsGeneration && !destroyed) {
       loading.value = false
     }
   }
@@ -172,10 +181,22 @@ watch(
 watch(
   () => theme.mode,
   () => {
-    if (!props.paypalOrderId || paying.value || settled || destroyed) return
+    if (!props.paypalOrderId || settled || destroyed) return
+    if (paying.value) {
+      themeRebuildDeferred = true
+      return
+    }
     initCardFields()
   }
 )
+
+watch(paying, (isPaying) => {
+  if (isPaying || settled || destroyed || !themeRebuildDeferred) return
+  themeRebuildDeferred = false
+  if (props.paypalOrderId) {
+    initCardFields()
+  }
+})
 
 onMounted(() => {
   if (props.paypalOrderId) {

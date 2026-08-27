@@ -10,10 +10,22 @@ import {
   AlertDialogTitle
 } from '@/components/ui/alert-dialog'
 import { confirmState, resolveConfirm } from '@/composables/useConfirm'
+
+function onOpenUpdate(open: boolean) {
+  if (!open) resolveConfirm(false)
+}
+
+function onConfirmClick(event: Event) {
+  // Capture + prevent so this runs before Reka DialogClose's bubble-phase
+  // onOpenChange(false). Otherwise overlay-close rejects pending first and
+  // the confirm click becomes a no-op. resolveConfirm already closes the dialog.
+  event.preventDefault()
+  resolveConfirm(true)
+}
 </script>
 
 <template>
-  <AlertDialog :open="confirmState.open" @update:open="(v: boolean) => !v && resolveConfirm(false)">
+  <AlertDialog :open="confirmState.open" @update:open="onOpenUpdate">
     <AlertDialogContent>
       <AlertDialogHeader>
         <AlertDialogTitle>{{ confirmState.options.title }}</AlertDialogTitle>
@@ -29,7 +41,7 @@ import { confirmState, resolveConfirm } from '@/composables/useConfirm'
               ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
               : ''
           "
-          @click="resolveConfirm(true)"
+          @click.capture.prevent="onConfirmClick"
         >
           {{ confirmState.options.confirmText }}
         </AlertDialogAction>

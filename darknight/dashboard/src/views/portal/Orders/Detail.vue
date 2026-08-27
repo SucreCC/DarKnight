@@ -64,6 +64,9 @@ async function ensurePaymentReady(refresh = false) {
     order.value = await preparePortalOrderPayment(orderId.value, { refresh })
   } catch (err) {
     paymentError.value = resolvePortalApiError(err, t)
+    if (order.value) {
+      order.value.paypal_order_id = null
+    }
   } finally {
     preparingPayment.value = false
   }
@@ -115,10 +118,14 @@ async function onPaymentError(message: string) {
 
 <template>
   <div class="min-h-screen bg-muted px-4 py-10">
-    <LoadingOverlay :loading="loading" class="mx-auto w-full max-w-5xl">
+    <LoadingOverlay
+      :loading="loading"
+      class="mx-auto w-full max-w-5xl"
+      :class="{ 'min-h-[60vh]': loading && !order }"
+    >
       <div
         v-if="order"
-        class="overflow-hidden rounded-2xl border border-border bg-card shadow-xl md:grid md:grid-cols-[minmax(0,380px)_minmax(0,1fr)]"
+        class="overflow-hidden rounded-2xl border border-border bg-card shadow-xl min-[960px]:grid min-[960px]:grid-cols-[minmax(0,380px)_minmax(0,1fr)]"
       >
         <OrderSummary
           :plan-id="order.plan_id"
@@ -165,6 +172,7 @@ async function onPaymentError(message: string) {
                 variant="ghost"
                 size="icon"
                 class="ms-auto text-muted-foreground"
+                :aria-label="t('portal.buy.closeOrder')"
                 @click="onCloseOrder"
               >
                 <X class="size-4" />
