@@ -3,6 +3,7 @@
   "activeUsers": "Пользователи",
   "apply": "Применить",
   "cancel": "Отмена",
+  "confirm": "Подтвердить",
   "core.configuration": "Конфигурация",
   "core.generalErrorMessage": "Что-то пошло не так, пожалуйста, проверьте конфигурацию",
   "core.logs": "Логи",

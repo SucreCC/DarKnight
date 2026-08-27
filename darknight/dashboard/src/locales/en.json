@@ -3,6 +3,7 @@
   "activeUsers": "active users",
   "apply": "Apply",
   "cancel": "Cancel",
+  "confirm": "Confirm",
   "core.configuration": "Configuration",
   "core.generalErrorMessage": "Something went wrong, please check the configuration",
   "core.logs": "Logs",

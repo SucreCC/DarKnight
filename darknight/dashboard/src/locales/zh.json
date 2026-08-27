@@ -3,6 +3,7 @@
   "activeUsers": "活跃用户",
   "apply": "应用",
   "cancel": "取消",
+  "confirm": "确定",
   "core.configuration": "配置",
   "core.generalErrorMessage": "配置有误, 请检查",
   "core.logs": "日志",

@@ -3,6 +3,7 @@
   "activeUsers": "کاربران فعال",
   "apply": "تایید",
   "cancel": "لغو",
+  "confirm": "تأیید",
   "core.configuration": "پیکربندی",
   "core.generalErrorMessage": "مشکلی پیش آمده، لطفا پیکربندی را بررسی کنید",
   "core.logs": "گزارش",
