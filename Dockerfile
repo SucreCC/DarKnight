@@ -1,7 +1,7 @@
 ARG PYTHON_VERSION=3.12
 
 # --- Build dashboard (Vue) ---
-FROM node:20-bookworm-slim AS dashboard
+FROM node:22-bookworm-slim AS dashboard
 WORKDIR /build
 
 COPY darknight/dashboard/package.json darknight/dashboard/package-lock.json ./
