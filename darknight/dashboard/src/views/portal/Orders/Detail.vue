@@ -2,10 +2,11 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { CircleCheckBig, X } from 'lucide-vue-next'
+import { CircleCheckBig, Loader2, X } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import OrderSummary from '../Buy/components/OrderSummary.vue'
 import PayPalCardForm from '../Buy/components/PayPalCardForm.vue'
+import { finishCheckoutBoot, isCheckoutBooting } from '../Buy/checkoutBoot'
 import {
   closePortalOrder,
   fetchPortalOrder,
@@ -19,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import LoadingOverlay from '@/components/LoadingOverlay/index.vue'
 import { getCycleLabelKey, getPlanMeta } from '../Buy/plans'
+import { preloadPayPalSdk } from '../Buy/paypalPreload'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -30,6 +32,8 @@ const order = ref<PortalOrder | null>(null)
 const loading = ref(true)
 const preparingPayment = ref(false)
 const paymentError = ref('')
+const paymentFormReady = ref(false)
+const paymentInitFailed = ref(false)
 
 const planName = computed(() =>
   order.value ? (getPlanMeta(order.value.plan_id)?.name ?? order.value.plan_id) : ''
@@ -37,9 +41,27 @@ const planName = computed(() =>
 const cycleLabel = computed(() => (order.value ? t(getCycleLabelKey(order.value.cycle_id)) : ''))
 const isPaid = computed(() => order.value?.status === 'paid')
 
+const showCheckoutBoot = computed(() => {
+  const o = order.value
+  if (!o || loading.value) return isCheckoutBooting.value
+  if (o.status !== 'pending') return false
+  if (paymentInitFailed.value) return false
+  if (paymentError.value && !o.paypal_order_id) return false
+  if (preparingPayment.value) return true
+  if (isCheckoutBooting.value) return true
+  if (o.paypal_order_id && !paymentFormReady.value) return true
+  return false
+})
+
+function resetPaymentBoot() {
+  paymentFormReady.value = false
+  paymentInitFailed.value = false
+}
+
 async function loadOrder() {
   loading.value = true
   paymentError.value = ''
+  resetPaymentBoot()
   try {
     order.value = await fetchPortalOrder(orderId.value)
     if (order.value.status === 'closed') {
@@ -60,6 +82,7 @@ async function loadOrder() {
 async function ensurePaymentReady(refresh = false) {
   preparingPayment.value = true
   paymentError.value = ''
+  resetPaymentBoot()
   try {
     order.value = await preparePortalOrderPayment(orderId.value, { refresh })
   } catch (err) {
@@ -73,6 +96,7 @@ async function ensurePaymentReady(refresh = false) {
 }
 
 watch(orderId, loadOrder, { immediate: true })
+preloadPayPalSdk()
 
 async function onCloseOrder() {
   try {
@@ -94,6 +118,11 @@ async function onCloseOrder() {
   }
 }
 
+function onPaymentFormReady() {
+  paymentFormReady.value = true
+  finishCheckoutBoot()
+}
+
 function onPaymentSuccess(paid: PortalOrder) {
   order.value = paid
   paymentError.value = ''
@@ -101,6 +130,13 @@ function onPaymentSuccess(paid: PortalOrder) {
 }
 
 async function onPaymentError(_message: string, refreshOrder = true) {
+  finishCheckoutBoot()
+  if (!refreshOrder) {
+    paymentInitFailed.value = true
+  } else {
+    resetPaymentBoot()
+  }
+
   if (!refreshOrder) return
 
   try {
@@ -115,6 +151,16 @@ async function onPaymentError(_message: string, refreshOrder = true) {
 </script>
 
 <template>
+  <Teleport to="body">
+    <div
+      v-if="showCheckoutBoot"
+      class="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-3 bg-muted"
+    >
+      <Loader2 class="size-8 animate-spin text-primary" />
+      <p class="text-sm text-muted-foreground">{{ t('portal.buy.paymentLoading') }}</p>
+    </div>
+  </Teleport>
+
   <div class="min-h-screen bg-muted px-4 py-10">
     <LoadingOverlay
       :loading="loading && !order"
@@ -124,6 +170,7 @@ async function onPaymentError(_message: string, refreshOrder = true) {
       <div
         v-if="order"
         class="overflow-hidden rounded-2xl border border-border bg-card shadow-xl min-[960px]:grid min-[960px]:grid-cols-[minmax(0,380px)_minmax(0,1fr)]"
+        :class="{ invisible: showCheckoutBoot && order.status === 'pending' }"
       >
         <OrderSummary
           :plan-id="order.plan_id"
@@ -177,28 +224,25 @@ async function onPaymentError(_message: string, refreshOrder = true) {
               </Button>
             </div>
 
-            <LoadingOverlay
-              v-if="order.status === 'pending'"
-              :loading="preparingPayment && !order.paypal_order_id"
-            >
-              <PayPalCardForm
-                v-if="order.paypal_order_id"
-                :order-id="order.id"
-                :paypal-order-id="order.paypal_order_id"
-                :amount="order.amount"
-                :currency="order.currency"
-                @success="onPaymentSuccess"
-                @error="onPaymentError"
-              />
-              <div v-else-if="paymentError" class="space-y-3">
-                <Alert variant="destructive">
-                  <AlertDescription>{{ paymentError }}</AlertDescription>
-                </Alert>
-                <Button variant="outline" @click="ensurePaymentReady(true)">
-                  {{ t('portal.buy.retryPayment') }}
-                </Button>
-              </div>
-            </LoadingOverlay>
+            <PayPalCardForm
+              v-if="order.status === 'pending' && order.paypal_order_id"
+              :order-id="order.id"
+              :paypal-order-id="order.paypal_order_id"
+              :amount="order.amount"
+              :currency="order.currency"
+              :boot-overlay="false"
+              @ready="onPaymentFormReady"
+              @success="onPaymentSuccess"
+              @error="onPaymentError"
+            />
+            <div v-else-if="order.status === 'pending' && paymentError" class="space-y-3">
+              <Alert variant="destructive">
+                <AlertDescription>{{ paymentError }}</AlertDescription>
+              </Alert>
+              <Button variant="outline" @click="ensurePaymentReady(true)">
+                {{ t('portal.buy.retryPayment') }}
+              </Button>
+            </div>
 
             <Alert v-else-if="order.status === 'failed'" variant="destructive">
               <AlertDescription>{{ t('portal.buy.paymentFailed') }}</AlertDescription>

@@ -301,6 +301,7 @@
   "portal.buy.cardCvv": "CVV",
   "portal.buy.payAmount": "Pay {amount}",
   "portal.buy.paying": "Processing payment…",
+  "portal.buy.paymentLoading": "Loading payment form…",
   "portal.buy.cardFormIncomplete": "Please complete the card number, name, expiry, and security code",
   "portal.buy.poweredByPayPal": "Secured by PayPal — no PayPal account needed",
   "portal.buy.paymentSuccess": "Payment successful. Your plan is active.",

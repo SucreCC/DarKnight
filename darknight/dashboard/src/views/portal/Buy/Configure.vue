@@ -2,9 +2,11 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { Check } from 'lucide-vue-next'
+import { Check, Loader2 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
-import { createPortalOrder } from '@/api/portal/orders'
+import { createPortalOrder, preparePortalOrderPayment } from '@/api/portal/orders'
+import { finishCheckoutBoot, startCheckoutBoot } from './checkoutBoot'
+import { preloadPayPalSdk } from './paypalPreload'
 import { resolvePortalApiError } from '@/utils/portalError'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
@@ -40,25 +42,39 @@ watch([planId, isLoading], () => {
   }
 })
 
+preloadPayPalSdk()
+
 async function placeOrder() {
   if (!plan.value) return
   submitting.value = true
+  startCheckoutBoot()
   try {
     const order = await createPortalOrder({
       plan_id: plan.value.id,
       cycle_id: selectedCycleId.value,
       coupon: coupon.value.trim() || undefined
     })
-    router.push({ name: 'portal-order-detail', params: { orderId: order.id } })
+    await preparePortalOrderPayment(order.id)
+    await router.push({ name: 'portal-order-detail', params: { orderId: order.id } })
   } catch (err) {
-    toast.error(resolvePortalApiError(err, t))
-  } finally {
     submitting.value = false
+    finishCheckoutBoot()
+    toast.error(resolvePortalApiError(err, t))
   }
 }
 </script>
 
 <template>
+  <Teleport to="body">
+    <div
+      v-if="submitting"
+      class="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-3 bg-muted"
+    >
+      <Loader2 class="size-8 animate-spin text-primary" />
+      <p class="text-sm text-muted-foreground">{{ t('portal.buy.paymentLoading') }}</p>
+    </div>
+  </Teleport>
+
   <Alert v-if="isError" variant="destructive">
     <AlertDescription>{{ t('portal.buy.plansLoadFailed') }}</AlertDescription>
   </Alert>
