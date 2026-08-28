@@ -28,6 +28,8 @@
   --paypal-field-placeholder: #a1a1aa;
   --paypal-field-focus: #6366f1;
   --paypal-field-invalid: #ef4444;
+  --paypal-field-bg: #f4f4f5;
+  --paypal-field-focus-ring: rgba(99, 102, 241, 0.3);
 }
 
 .dark {
@@ -54,6 +56,8 @@
   --paypal-field-placeholder: #71717a;
   --paypal-field-focus: #818cf8;
   --paypal-field-invalid: #f87171;
+  --paypal-field-bg: #27272a;
+  --paypal-field-focus-ring: rgba(129, 140, 248, 0.3);
 }
 
 @theme inline {

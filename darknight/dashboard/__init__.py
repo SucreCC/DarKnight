@@ -51,9 +51,8 @@ def register_dashboard(app: FastAPI, app_config: AppConfig) -> None:
     web = app_config.web
     dashboard_path = web.dashboard_path.rstrip("/") + "/"
 
-    if not build_dir.is_dir() or not (build_dir / "index.html").exists():
-        logger.info("Building dashboard (first run, may take a minute)...")
-        build_dashboard(web.vite_base_api)
+    logger.info("Building dashboard (may take a minute)...")
+    build_dashboard(web.vite_base_api)
 
     if dashboard_path != "/":
         legacy_path = "/dashboard/"

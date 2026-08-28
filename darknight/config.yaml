@@ -21,6 +21,7 @@ server:
 web:
   dashboard_path: /
   debug: false
+  # 每次启动都会执行 dashboard 的 npm run build，改前端后重启即可看到。
   # DEBUG=true 且未显式设置时，会自动变为 http://127.0.0.1:{port}/api/v1/
   # vite_base_api: /api/v1/
 

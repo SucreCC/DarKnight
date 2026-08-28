@@ -119,7 +119,7 @@ async function onPaymentError(message: string) {
 <template>
   <div class="min-h-screen bg-muted px-4 py-10">
     <LoadingOverlay
-      :loading="loading"
+      :loading="loading && !order"
       class="mx-auto w-full max-w-5xl"
       :class="{ 'min-h-[60vh]': loading && !order }"
     >
@@ -179,7 +179,10 @@ async function onPaymentError(message: string) {
               </Button>
             </div>
 
-            <LoadingOverlay v-if="order.status === 'pending'" :loading="preparingPayment">
+            <LoadingOverlay
+              v-if="order.status === 'pending'"
+              :loading="preparingPayment && !order.paypal_order_id"
+            >
               <PayPalCardForm
                 v-if="order.paypal_order_id"
                 :order-id="order.id"
