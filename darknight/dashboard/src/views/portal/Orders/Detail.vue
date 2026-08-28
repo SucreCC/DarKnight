@@ -100,11 +100,9 @@ function onPaymentSuccess(paid: PortalOrder) {
   toast.success(t('portal.buy.paymentSuccess'))
 }
 
-async function onPaymentError(message: string) {
-  toast.error(message)
+async function onPaymentError(_message: string, refreshOrder = true) {
+  if (!refreshOrder) return
 
-  // 失败的那次尝试已经把 PayPal 订单用掉了，必须换一个新的，
-  // 否则下一次提交是对着作废订单打，永远失败。
   try {
     order.value = await fetchPortalOrder(orderId.value)
   } catch {

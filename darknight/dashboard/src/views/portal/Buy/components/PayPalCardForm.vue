@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { toRef } from 'vue'
+import { Loader2 } from 'lucide-vue-next'
+import { ref, toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { toast } from 'vue-sonner'
 import { type PortalOrder } from '@/api/portal/orders'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import LoadingOverlay from '@/components/LoadingOverlay/index.vue'
@@ -17,22 +20,41 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   success: [order: PortalOrder]
-  error: [message: string]
+  error: [message: string, refreshOrder?: boolean]
 }>()
 
 const { t } = useI18n()
+const errorMessage = ref('')
+
+function handleError(message: string, refreshOrder?: boolean) {
+  errorMessage.value = message
+  toast.error(message)
+  emit('error', message, refreshOrder)
+}
 
 const { loading, paying, ready, submitPayment } = usePayPalCardFields({
   orderId: toRef(props, 'orderId'),
   paypalOrderId: toRef(props, 'paypalOrderId'),
-  onSuccess: (order) => emit('success', order),
-  onError: (message) => emit('error', message)
+  onSuccess: (order) => {
+    errorMessage.value = ''
+    emit('success', order)
+  },
+  onError: handleError
 })
+
+async function onPayClick() {
+  errorMessage.value = ''
+  await submitPayment()
+}
 </script>
 
 <template>
-  <LoadingOverlay :loading="loading">
+  <LoadingOverlay :loading="loading || paying">
     <div class="space-y-4">
+      <Alert v-if="errorMessage" variant="destructive">
+        <AlertDescription>{{ errorMessage }}</AlertDescription>
+      </Alert>
+
       <div class="space-y-2">
         <Label for="paypal-card-number">{{ t('portal.buy.cardNumber') }}</Label>
         <div class="paypal-field-wrap">
@@ -62,8 +84,13 @@ const { loading, paying, ready, submitPayment } = usePayPalCardFields({
         </div>
       </div>
 
-      <Button class="h-11 w-full text-base" :disabled="!ready || paying" @click="submitPayment">
-        {{ t('portal.buy.payAmount', { amount: currencySymbol(currency) + formatPrice(amount) }) }}
+      <Button class="h-11 w-full text-base" :disabled="!ready || paying" @click="onPayClick">
+        <Loader2 v-if="paying" class="me-2 size-4 animate-spin" />
+        {{
+          paying
+            ? t('portal.buy.paying')
+            : t('portal.buy.payAmount', { amount: currencySymbol(currency) + formatPrice(amount) })
+        }}
       </Button>
       <p class="text-center text-xs text-muted-foreground">
         {{ t('portal.buy.poweredByPayPal') }}
