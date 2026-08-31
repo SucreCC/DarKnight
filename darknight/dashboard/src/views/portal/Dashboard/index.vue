@@ -2,44 +2,48 @@
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import {
-  Connection,
-  HelpFilled,
-  Plus,
-  Reading,
-  ShoppingBag
-} from '@element-plus/icons-vue'
+import { BookOpen, LifeBuoy, Link2, Plus, ShoppingCart } from 'lucide-vue-next'
+import type { Component } from 'vue'
 import { fetchPortalMe } from '@/api/portal'
 import type { PortalUser } from '@/api/portal/types'
 import { formatBytes } from '@/utils/formatter'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 const { t } = useI18n()
 const router = useRouter()
 const user = ref<PortalUser | null>(null)
 
-const shortcuts = [
+const shortcuts: {
+  title: string
+  desc: string
+  icon: Component
+  route?: string
+  action?: string
+}[] = [
   {
     title: 'portal.dashboard.shortcutDocs',
     desc: 'portal.dashboard.shortcutDocsDesc',
-    icon: Reading,
+    icon: BookOpen,
     route: 'portal-docs'
   },
   {
     title: 'portal.dashboard.shortcutSubscribe',
     desc: 'portal.dashboard.shortcutSubscribeDesc',
-    icon: Connection,
+    icon: Link2,
     action: 'copySub'
   },
   {
     title: 'portal.dashboard.shortcutBuy',
     desc: 'portal.dashboard.shortcutBuyDesc',
-    icon: ShoppingBag,
+    icon: ShoppingCart,
     route: 'portal-buy'
   },
   {
     title: 'portal.dashboard.shortcutSupport',
     desc: 'portal.dashboard.shortcutSupportDesc',
-    icon: HelpFilled,
+    icon: LifeBuoy,
     route: 'portal-tickets'
   }
 ]
@@ -63,142 +67,64 @@ function onShortcut(item: (typeof shortcuts)[number]) {
 </script>
 
 <template>
-  <div class="portal-dashboard">
-    <el-alert
-      v-if="false"
-      type="warning"
-      :title="t('portal.dashboard.unpaidOrder')"
-      show-icon
-      class="portal-alert"
-    />
+  <div class="flex max-w-6xl flex-col gap-4">
+    <div class="rounded-xl border border-border bg-card p-5">
+      <Badge variant="secondary">{{ t('portal.dashboard.announcement') }}</Badge>
+      <p class="mt-3 text-sm text-foreground">{{ t('portal.dashboard.announcementText') }}</p>
+      <p class="mt-2 text-xs text-muted-foreground">2026-08-19</p>
+    </div>
 
-    <el-card class="announcement-card" shadow="never">
-      <el-tag type="warning" size="small">{{ t('portal.dashboard.announcement') }}</el-tag>
-      <p class="announcement-text">{{ t('portal.dashboard.announcementText') }}</p>
-      <span class="announcement-date">2026-08-19</span>
-    </el-card>
-
-    <div class="dashboard-grid">
-      <el-card shadow="never" class="subscription-card">
-        <template #header>
-          <span>{{ t('portal.dashboard.mySubscription') }}</span>
-        </template>
-        <div v-if="user?.subscription_url" class="subscription-info">
-          <p>
-            <strong>{{ t('portal.dashboard.status') }}:</strong>
+    <div class="grid gap-4 md:grid-cols-2">
+      <div class="rounded-xl border border-border bg-card p-5">
+        <h2 class="mb-4 text-base font-semibold text-foreground">
+          {{ t('portal.dashboard.mySubscription') }}
+        </h2>
+        <div v-if="user?.subscription_url" class="space-y-3">
+          <p class="text-sm text-foreground">
+            <span class="font-medium">{{ t('portal.dashboard.status') }}:</span>
             {{ user.status }}
           </p>
-          <p>
-            <strong>{{ t('portal.dashboard.traffic') }}:</strong>
+          <p class="text-sm text-foreground">
+            <span class="font-medium">{{ t('portal.dashboard.traffic') }}:</span>
             {{ formatBytes(user.used_traffic) }}
             <template v-if="user.data_limit"> / {{ formatBytes(user.data_limit) }}</template>
           </p>
-          <el-input :model-value="user.subscription_url" readonly>
-            <template #append>
-              <el-button @click="copySubscription">{{ t('portal.dashboard.copy') }}</el-button>
-            </template>
-          </el-input>
+          <div class="flex gap-2">
+            <Input :model-value="user.subscription_url" readonly class="flex-1" />
+            <Button type="button" variant="outline" @click="copySubscription">
+              {{ t('portal.dashboard.copy') }}
+            </Button>
+          </div>
         </div>
-        <div v-else class="empty-subscription" @click="router.push({ name: 'portal-buy' })">
-          <el-icon :size="48"><Plus /></el-icon>
+        <button
+          v-else
+          type="button"
+          class="flex min-h-44 w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border text-muted-foreground transition-colors hover:bg-muted/50"
+          @click="router.push({ name: 'portal-buy' })"
+        >
+          <Plus class="size-10" />
           <span>{{ t('portal.dashboard.buySubscription') }}</span>
-        </div>
-      </el-card>
+        </button>
+      </div>
 
-      <el-card shadow="never" class="shortcuts-card">
-        <template #header>
-          <span>{{ t('portal.dashboard.shortcuts') }}</span>
-        </template>
-        <div
+      <div class="rounded-xl border border-border bg-card p-5">
+        <h2 class="mb-2 text-base font-semibold text-foreground">
+          {{ t('portal.dashboard.shortcuts') }}
+        </h2>
+        <button
           v-for="item in shortcuts"
           :key="item.title"
-          class="shortcut-item"
+          type="button"
+          class="flex w-full items-center justify-between gap-3 border-b border-border py-3.5 text-start last:border-b-0"
           @click="onShortcut(item)"
         >
           <div>
-            <div class="shortcut-title">{{ t(item.title) }}</div>
-            <div class="shortcut-desc">{{ t(item.desc) }}</div>
+            <div class="font-semibold text-foreground">{{ t(item.title) }}</div>
+            <div class="mt-1 text-[13px] text-muted-foreground">{{ t(item.desc) }}</div>
           </div>
-          <el-icon :size="22"><component :is="item.icon" /></el-icon>
-        </div>
-      </el-card>
+          <component :is="item.icon" class="size-5 shrink-0 text-muted-foreground" />
+        </button>
+      </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.portal-dashboard {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.portal-alert {
-  margin-bottom: 0;
-}
-
-.announcement-card {
-  color: #fff;
-  background: linear-gradient(135deg, #2c3e50, #4ca1af);
-}
-
-.announcement-text {
-  margin: 12px 0 8px;
-  font-size: 15px;
-}
-
-.announcement-date {
-  font-size: 12px;
-  opacity: 0.8;
-}
-
-.dashboard-grid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: 1fr 1fr;
-}
-
-@media (width <= 960px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.empty-subscription {
-  display: flex;
-  min-height: 180px;
-  color: #909399;
-  cursor: pointer;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.shortcut-item {
-  display: flex;
-  padding: 14px 0;
-  cursor: pointer;
-  border-bottom: 1px solid #ebeef5;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.shortcut-item:last-child {
-  border-bottom: none;
-}
-
-.shortcut-title {
-  font-weight: 600;
-}
-
-.shortcut-desc {
-  margin-top: 4px;
-  font-size: 13px;
-  color: #909399;
-}
-
-.subscription-info p {
-  margin: 0 0 12px;
-}
-</style>
