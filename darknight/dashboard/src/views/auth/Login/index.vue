@@ -2,26 +2,24 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import type { FormInstance, FormRules } from 'element-plus'
 import { extractErrorDetail } from '@/config/axios'
 import { loginAccount } from '@/api/portal'
 import { removeToken, setToken } from '@/utils/auth'
 import { removeUserToken, setUserToken } from '@/utils/userAuth'
 import LanguageSwitch from '@/components/LanguageSwitch/index.vue'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 
-const formRef = ref<FormInstance>()
 const form = reactive({ username: '', password: '' })
+const fieldErrors = reactive({ username: '', password: '' })
 const loading = ref(false)
 const errorMsg = ref('')
-
-const rules: FormRules = {
-  username: [{ required: true, message: () => t('login.fieldRequired'), trigger: 'blur' }],
-  password: [{ required: true, message: () => t('login.fieldRequired'), trigger: 'blur' }]
-}
 
 onMounted(() => {
   removeToken()
@@ -43,10 +41,14 @@ function goRegister() {
   router.push({ name: 'portal-register' })
 }
 
+function validate(): boolean {
+  fieldErrors.username = form.username.trim() ? '' : t('login.fieldRequired')
+  fieldErrors.password = form.password ? '' : t('login.fieldRequired')
+  return !fieldErrors.username && !fieldErrors.password
+}
+
 async function onSubmit() {
-  if (!formRef.value) return
-  const valid = await formRef.value.validate().catch(() => false)
-  if (!valid) return
+  if (!validate()) return
 
   errorMsg.value = ''
   loading.value = true
@@ -71,123 +73,64 @@ async function onSubmit() {
 </script>
 
 <template>
-  <div class="login-page">
-    <div class="login-topbar">
+  <div class="flex min-h-screen flex-col bg-muted/40 p-6">
+    <div class="flex justify-end">
       <LanguageSwitch />
     </div>
-    <div class="login-center">
-      <el-card class="login-card">
-        <div class="login-logo-wrap">
-          <img src="/statics/logo.png" class="login-logo" alt="DarKnight VPN" />
+    <div class="flex flex-1 items-center justify-center">
+      <div class="w-full max-w-sm rounded-xl border border-border bg-card p-7 shadow-sm">
+        <div class="mb-3 flex justify-center">
+          <img
+            src="/statics/logo.png"
+            alt="DarKnight VPN"
+            class="size-28 rounded-2xl object-contain"
+          />
         </div>
-        <div class="login-heading">{{ t('login.loginYourAccount') }}</div>
-        <div class="login-sub">{{ t('login.welcomeBack') }}</div>
-        <el-form
-          ref="formRef"
-          :model="form"
-          :rules="rules"
-          label-position="top"
-          @submit.prevent="onSubmit"
-        >
-          <el-form-item prop="username">
-            <el-input
+        <h1 class="text-center text-lg font-semibold text-foreground">
+          {{ t('login.loginYourAccount') }}
+        </h1>
+        <p class="mb-5 text-center text-sm text-muted-foreground">
+          {{ t('login.welcomeBack') }}
+        </p>
+        <form class="flex flex-col gap-4" @submit.prevent="onSubmit">
+          <div class="space-y-2">
+            <Label for="login-username">{{ t('login.accountPlaceholder') }}</Label>
+            <Input
+              id="login-username"
               v-model="form.username"
               :placeholder="t('login.accountPlaceholder')"
-              size="large"
+              autocomplete="username"
             />
-          </el-form-item>
-          <el-form-item prop="password">
-            <el-input
+            <p v-if="fieldErrors.username" class="text-sm text-destructive">
+              {{ fieldErrors.username }}
+            </p>
+          </div>
+          <div class="space-y-2">
+            <Label for="login-password">{{ t('password') }}</Label>
+            <Input
+              id="login-password"
               v-model="form.password"
               type="password"
-              show-password
               :placeholder="t('password')"
-              size="large"
-              @keyup.enter="onSubmit"
+              autocomplete="current-password"
             />
-          </el-form-item>
-          <el-alert
-            v-if="errorMsg"
-            :title="errorMsg"
-            type="error"
-            :closable="false"
-            show-icon
-            style="margin-bottom: 12px"
-          />
-          <el-button
-            type="primary"
-            size="large"
-            :loading="loading"
-            style="width: 100%"
-            @click="onSubmit"
-          >
+            <p v-if="fieldErrors.password" class="text-sm text-destructive">
+              {{ fieldErrors.password }}
+            </p>
+          </div>
+          <Alert v-if="errorMsg" variant="destructive">
+            <AlertDescription>{{ errorMsg }}</AlertDescription>
+          </Alert>
+          <Button type="submit" class="h-11 w-full" :disabled="loading">
             {{ t('login') }}
-          </el-button>
-        </el-form>
-        <div class="login-portal-link">
-          <el-button link type="primary" @click="goRegister">{{ t('portal.goRegister') }}</el-button>
+          </Button>
+        </form>
+        <div class="mt-4 text-center">
+          <Button variant="link" class="h-auto p-0" @click="goRegister">
+            {{ t('portal.goRegister') }}
+          </Button>
         </div>
-      </el-card>
+      </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.login-page {
-  display: flex;
-  min-height: 100vh;
-  padding: 24px;
-  flex-direction: column;
-}
-
-.login-topbar {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.login-center {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-}
-
-.login-card {
-  width: 360px;
-}
-
-.login-logo-wrap {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 12px;
-}
-
-.login-logo {
-  width: 120px;
-  height: 120px;
-  object-fit: contain;
-  border-radius: 16px;
-}
-
-.login-heading {
-  font-size: 18px;
-  font-weight: 600;
-  text-align: center;
-}
-
-.login-sub {
-  margin-bottom: 20px;
-  color: var(--el-text-color-secondary);
-  text-align: center;
-}
-
-.login-portal-link {
-  margin-top: 16px;
-  text-align: center;
-}
-
-.login-portal-link .el-button {
-  font-size: 14px;
-  color: #20a397;
-}
-</style>
