@@ -21,7 +21,8 @@ server:
 web:
   dashboard_path: /
   debug: false
-  # 每次启动都会执行 dashboard 的 npm run build，改前端后重启即可看到。
+  # debug: true 时每次启动会 npm run build（需本机有 Node）。
+  # Docker / 生产：镜像构建时已打好 dist/，启动直接使用，无需 npm。
   # DEBUG=true 且未显式设置时，会自动变为 http://127.0.0.1:{port}/api/v1/
   # vite_base_api: /api/v1/
 
