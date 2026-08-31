@@ -9,15 +9,22 @@ import {
   type PortalOrder
 } from '@/api/portal/orders'
 import { currencySymbol, formatPrice, getCycleLabelKey, getPlanMeta } from '../Buy/plans'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const { t } = useI18n()
 const router = useRouter()
 
-const STATUS_TAG: Record<OrderStatus, 'warning' | 'success' | 'info' | 'danger'> = {
-  pending: 'warning',
-  paid: 'success',
-  closed: 'info',
-  failed: 'danger'
+const STATUS_VARIANT: Record<
+  OrderStatus,
+  'secondary' | 'default' | 'outline' | 'destructive'
+> = {
+  pending: 'secondary',
+  paid: 'default',
+  closed: 'outline',
+  failed: 'destructive'
 }
 
 const { data, isLoading, isError } = useQuery({
@@ -25,8 +32,6 @@ const { data, isLoading, isError } = useQuery({
   queryFn: fetchPortalOrders,
   refetchOnWindowFocus: false
 })
-
-const asOrder = (row: unknown) => row as PortalOrder
 
 function planName(order: PortalOrder) {
   return getPlanMeta(order.plan_id)?.name ?? order.plan_id
@@ -38,89 +43,82 @@ function openOrder(order: PortalOrder) {
 </script>
 
 <template>
-  <div class="orders-page">
-    <el-alert
-      v-if="isError"
-      type="error"
-      :title="t('portal.requestFailed')"
-      show-icon
-      :closable="false"
-      class="orders-alert"
-    />
+  <div class="max-w-6xl">
+    <Alert v-if="isError" variant="destructive" class="mb-4">
+      <AlertDescription>{{ t('portal.requestFailed') }}</AlertDescription>
+    </Alert>
 
-    <el-table v-loading="isLoading" :data="data ?? []" class="orders-table">
-      <el-table-column :label="t('portal.buy.orderNo')" min-width="200">
-        <template #default="{ row }">
-          <el-link type="primary" @click="openOrder(asOrder(row))">{{ row.id }}</el-link>
-        </template>
-      </el-table-column>
-      <el-table-column :label="t('portal.buy.productInfo')" min-width="140">
-        <template #default="{ row }">
-          {{ planName(asOrder(row)) }} · {{ t(getCycleLabelKey(row.cycle_id)) }}
-        </template>
-      </el-table-column>
-      <el-table-column :label="t('portal.buy.orderTotal')" min-width="120">
-        <template #default="{ row }">
-          {{ currencySymbol(row.currency) }}{{ formatPrice(row.amount) }}
-        </template>
-      </el-table-column>
-      <el-table-column :label="t('portal.orders.status')" min-width="110">
-        <template #default="{ row }">
-          <el-tag :type="STATUS_TAG[row.status as OrderStatus]" disable-transitions>
-            {{ t(`portal.orders.status.${row.status}`) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column :label="t('portal.buy.createdAt')" min-width="180">
-        <template #default="{ row }">{{ formatOrderTime(row.created_at) }}</template>
-      </el-table-column>
-      <el-table-column :label="t('portal.orders.action')" width="120" align="right">
-        <template #default="{ row }">
-          <el-button
-            v-if="row.status === 'pending'"
-            size="small"
-            type="primary"
-            @click="openOrder(asOrder(row))"
+    <div class="overflow-x-auto rounded-xl border border-border bg-card">
+      <div v-if="isLoading" class="space-y-3 p-4">
+        <Skeleton v-for="i in 5" :key="i" class="h-10 w-full" />
+      </div>
+
+      <div
+        v-else-if="!(data ?? []).length"
+        class="flex flex-col items-center gap-3 py-10 text-muted-foreground"
+      >
+        <p>{{ t('portal.orders.empty') }}</p>
+        <Button @click="router.push({ name: 'portal-buy' })">
+          {{ t('portal.buy.subscribeNow') }}
+        </Button>
+      </div>
+
+      <table v-else class="w-full min-w-[720px] text-sm">
+        <thead class="border-b border-border text-muted-foreground">
+          <tr>
+            <th class="px-4 py-3 text-start font-medium">{{ t('portal.buy.orderNo') }}</th>
+            <th class="px-4 py-3 text-start font-medium">{{ t('portal.buy.productInfo') }}</th>
+            <th class="px-4 py-3 text-start font-medium">{{ t('portal.buy.orderTotal') }}</th>
+            <th class="px-4 py-3 text-start font-medium">{{ t('portal.orders.status') }}</th>
+            <th class="px-4 py-3 text-start font-medium">{{ t('portal.buy.createdAt') }}</th>
+            <th class="px-4 py-3 text-end font-medium">{{ t('portal.orders.action') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="row in data"
+            :key="row.id"
+            class="border-b border-border last:border-0"
           >
-            {{ t('portal.buy.checkout') }}
-          </el-button>
-          <el-button v-else size="small" @click="openOrder(asOrder(row))">
-            {{ t('portal.orders.detail') }}
-          </el-button>
-        </template>
-      </el-table-column>
-      <template #empty>
-        <div class="orders-empty">
-          <p>{{ t('portal.orders.empty') }}</p>
-          <el-button type="primary" @click="router.push({ name: 'portal-buy' })">
-            {{ t('portal.buy.subscribeNow') }}
-          </el-button>
-        </div>
-      </template>
-    </el-table>
+            <td class="px-4 py-3">
+              <button
+                type="button"
+                class="text-primary hover:underline"
+                @click="openOrder(row)"
+              >
+                {{ row.id }}
+              </button>
+            </td>
+            <td class="px-4 py-3">
+              {{ planName(row) }} · {{ t(getCycleLabelKey(row.cycle_id)) }}
+            </td>
+            <td class="px-4 py-3">
+              {{ currencySymbol(row.currency) }}{{ formatPrice(row.amount) }}
+            </td>
+            <td class="px-4 py-3">
+              <Badge :variant="STATUS_VARIANT[row.status]">
+                {{ t(`portal.orders.status.${row.status}`) }}
+              </Badge>
+            </td>
+            <td class="px-4 py-3 text-muted-foreground">
+              {{ formatOrderTime(row.created_at) }}
+            </td>
+            <td class="px-4 py-3 text-end">
+              <Button
+                size="sm"
+                :variant="row.status === 'pending' ? 'default' : 'outline'"
+                @click="openOrder(row)"
+              >
+                {{
+                  row.status === 'pending'
+                    ? t('portal.buy.checkout')
+                    : t('portal.orders.detail')
+                }}
+              </Button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
-
-<style scoped>
-.orders-page {
-  max-width: 1200px;
-}
-
-.orders-alert {
-  margin-bottom: 16px;
-}
-
-.orders-table {
-  background: #fff;
-  border-radius: 8px;
-}
-
-.orders-empty {
-  padding: 24px 0;
-  color: #909399;
-}
-
-.orders-empty p {
-  margin: 0 0 12px;
-}
-</style>
