@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog'
+import { cn } from '@/lib/utils'
 
 const props = defineProps<{
   modelValue: boolean
@@ -26,11 +34,6 @@ const passThreshold = 8
 const maxOffset = computed(() => Math.max(0, trackWidth.value - handleSize))
 const progressWidth = computed(() => offsetX.value + handleSize / 2)
 
-const visible = computed({
-  get: () => props.modelValue,
-  set: (v: boolean) => emit('update:modelValue', v)
-})
-
 function measure() {
   if (trackRef.value) {
     trackWidth.value = trackRef.value.clientWidth
@@ -51,6 +54,8 @@ watch(
       reset()
       await nextTick()
       measure()
+    } else {
+      reset()
     }
   }
 )
@@ -77,16 +82,12 @@ function onPointerUp() {
     verified.value = true
     window.setTimeout(() => {
       emit('success')
-      visible.value = false
+      emit('update:modelValue', false)
     }, 280)
   } else {
     failed.value = true
     offsetX.value = 0
   }
-}
-
-function onClosed() {
-  reset()
 }
 
 onBeforeUnmount(() => {
@@ -95,120 +96,67 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <el-dialog
-    v-model="visible"
-    :title="t('portal.slideCaptchaTitle')"
-    width="360px"
-    align-center
-    :close-on-click-modal="false"
-    @closed="onClosed"
+  <AlertDialog
+    :open="props.modelValue"
+    @update:open="(v: boolean) => emit('update:modelValue', v)"
   >
-    <p class="hint">{{ t('portal.slideCaptchaHint') }}</p>
-    <div
-      ref="trackRef"
-      class="track"
-      :class="{ ok: verified, bad: failed }"
-    >
-      <div class="progress" :style="{ width: `${progressWidth}px` }" />
-      <span class="track-text">
-        {{
-          verified
-            ? t('portal.slideCaptchaOk')
-            : failed
-              ? t('portal.slideCaptchaRetry')
-              : t('portal.slideCaptchaDrag')
-        }}
-      </span>
-      <button
-        type="button"
-        class="handle"
-        :style="{ transform: `translateX(${offsetX}px)` }"
-        :aria-label="t('portal.slideCaptchaDrag')"
-        @pointerdown="onPointerDown"
-        @pointermove="onPointerMove"
-        @pointerup="onPointerUp"
-        @pointercancel="onPointerUp"
+    <AlertDialogContent class="sm:max-w-sm">
+      <AlertDialogHeader>
+        <AlertDialogTitle>{{ t('portal.slideCaptchaTitle') }}</AlertDialogTitle>
+        <AlertDialogDescription>{{ t('portal.slideCaptchaHint') }}</AlertDialogDescription>
+      </AlertDialogHeader>
+
+      <div
+        ref="trackRef"
+        :class="
+          cn(
+            'relative h-11 touch-none overflow-hidden rounded-md bg-muted select-none',
+            verified && 'bg-primary/10',
+            failed && 'track-bad'
+          )
+        "
       >
-        ››
-      </button>
-    </div>
-  </el-dialog>
+        <div
+          class="pointer-events-none absolute inset-y-0 start-0 bg-primary/20"
+          :class="verified ? 'bg-primary/35' : undefined"
+          :style="{ width: `${progressWidth}px` }"
+        />
+        <span
+          :class="
+            cn(
+              'pointer-events-none absolute inset-0 flex items-center justify-center text-[13px] text-muted-foreground',
+              verified && 'text-primary'
+            )
+          "
+        >
+          {{
+            verified
+              ? t('portal.slideCaptchaOk')
+              : failed
+                ? t('portal.slideCaptchaRetry')
+                : t('portal.slideCaptchaDrag')
+          }}
+        </span>
+        <button
+          type="button"
+          class="absolute start-0 top-0 z-[1] flex size-11 cursor-grab items-center justify-center rounded-md border border-border bg-card text-lg font-bold text-primary shadow-sm active:cursor-grabbing"
+          :style="{ transform: `translateX(${offsetX}px)` }"
+          :aria-label="t('portal.slideCaptchaDrag')"
+          @pointerdown="onPointerDown"
+          @pointermove="onPointerMove"
+          @pointerup="onPointerUp"
+          @pointercancel="onPointerUp"
+        >
+          ››
+        </button>
+      </div>
+    </AlertDialogContent>
+  </AlertDialog>
 </template>
 
 <style scoped>
-.hint {
-  margin: 0 0 16px;
-  color: #606266;
-  font-size: 14px;
-}
-
-.track {
-  position: relative;
-  height: 44px;
-  overflow: hidden;
-  user-select: none;
-  background: #f2f3f5;
-  border-radius: 6px;
-  touch-action: none;
-}
-
-.track.ok {
-  background: #e8f8f5;
-}
-
-.track.bad {
+.track-bad {
   animation: shake 0.28s ease;
-}
-
-.progress {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  background: rgb(32 163 151 / 22%);
-  pointer-events: none;
-}
-
-.track.ok .progress {
-  background: rgb(32 163 151 / 35%);
-}
-
-.track-text {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #909399;
-  font-size: 13px;
-  pointer-events: none;
-}
-
-.track.ok .track-text {
-  color: #20a397;
-}
-
-.handle {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 1;
-  width: 44px;
-  height: 44px;
-  margin: 0;
-  padding: 0;
-  color: #20a397;
-  font-size: 18px;
-  font-weight: 700;
-  cursor: grab;
-  background: #fff;
-  border: 1px solid #dcdfe6;
-  border-radius: 6px;
-  box-shadow: 0 1px 4px rgb(0 0 0 / 8%);
-}
-
-.handle:active {
-  cursor: grabbing;
 }
 
 @keyframes shake {
@@ -216,9 +164,11 @@ onBeforeUnmount(() => {
   100% {
     transform: translateX(0);
   }
+
   25% {
     transform: translateX(-4px);
   }
+
   75% {
     transform: translateX(4px);
   }
