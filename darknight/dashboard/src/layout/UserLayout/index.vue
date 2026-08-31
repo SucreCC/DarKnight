@@ -1,22 +1,51 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import * as ElIcons from '@element-plus/icons-vue'
-import type { Component } from 'vue'
+import {
+  Activity,
+  ChevronDown,
+  FileText,
+  Gauge,
+  Headset,
+  List,
+  Monitor,
+  ShoppingCart,
+  User,
+  UserPlus
+} from 'lucide-vue-next'
 import { portalRoutes } from '@/router/portal'
 import { fetchPortalMe } from '@/api/portal'
 import type { PortalUser } from '@/api/portal/types'
 import { removeUserToken } from '@/utils/userAuth'
 import LanguageSwitch from '@/components/LanguageSwitch/index.vue'
 import { getDocById } from '@/views/portal/Docs/articles'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
+import { cn } from '@/lib/utils'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
 const user = ref<PortalUser | null>(null)
-const iconMap = ElIcons as unknown as Record<string, Component>
+
+const iconMap: Record<string, Component> = {
+  Gauge,
+  FileText,
+  ShoppingCart,
+  Monitor,
+  List,
+  UserPlus,
+  User,
+  Headset,
+  Activity
+}
 
 const menuChildren = computed(() => {
   const portalRoot = portalRoutes.find((r) => r.path === '/portal')
@@ -88,8 +117,8 @@ onMounted(async () => {
   }
 })
 
-function onSelect(index: string) {
-  router.push({ name: index })
+function onSelect(name: string) {
+  router.push({ name })
 }
 
 function logout() {
@@ -99,121 +128,68 @@ function logout() {
 </script>
 
 <template>
-  <div class="user-layout">
-    <header class="user-header">
-      <div class="user-header-left">{{ t('portal.siteName') }}</div>
-      <div class="user-header-center">{{ pageTitle }}</div>
-      <div class="user-header-right">
+  <div class="flex min-h-screen flex-col bg-muted/40">
+    <header
+      class="grid h-14 shrink-0 items-center border-b border-border bg-card px-5 grid-cols-[1fr_auto_1fr]"
+    >
+      <div class="text-lg font-bold tracking-tight text-foreground">
+        {{ t('portal.siteName') }}
+      </div>
+      <div class="text-sm font-medium text-muted-foreground">{{ pageTitle }}</div>
+      <div class="flex items-center justify-end gap-3">
         <LanguageSwitch />
-        <el-dropdown>
-          <span class="user-profile">
-            <el-icon><component :is="iconMap.User" /></el-icon>
-            {{ user?.email || '...' }}
-            <el-icon><component :is="iconMap.ArrowDown" /></el-icon>
-          </span>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item @click="logout">{{ t('portal.logout') }}</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button variant="ghost" class="gap-1.5 text-foreground">
+              <User class="size-4" />
+              <span class="max-w-40 truncate">{{ user?.email || '...' }}</span>
+              <ChevronDown class="size-4 opacity-60" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" class="min-w-40">
+            <DropdownMenuItem @click="logout">{{ t('portal.logout') }}</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
-    <div class="user-body">
-      <aside class="user-aside">
-        <el-menu :default-active="activeMenu" @select="onSelect">
+
+    <div class="flex min-h-0 flex-1 overflow-hidden">
+      <aside class="w-[220px] shrink-0 overflow-auto border-e border-border bg-card">
+        <nav class="flex flex-col gap-1 p-3">
           <template v-for="(group, gi) in menuGroups" :key="gi">
-            <div v-if="group.label" class="menu-group-label">{{ t(group.label) }}</div>
-            <el-menu-item
+            <div
+              v-if="group.label"
+              class="px-3 pb-1 pt-3 text-xs font-medium text-muted-foreground"
+            >
+              {{ t(group.label) }}
+            </div>
+            <button
               v-for="item in group.items"
               :key="item.name as string"
-              :index="item.name as string"
+              type="button"
+              :class="
+                cn(
+                  'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors',
+                  activeMenu === item.name
+                    ? 'bg-primary/10 font-medium text-primary'
+                    : 'text-foreground hover:bg-muted'
+                )
+              "
+              @click="onSelect(item.name as string)"
             >
-              <el-icon>
-                <component :is="iconMap[item.meta!.icon as string]" />
-              </el-icon>
+              <component
+                :is="iconMap[item.meta!.icon as string] || User"
+                class="size-4 shrink-0"
+              />
               <span>{{ t(item.meta!.title as string) }}</span>
-            </el-menu-item>
+            </button>
           </template>
-        </el-menu>
+        </nav>
       </aside>
-      <main class="user-main">
+
+      <main class="flex-1 overflow-auto p-6">
         <router-view />
       </main>
     </div>
   </div>
 </template>
-
-<style scoped>
-.user-layout {
-  display: flex;
-  min-height: 100vh;
-  flex-direction: column;
-  background: #eef2f6;
-}
-
-.user-header {
-  display: grid;
-  height: 56px;
-  padding: 0 20px;
-  color: #fff;
-  background: #20a397;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-}
-
-.user-header-left {
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.user-header-center {
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.user-header-right {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 16px;
-}
-
-.user-profile {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #fff;
-  cursor: pointer;
-}
-
-.user-body {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-}
-
-.user-aside {
-  width: 220px;
-  overflow: auto;
-  background: #f5f7fa;
-  border-right: 1px solid #e4e7ed;
-}
-
-.menu-group-label {
-  padding: 16px 20px 8px;
-  font-size: 12px;
-  color: #909399;
-}
-
-.user-main {
-  flex: 1;
-  padding: 20px;
-  overflow: auto;
-}
-
-.el-menu {
-  border-right: none;
-  background: transparent;
-}
-</style>

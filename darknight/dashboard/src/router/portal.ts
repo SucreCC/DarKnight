@@ -34,13 +34,13 @@ export const portalRoutes: RouteRecordRaw[] = [
         path: 'dashboard',
         name: 'portal-dashboard',
         component: () => import('@/views/portal/Dashboard/index.vue'),
-        meta: { title: 'portal.menu.dashboard', icon: 'Odometer', authType: 'user' }
+        meta: { title: 'portal.menu.dashboard', icon: 'Gauge', authType: 'user' }
       },
       {
         path: 'docs',
         name: 'portal-docs',
         component: () => import('@/views/portal/Docs/index.vue'),
-        meta: { title: 'portal.menu.docs', icon: 'Document', authType: 'user' }
+        meta: { title: 'portal.menu.docs', icon: 'FileText', authType: 'user' }
       },
       {
         path: 'docs/:id',
@@ -97,7 +97,7 @@ export const portalRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/portal/Placeholder/index.vue'),
         meta: {
           title: 'portal.menu.invite',
-          icon: 'UserFilled',
+          icon: 'UserPlus',
           authType: 'user',
           group: 'portal.menu.finance'
         }
@@ -119,7 +119,7 @@ export const portalRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/portal/Placeholder/index.vue'),
         meta: {
           title: 'portal.menu.tickets',
-          icon: 'Service',
+          icon: 'Headset',
           authType: 'user',
           group: 'portal.menu.user'
         }
@@ -130,7 +130,7 @@ export const portalRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/portal/Placeholder/index.vue'),
         meta: {
           title: 'portal.menu.traffic',
-          icon: 'DataLine',
+          icon: 'Activity',
           authType: 'user',
           group: 'portal.menu.user'
         }
