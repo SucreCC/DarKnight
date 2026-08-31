@@ -2,7 +2,8 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { Search } from '@element-plus/icons-vue'
+import { Search } from 'lucide-vue-next'
+import { Input } from '@/components/ui/input'
 import { DOC_ARTICLES, DOC_CATEGORIES } from './articles'
 
 const { t } = useI18n()
@@ -27,74 +28,30 @@ function openArticle(id: string) {
 </script>
 
 <template>
-  <el-card shadow="never" class="docs-page">
-    <el-input v-model="keyword" :placeholder="t('portal.docs.search')" clearable size="large">
-      <template #suffix>
-        <el-icon><Search /></el-icon>
-      </template>
-    </el-input>
+  <div class="max-w-3xl rounded-xl border border-border bg-card p-6">
+    <div class="relative mb-6">
+      <Search
+        class="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+      />
+      <Input v-model="keyword" class="ps-9" :placeholder="t('portal.docs.search')" />
+    </div>
 
-    <el-empty v-if="!groups.length" :description="t('portal.docs.emptySearch')" />
+    <p v-if="!groups.length" class="py-10 text-center text-sm text-muted-foreground">
+      {{ t('portal.docs.emptySearch') }}
+    </p>
 
-    <section v-for="group in groups" :key="group.id" class="docs-group">
-      <h2 class="docs-group-title">{{ t(group.titleKey) }}</h2>
+    <section v-for="group in groups" :key="group.id" class="mb-6 last:mb-0">
+      <h2 class="mb-2 text-base font-semibold text-foreground">{{ t(group.titleKey) }}</h2>
       <button
         v-for="article in group.articles"
         :key="article.id"
         type="button"
-        class="docs-item"
+        class="flex w-full items-center justify-between gap-4 rounded-lg px-3 py-3 text-start hover:bg-muted"
         @click="openArticle(article.id)"
       >
-        <span class="docs-item-title">{{ t(article.titleKey) }}</span>
-        <span class="docs-item-date">{{ article.updatedAt }}</span>
+        <span class="font-medium text-foreground">{{ t(article.titleKey) }}</span>
+        <span class="shrink-0 text-sm text-muted-foreground">{{ article.updatedAt }}</span>
       </button>
     </section>
-  </el-card>
+  </div>
 </template>
-
-<style scoped>
-.docs-page {
-  min-height: 360px;
-}
-
-.docs-group {
-  margin-top: 28px;
-}
-
-.docs-group-title {
-  margin: 0 0 4px;
-  font-size: 16px;
-  font-weight: 700;
-  color: #303133;
-}
-
-.docs-item {
-  display: flex;
-  width: 100%;
-  padding: 14px 0;
-  font-size: 14px;
-  color: #303133;
-  text-align: left;
-  cursor: pointer;
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid #ebeef5;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-}
-
-.docs-item:hover .docs-item-title {
-  color: #20a397;
-}
-
-.docs-item-title {
-  line-height: 1.5;
-}
-
-.docs-item-date {
-  flex-shrink: 0;
-  font-size: 13px;
-  color: #909399;
-}
-</style>

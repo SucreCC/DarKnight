@@ -2,10 +2,11 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { Download } from '@element-plus/icons-vue'
+import { toast } from 'vue-sonner'
+import { Download } from 'lucide-vue-next'
 import { fetchPortalMe } from '@/api/portal'
 import type { PortalUser } from '@/api/portal/types'
+import { Button } from '@/components/ui/button'
 import { getDocById } from './articles'
 
 const { t } = useI18n()
@@ -30,7 +31,7 @@ onMounted(async () => {
 function requireSubscription(): string | null {
   const url = user.value?.subscription_url
   if (!url) {
-    ElMessage.warning(t('portal.docs.needSubscription'))
+    toast.warning(t('portal.docs.needSubscription'))
     return null
   }
   return url
@@ -40,7 +41,7 @@ async function copySubscription() {
   const url = requireSubscription()
   if (!url) return
   await navigator.clipboard.writeText(url)
-  ElMessage.success(t('portal.docs.copySuccess'))
+  toast.success(t('portal.docs.copySuccess'))
 }
 
 function importClash() {
@@ -57,138 +58,73 @@ function importShadowrocket() {
 </script>
 
 <template>
-  <el-card v-if="article" shadow="never" class="doc-detail">
+  <div
+    v-if="article"
+    class="max-w-3xl rounded-xl border border-border bg-card p-6 leading-relaxed text-foreground"
+  >
     <template v-for="(block, index) in article.blocks" :key="index">
-      <p v-if="block.type === 'lead'" class="doc-lead">{{ t(block.textKey) }}</p>
+      <p v-if="block.type === 'lead'" class="mb-7 text-base font-bold">
+        {{ t(block.textKey) }}
+      </p>
 
-      <div v-else-if="block.type === 'step'" class="doc-step">
-        <h3 class="doc-step-title">{{ t(block.titleKey) }}</h3>
-        <p v-if="block.bodyKey" class="doc-step-body">{{ t(block.bodyKey) }}</p>
+      <div v-else-if="block.type === 'step'" class="mb-3 mt-7">
+        <h3 class="mb-2.5 text-base font-bold">{{ t(block.titleKey) }}</h3>
+        <p v-if="block.bodyKey" class="mb-3 text-sm text-muted-foreground">
+          {{ t(block.bodyKey) }}
+        </p>
       </div>
 
-      <p v-else-if="block.type === 'paragraph'" class="doc-paragraph">{{ t(block.textKey) }}</p>
+      <p
+        v-else-if="block.type === 'paragraph'"
+        class="mb-3 text-sm text-muted-foreground"
+      >
+        {{ t(block.textKey) }}
+      </p>
 
-      <div v-else-if="block.type === 'downloads'" class="doc-downloads">
+      <div v-else-if="block.type === 'downloads'" class="my-3 flex flex-col gap-3">
         <a
           v-for="item in block.items"
           :key="item.url"
-          class="doc-download"
+          class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           :href="item.url"
           target="_blank"
           rel="noopener noreferrer"
         >
-          <el-icon :size="18"><Download /></el-icon>
+          <Download class="size-4" />
           {{ t(item.labelKey) }}
         </a>
       </div>
 
-      <div v-else-if="block.type === 'note'" class="doc-note">{{ t(block.textKey) }}</div>
+      <div
+        v-else-if="block.type === 'note'"
+        class="my-3 rounded-lg bg-muted p-4 text-[13px] text-muted-foreground"
+      >
+        {{ t(block.textKey) }}
+      </div>
 
-      <el-button
+      <Button
         v-else-if="block.type === 'copySub'"
-        class="doc-action"
-        type="primary"
+        class="mt-2 mb-1 w-full"
         @click="copySubscription"
       >
         {{ t('portal.docs.copySub') }}
-      </el-button>
+      </Button>
 
-      <el-button
+      <Button
         v-else-if="block.type === 'importClash'"
-        class="doc-action"
-        type="primary"
+        class="mt-2 mb-1 w-full"
         @click="importClash"
       >
         {{ t('portal.docs.importClash') }}
-      </el-button>
+      </Button>
 
-      <el-button
+      <Button
         v-else-if="block.type === 'importShadowrocket'"
-        class="doc-action"
-        type="primary"
+        class="mt-2 mb-1 w-full"
         @click="importShadowrocket"
       >
         {{ t('portal.docs.importShadowrocket') }}
-      </el-button>
+      </Button>
     </template>
-  </el-card>
+  </div>
 </template>
-
-<style scoped>
-.doc-detail {
-  max-width: 880px;
-  line-height: 1.7;
-  color: #303133;
-}
-
-.doc-lead {
-  margin: 0 0 28px;
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.doc-step {
-  margin: 28px 0 12px;
-}
-
-.doc-step-title {
-  margin: 0 0 10px;
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.doc-step-body,
-.doc-paragraph {
-  margin: 0 0 12px;
-  font-size: 14px;
-  color: #606266;
-}
-
-.doc-downloads {
-  display: flex;
-  margin: 12px 0;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.doc-download {
-  display: flex;
-  padding: 14px 16px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
-  text-decoration: none;
-  background: #20a397;
-  border-radius: 6px;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.doc-download:hover {
-  color: #fff;
-  background: #1b8c82;
-}
-
-.doc-note {
-  padding: 14px 16px;
-  margin: 12px 0 8px;
-  font-size: 13px;
-  color: #606266;
-  background: #f4f6f8;
-  border-radius: 6px;
-}
-
-.doc-action {
-  width: 100%;
-  margin: 8px 0 4px;
-  background: #20a397;
-  border-color: #20a397;
-}
-
-.doc-action:hover,
-.doc-action:focus {
-  background: #1b8c82;
-  border-color: #1b8c82;
-}
-</style>
