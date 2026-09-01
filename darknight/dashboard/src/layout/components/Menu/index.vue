@@ -1,18 +1,17 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import * as ElIcons from '@element-plus/icons-vue'
-import type { Component } from 'vue'
+import { Link, Network, Settings, Users } from 'lucide-vue-next'
 import { routes } from '@/router'
 import { useAppStore } from '@/store/modules/app'
+import { cn } from '@/lib/utils'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const appStore = useAppStore()
 
-/** 菜单项来自路由表 children，避免菜单与路由两处维护 */
 const menuItems = computed(() => {
   const root = routes.find((r) => r.path === '/admin')
   return (root?.children ?? []).filter((child) => child.meta?.title)
@@ -20,55 +19,48 @@ const menuItems = computed(() => {
 
 const activeMenu = computed(() => route.name as string)
 
-const iconMap = ElIcons as unknown as Record<string, Component>
+const iconMap: Record<string, Component> = {
+  Users,
+  Network,
+  Link,
+  Settings
+}
 
-function onSelect(index: string) {
-  router.push({ name: index })
+function onSelect(name: string) {
+  router.push({ name })
 }
 </script>
 
 <template>
-  <div class="layout-brand">
-    <img src="/statics/logo.png" class="brand-logo" alt="DarKnight" />
-    <span v-show="!appStore.collapsed" class="brand-text">DarKnight</span>
+  <div
+    class="flex h-15 shrink-0 items-center gap-2.5 overflow-hidden whitespace-nowrap px-5"
+    :class="appStore.collapsed ? 'justify-center px-2' : undefined"
+  >
+    <img src="/statics/logo.png" class="size-8 shrink-0 rounded-lg object-contain" alt="DarKnight" />
+    <span v-show="!appStore.collapsed" class="text-xl font-bold text-foreground">DarKnight</span>
   </div>
-  <el-menu :default-active="activeMenu" :collapse="appStore.collapsed" @select="onSelect">
-    <el-menu-item v-for="item in menuItems" :key="item.name as string" :index="item.name as string">
-      <el-icon>
-        <component :is="iconMap[item.meta!.icon as string]" />
-      </el-icon>
-      <template #title>{{ t(item.meta!.title as string) }}</template>
-    </el-menu-item>
-  </el-menu>
+  <nav class="flex flex-1 flex-col gap-1 overflow-auto p-2">
+    <button
+      v-for="item in menuItems"
+      :key="item.name as string"
+      type="button"
+      :title="t(item.meta!.title as string)"
+      :class="
+        cn(
+          'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors',
+          appStore.collapsed && 'justify-center px-2',
+          activeMenu === item.name
+            ? 'bg-primary/10 font-medium text-primary'
+            : 'text-foreground hover:bg-muted'
+        )
+      "
+      @click="onSelect(item.name as string)"
+    >
+      <component
+        :is="iconMap[item.meta!.icon as string] || Users"
+        class="size-4 shrink-0"
+      />
+      <span v-show="!appStore.collapsed">{{ t(item.meta!.title as string) }}</span>
+    </button>
+  </nav>
 </template>
-
-<style scoped>
-.layout-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: 60px;
-  padding: 0 20px;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.brand-logo {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-  border-radius: 8px;
-  flex-shrink: 0;
-}
-
-.brand-text {
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.el-menu {
-  width: 100%;
-  border-right: none;
-  flex: 1;
-}
-</style>

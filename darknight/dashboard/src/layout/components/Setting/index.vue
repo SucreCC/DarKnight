@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/store/modules/app'
 import { useThemeStore } from '@/store/modules/theme'
+import { Switch } from '@/components/ui/switch'
 
 const visible = defineModel<boolean>({ required: true })
 
@@ -17,33 +18,38 @@ const isDark = computed({
 </script>
 
 <template>
-  <el-drawer v-model="visible" :title="t('layout.settings')" size="300px">
-    <div class="setting-item">
-      <span>{{ t('layout.darkMode') }}</span>
-      <el-switch v-model="isDark" />
-    </div>
-    <div class="setting-item">
-      <span>{{ t('layout.breadcrumb') }}</span>
-      <el-switch
-        :model-value="appStore.showBreadcrumb"
-        @update:model-value="appStore.setShowBreadcrumb($event as boolean)"
-      />
-    </div>
-    <div class="setting-item">
-      <span>{{ t('layout.tagsView') }}</span>
-      <el-switch
-        :model-value="appStore.showTagsView"
-        @update:model-value="appStore.setShowTagsView($event as boolean)"
-      />
-    </div>
-  </el-drawer>
+  <div v-if="visible" class="fixed inset-0 z-50">
+    <button
+      type="button"
+      class="absolute inset-0 bg-black/50"
+      aria-label="close"
+      @click="visible = false"
+    />
+    <aside
+      class="absolute inset-y-0 end-0 flex w-[300px] flex-col border-s border-border bg-card p-5 shadow-lg"
+    >
+      <h2 class="mb-2 text-base font-semibold text-foreground">{{ t('layout.settings') }}</h2>
+      <div class="flex items-center justify-between py-3">
+        <span class="text-sm text-foreground">{{ t('layout.darkMode') }}</span>
+        <Switch
+          :checked="isDark"
+          @update:checked="(v: boolean) => (isDark = v)"
+        />
+      </div>
+      <div class="flex items-center justify-between py-3">
+        <span class="text-sm text-foreground">{{ t('layout.breadcrumb') }}</span>
+        <Switch
+          :checked="appStore.showBreadcrumb"
+          @update:checked="(v: boolean) => appStore.setShowBreadcrumb(v)"
+        />
+      </div>
+      <div class="flex items-center justify-between py-3">
+        <span class="text-sm text-foreground">{{ t('layout.tagsView') }}</span>
+        <Switch
+          :checked="appStore.showTagsView"
+          @update:checked="(v: boolean) => appStore.setShowTagsView(v)"
+        />
+      </div>
+    </aside>
+  </div>
 </template>
-
-<style scoped>
-.setting-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 0;
-}
-</style>

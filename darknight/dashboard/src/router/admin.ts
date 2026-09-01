@@ -11,13 +11,13 @@ export const adminRoutes: RouteRecordRaw[] = [
         path: 'users',
         name: 'users',
         component: () => import('@/views/admin/User/index.vue'),
-        meta: { title: 'users', icon: 'User', authType: 'admin' }
+        meta: { title: 'users', icon: 'Users', authType: 'admin' }
       },
       {
         path: 'nodes',
         name: 'nodes',
         component: () => import('@/views/admin/Node/index.vue'),
-        meta: { title: 'header.nodeSettings', icon: 'Connection', authType: 'admin' }
+        meta: { title: 'header.nodeSettings', icon: 'Network', authType: 'admin' }
       },
       {
         path: 'hosts',
@@ -29,7 +29,7 @@ export const adminRoutes: RouteRecordRaw[] = [
         path: 'settings',
         name: 'settings',
         component: () => import('@/views/admin/Setting/index.vue'),
-        meta: { title: 'core.title', icon: 'Setting', authType: 'admin' }
+        meta: { title: 'core.title', icon: 'Settings', authType: 'admin' }
       }
     ]
   },

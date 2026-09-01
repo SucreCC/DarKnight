@@ -2,8 +2,9 @@
 import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import type { TabPaneName } from 'element-plus'
+import { X } from 'lucide-vue-next'
 import { useTagsViewStore } from '@/store/modules/tagsView'
+import { cn } from '@/lib/utils'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -19,16 +20,14 @@ watch(
 )
 
 const activeName = computed(() => route.name as string)
-
-/** 只剩一个标签时不允许关闭，否则会退化成空白页 */
 const closable = computed(() => tagsViewStore.visitedViews.length > 1)
 
-function onTabClick(name: TabPaneName) {
-  if (name !== route.name) router.push({ name: name as string })
+function onTabClick(name: string) {
+  if (name !== route.name) router.push({ name })
 }
 
-function onTabRemove(name: TabPaneName) {
-  const next = tagsViewStore.removeView(name as string)
+function onTabRemove(name: string) {
+  const next = tagsViewStore.removeView(name)
   if (name === route.name && next) {
     router.push({ name: next.name })
   }
@@ -36,54 +35,32 @@ function onTabRemove(name: TabPaneName) {
 </script>
 
 <template>
-  <el-tabs
-    :model-value="activeName"
-    type="card"
-    class="tags-view"
-    @tab-change="onTabClick"
-    @tab-remove="onTabRemove"
-  >
-    <el-tab-pane
+  <div class="flex gap-2 overflow-x-auto border-b border-border bg-card px-3 py-2">
+    <button
       v-for="view in tagsViewStore.visitedViews"
       :key="view.name"
-      :name="view.name"
-      :label="t(view.title)"
-      :closable="closable"
-    />
-  </el-tabs>
+      type="button"
+      :class="
+        cn(
+          'inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs transition-colors',
+          activeName === view.name
+            ? 'border-primary/30 bg-primary/10 text-primary'
+            : 'border-border text-muted-foreground hover:bg-muted'
+        )
+      "
+      @click="onTabClick(view.name)"
+    >
+      <span>{{ t(view.title) }}</span>
+      <span
+        v-if="closable"
+        role="button"
+        tabindex="0"
+        class="inline-flex rounded-sm p-0.5 hover:bg-muted"
+        @click.stop="onTabRemove(view.name)"
+        @keydown.enter.stop="onTabRemove(view.name)"
+      >
+        <X class="size-3" />
+      </span>
+    </button>
+  </div>
 </template>
-
-<style scoped>
-.tags-view {
-  padding: 6px 16px 0;
-  border-bottom: 1px solid var(--el-border-color);
-  flex-shrink: 0;
-  background: var(--el-bg-color);
-}
-
-.tags-view :deep(.el-tabs__header) {
-  margin: 0;
-}
-
-.tags-view :deep(.el-tabs__content) {
-  display: none;
-}
-
-.tags-view :deep(.el-tabs__nav) {
-  border: none;
-}
-
-.tags-view :deep(.el-tabs__item) {
-  height: 30px;
-  margin-right: 6px;
-  line-height: 30px;
-  border: 1px solid var(--el-border-color);
-  border-radius: 4px;
-}
-
-.tags-view :deep(.el-tabs__item.is-active) {
-  color: #fff;
-  background-color: var(--el-color-primary);
-  border-color: var(--el-color-primary);
-}
-</style>

@@ -12,7 +12,12 @@ const items = computed(() =>
 </script>
 
 <template>
-  <el-breadcrumb separator="/">
-    <el-breadcrumb-item v-for="item in items" :key="item">{{ item }}</el-breadcrumb-item>
-  </el-breadcrumb>
+  <nav class="flex items-center gap-2 text-sm text-muted-foreground">
+    <template v-for="(item, index) in items" :key="item">
+      <span v-if="index > 0">/</span>
+      <span :class="index === items.length - 1 ? 'font-medium text-foreground' : undefined">
+        {{ item }}
+      </span>
+    </template>
+  </nav>
 </template>
