@@ -6,6 +6,7 @@ from darknight.api.v1.routers import (
     core,
     node,
     order,
+    product,
     subscription,
     system,
     user,
@@ -25,6 +26,7 @@ for router in (
     user_template.router,
     user.router,
     order.router,
+    product.router,
 ):
     api_router.include_router(router)
 
