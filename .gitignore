@@ -166,3 +166,5 @@ cython_debug/
 
 # Xray-core runtime binaries (download from upstream releases)
 /xray/
+
+.worktrees/
