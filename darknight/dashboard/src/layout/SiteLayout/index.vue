@@ -2,101 +2,46 @@
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import LanguageSwitch from '@/components/LanguageSwitch/index.vue'
+import { Button } from '@/components/ui/button'
 
 const { t } = useI18n()
 const router = useRouter()
 </script>
 
 <template>
-  <div class="site-layout">
-    <header class="site-header">
-      <div class="site-header-inner">
-        <button type="button" class="site-brand" @click="router.push({ name: 'site-home' })">
-          <img src="/statics/logo.png" class="site-logo" alt="DarKnight" />
+  <div class="flex min-h-screen flex-col bg-muted/40">
+    <header class="border-b border-border bg-card">
+      <div class="mx-auto flex h-16 max-w-5xl items-center justify-between gap-6 px-6">
+        <button
+          type="button"
+          class="inline-flex items-center gap-2.5 border-0 bg-transparent p-0 text-xl font-bold text-foreground"
+          @click="router.push({ name: 'site-home' })"
+        >
+          <img
+            src="/statics/logo.png"
+            alt="DarKnight"
+            class="size-8 rounded-lg object-contain"
+          />
           <span>DarKnight</span>
         </button>
-        <div class="site-actions">
+        <div class="flex items-center gap-3">
           <LanguageSwitch />
-          <el-button @click="router.push({ name: 'login' })">{{ t('portal.login') }}</el-button>
-          <el-button type="primary" @click="router.push({ name: 'portal-register' })">
+          <Button variant="outline" @click="router.push({ name: 'login' })">
+            {{ t('portal.login') }}
+          </Button>
+          <Button @click="router.push({ name: 'portal-register' })">
             {{ t('portal.register') }}
-          </el-button>
+          </Button>
         </div>
       </div>
     </header>
-    <main class="site-main">
+    <main class="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
       <router-view />
     </main>
-    <footer class="site-footer">
-      <span>{{ t('site.footer') }}</span>
+    <footer
+      class="border-t border-border bg-card px-6 py-5 text-center text-[13px] text-muted-foreground"
+    >
+      {{ t('site.footer') }}
     </footer>
   </div>
 </template>
-
-<style scoped>
-.site-layout {
-  display: flex;
-  min-height: 100vh;
-  flex-direction: column;
-  background: #f5f7fa;
-}
-
-.site-header {
-  background: #fff;
-  border-bottom: 1px solid #e4e7ed;
-}
-
-.site-header-inner {
-  display: flex;
-  max-width: 1120px;
-  height: 64px;
-  padding: 0 24px;
-  margin: 0 auto;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.site-brand {
-  display: inline-flex;
-  padding: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: #303133;
-  cursor: pointer;
-  background: transparent;
-  border: none;
-  align-items: center;
-  gap: 10px;
-}
-
-.site-logo {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-  border-radius: 8px;
-}
-
-.site-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.site-main {
-  flex: 1;
-  width: 100%;
-  max-width: 1120px;
-  padding: 32px 24px;
-  margin: 0 auto;
-}
-
-.site-footer {
-  padding: 20px 24px;
-  font-size: 13px;
-  color: #909399;
-  text-align: center;
-  border-top: 1px solid #e4e7ed;
-  background: #fff;
-}
-</style>
