@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 
 from darknight.db.models import PortalOrder, PortalOrderStatus, User, UserUsageResetLogs
 from darknight.models.user import UserStatus
-from darknight.services.payment.plans import get_plan_cycle
 
 
 def try_mark_order_paid(db: Session, order: PortalOrder) -> bool:
