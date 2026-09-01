@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { BookOpen, LifeBuoy, Link2, Plus, ShoppingCart } from 'lucide-vue-next'
@@ -48,6 +48,38 @@ const shortcuts: {
   }
 ]
 
+function isUnlimited(limit: number | null | undefined): boolean {
+  return limit === null || limit === undefined || limit === 0
+}
+
+const hasSubscription = computed(() => !!user.value?.subscription_url)
+
+const trafficPercent = computed(() => {
+  const u = user.value
+  if (!u || isUnlimited(u.data_limit)) return 0
+  return Math.min(100, Math.round((u.used_traffic / (u.data_limit as number)) * 100))
+})
+
+const trafficRemaining = computed(() => {
+  const u = user.value
+  if (!u || isUnlimited(u.data_limit)) return 0
+  return Math.max(0, (u.data_limit as number) - u.used_traffic)
+})
+
+const trafficBarClass = computed(() => {
+  const p = trafficPercent.value
+  if (p >= 100) return 'bg-destructive'
+  if (p >= 80) return 'bg-amber-500'
+  return 'bg-primary'
+})
+
+const trafficPercentClass = computed(() => {
+  const p = trafficPercent.value
+  if (p >= 100) return 'text-destructive'
+  if (p >= 80) return 'text-amber-600 dark:text-amber-400'
+  return 'text-muted-foreground'
+})
+
 onMounted(async () => {
   user.value = await fetchPortalMe()
 })
@@ -74,6 +106,54 @@ function onShortcut(item: (typeof shortcuts)[number]) {
       <p class="mt-2 text-xs text-muted-foreground">2026-08-19</p>
     </div>
 
+    <div
+      v-if="hasSubscription && user"
+      class="rounded-xl border border-border bg-card p-5"
+    >
+      <div class="mb-3 flex items-center justify-between gap-3">
+        <h2 class="text-base font-semibold text-foreground">
+          {{ t('portal.dashboard.trafficUsage') }}
+        </h2>
+        <template v-if="isUnlimited(user.data_limit)">
+          <Badge variant="secondary">{{ t('portal.dashboard.trafficUnlimited') }}</Badge>
+        </template>
+        <span v-else :class="['text-sm font-medium', trafficPercentClass]">
+          {{ trafficPercent }}%
+        </span>
+      </div>
+
+      <template v-if="!isUnlimited(user.data_limit)">
+        <div class="mb-3 h-2.5 overflow-hidden rounded-full bg-muted">
+          <div
+            class="h-full rounded-full transition-[width] duration-300"
+            :class="trafficBarClass"
+            :style="{ width: `${trafficPercent}%` }"
+          />
+        </div>
+        <div class="flex items-center justify-between gap-3 text-sm text-muted-foreground">
+          <span>
+            {{
+              t('portal.dashboard.trafficUsedOf', {
+                used: formatBytes(user.used_traffic),
+                total: formatBytes(user.data_limit as number)
+              })
+            }}
+          </span>
+          <span>
+            {{
+              t('portal.dashboard.trafficRemaining', {
+                remaining: formatBytes(trafficRemaining)
+              })
+            }}
+          </span>
+        </div>
+      </template>
+
+      <p v-else class="text-sm text-muted-foreground">
+        {{ formatBytes(user.used_traffic) }}
+      </p>
+    </div>
+
     <div class="grid gap-4 md:grid-cols-2">
       <div class="rounded-xl border border-border bg-card p-5">
         <h2 class="mb-4 text-base font-semibold text-foreground">
@@ -83,11 +163,6 @@ function onShortcut(item: (typeof shortcuts)[number]) {
           <p class="text-sm text-foreground">
             <span class="font-medium">{{ t('portal.dashboard.status') }}:</span>
             {{ user.status }}
-          </p>
-          <p class="text-sm text-foreground">
-            <span class="font-medium">{{ t('portal.dashboard.traffic') }}:</span>
-            {{ formatBytes(user.used_traffic) }}
-            <template v-if="user.data_limit"> / {{ formatBytes(user.data_limit) }}</template>
           </p>
           <div class="flex gap-2">
             <Input :model-value="user.subscription_url" readonly class="flex-1" />
