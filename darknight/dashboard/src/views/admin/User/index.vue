@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { toast } from 'vue-sonner'
 import { useUsersStore } from '@/store/modules/user'
 import { useUsersQuery, useUserMutations } from '@/api/user'
 import type { User } from '@/api/user/types'
+import { useConfirm } from '@/composables/useConfirm'
 import UserFilters from './components/UserFilters.vue'
 import UsersTable from './components/UsersTable.vue'
 import UserDialog from './components/UserDialog.vue'
@@ -12,6 +13,7 @@ import QRCodeDialog from './components/QRCodeDialog.vue'
 import Statistics from './components/Statistics.vue'
 
 const { t } = useI18n()
+const { confirm } = useConfirm()
 const store = useUsersStore()
 const { data, isFetching } = useUsersQuery(() => ({ ...store.filters }))
 const { deleteUser, resetUserUsage, resetAllUsage, revokeSub } = useUserMutations()
@@ -28,6 +30,10 @@ const dialogVisible = computed({
 })
 const qrVisible = ref(false)
 
+function stripHtml(text: string) {
+  return text.replace(/<\/?b>/gi, '')
+}
+
 function onEdit(user: User) {
   store.openEdit(user)
 }
@@ -37,73 +43,80 @@ function onQr(user: User) {
 }
 
 async function onRemove(user: User) {
-  await ElMessageBox.confirm(
-    t('deleteUser.prompt', { username: user.username }),
-    t('deleteUser.title'),
-    { type: 'warning', dangerouslyUseHTMLString: true }
-  ).catch(() => 'cancel')
+  try {
+    await confirm({
+      title: t('deleteUser.title'),
+      description: stripHtml(t('deleteUser.prompt', { username: user.username })),
+      destructive: true
+    })
+  } catch {
+    return
+  }
   try {
     await deleteUser.mutateAsync(user.username)
-    ElMessage.success(t('deleteUser.deleteSuccess', { username: user.username }))
+    toast.success(t('deleteUser.deleteSuccess', { username: user.username }))
   } catch {
     /* handled globally */
   }
 }
 
 async function onResetUsage(user: User) {
-  const confirmed = await ElMessageBox.confirm(
-    t('resetUserUsage.prompt', { username: user.username }),
-    t('resetUserUsage.title'),
-    { type: 'warning', dangerouslyUseHTMLString: true }
-  )
-    .then(() => true)
-    .catch(() => false)
-  if (!confirmed) return
+  try {
+    await confirm({
+      title: t('resetUserUsage.title'),
+      description: stripHtml(t('resetUserUsage.prompt', { username: user.username })),
+      destructive: true
+    })
+  } catch {
+    return
+  }
   try {
     await resetUserUsage.mutateAsync(user.username)
-    ElMessage.success(t('resetUserUsage.success', { username: user.username }))
+    toast.success(t('resetUserUsage.success', { username: user.username }))
   } catch {
-    ElMessage.error(t('resetUserUsage.error'))
+    toast.error(t('resetUserUsage.error'))
   }
 }
 
 async function onRevokeSub(user: User) {
-  const confirmed = await ElMessageBox.confirm(
-    t('revokeUserSub.prompt', { username: user.username }),
-    t('revokeUserSub.title'),
-    { type: 'warning', dangerouslyUseHTMLString: true }
-  )
-    .then(() => true)
-    .catch(() => false)
-  if (!confirmed) return
+  try {
+    await confirm({
+      title: t('revokeUserSub.title'),
+      description: stripHtml(t('revokeUserSub.prompt', { username: user.username })),
+      destructive: true
+    })
+  } catch {
+    return
+  }
   try {
     await revokeSub.mutateAsync(user.username)
-    ElMessage.success(t('revokeUserSub.success', { username: user.username }))
+    toast.success(t('revokeUserSub.success', { username: user.username }))
   } catch {
-    ElMessage.error(t('revokeUserSub.error'))
+    toast.error(t('revokeUserSub.error'))
   }
 }
 
 async function onResetAll() {
-  const confirmed = await ElMessageBox.confirm(
-    t('resetAllUsage.prompt'),
-    t('resetAllUsage.title'),
-    { type: 'warning' }
-  )
-    .then(() => true)
-    .catch(() => false)
-  if (!confirmed) return
+  try {
+    await confirm({
+      title: t('resetAllUsage.title'),
+      description: t('resetAllUsage.prompt'),
+      destructive: true
+    })
+  } catch {
+    return
+  }
   try {
     await resetAllUsage.mutateAsync()
-    ElMessage.success(t('resetAllUsage.success'))
+    toast.success(t('resetAllUsage.success'))
   } catch {
-    ElMessage.error(t('resetAllUsage.error'))
+    toast.error(t('resetAllUsage.error'))
   }
 }
 </script>
 
 <template>
-  <div class="dk-page">
+  <div class="flex max-w-6xl flex-col gap-4">
     <Statistics />
 
     <UserFilters

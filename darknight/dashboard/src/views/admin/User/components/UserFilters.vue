@@ -2,8 +2,17 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDebounceFn } from '@vueuse/core'
-import { Plus, Search } from '@element-plus/icons-vue'
+import { Plus, Search } from 'lucide-vue-next'
 import type { UserFilters } from '@/api/user/types'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 
 const props = defineProps<{
   search: string
@@ -19,11 +28,15 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
+/** Reka Select disallows empty-string item values. */
+const ALL_STATUS = '__all__'
+
 const searchInput = ref(props.search)
 const emitSearch = useDebounceFn((v: string) => emit('update:search', v), 300)
-function onSearch(v: string) {
-  searchInput.value = v
-  emitSearch(v)
+function onSearch(v: string | number) {
+  const text = String(v)
+  searchInput.value = text
+  emitSearch(text)
 }
 
 const statusOptions: {
@@ -36,40 +49,49 @@ const statusOptions: {
   { label: 'status.limited', value: 'limited' },
   { label: 'status.expired', value: 'expired' }
 ]
+
+function statusSelectValue() {
+  return props.status ?? ALL_STATUS
+}
+
+function onStatusChange(value: string | number | bigint | Record<string, unknown> | null) {
+  const v = String(value ?? ALL_STATUS)
+  emit('update:status', (v === ALL_STATUS ? undefined : v) as UserFilters['status'])
+}
 </script>
 
 <template>
-  <div class="dk-toolbar">
-    <el-input
-      :model-value="searchInput"
-      :placeholder="t('search')"
-      :prefix-icon="Search"
-      clearable
-      style="width: 260px"
-      @update:model-value="onSearch"
-    />
-    <el-select
-      :model-value="status ?? ''"
-      :placeholder="t('usersTable.status')"
-      clearable
-      style="width: 160px"
-      @update:model-value="
-        (v: string) => emit('update:status', (v || undefined) as UserFilters['status'])
-      "
-    >
-      <el-option
-        v-for="opt in statusOptions"
-        :key="opt.value"
-        :label="t(opt.label)"
-        :value="opt.value"
+  <div class="flex flex-wrap items-center gap-3">
+    <div class="relative w-full max-w-[260px]">
+      <Search class="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+      <Input
+        :model-value="searchInput"
+        :placeholder="t('search')"
+        class="ps-9"
+        @update:model-value="onSearch"
       />
-    </el-select>
+    </div>
 
-    <div class="dk-spacer" />
+    <Select :model-value="statusSelectValue()" @update:model-value="onStatusChange">
+      <SelectTrigger class="w-[160px]">
+        <SelectValue :placeholder="t('usersTable.status')" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem :value="ALL_STATUS">{{ t('usersTable.status') }}</SelectItem>
+        <SelectItem v-for="opt in statusOptions" :key="opt.value" :value="opt.value">
+          {{ t(opt.label) }}
+        </SelectItem>
+      </SelectContent>
+    </Select>
 
-    <el-button @click="emit('resetAll')">{{ t('resetAllUsage') }}</el-button>
-    <el-button type="primary" :icon="Plus" @click="emit('create')">
+    <div class="flex-1" />
+
+    <Button variant="outline" type="button" @click="emit('resetAll')">
+      {{ t('resetAllUsage') }}
+    </Button>
+    <Button type="button" @click="emit('create')">
+      <Plus class="size-4" />
       {{ t('createUser') }}
-    </el-button>
+    </Button>
   </div>
 </template>

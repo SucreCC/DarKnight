@@ -95,3 +95,17 @@ export const STATUS_TAG_TYPE: Record<
   limited: 'danger',
   error: 'danger'
 }
+
+export const STATUS_BADGE: Record<
+  UserStatus,
+  'default' | 'secondary' | 'outline' | 'destructive'
+> = {
+  active: 'default',
+  connected: 'default',
+  disabled: 'secondary',
+  expired: 'outline',
+  on_hold: 'secondary',
+  connecting: 'outline',
+  limited: 'destructive',
+  error: 'destructive'
+}

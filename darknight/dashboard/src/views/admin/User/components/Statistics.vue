@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useQuery } from '@tanstack/vue-query'
-import { User, DataLine, Cpu } from '@element-plus/icons-vue'
+import { Activity, Cpu, Users } from 'lucide-vue-next'
 import { http } from '@/config/axios'
 import { formatBytes, numberWithCommas } from '@/utils/formatter'
 
@@ -21,82 +22,61 @@ const { data } = useQuery({
   queryFn: () => http<SystemStats>('/system'),
   refetchInterval: 5000
 })
+
+const memPercent = computed(() => {
+  if (!data.value || !data.value.mem_total) return 0
+  return Math.min((data.value.mem_used / data.value.mem_total) * 100, 100)
+})
 </script>
 
 <template>
-  <el-row :gutter="16" class="stats">
-    <el-col :xs="24" :sm="8">
-      <el-card shadow="never">
-        <div class="stat">
-          <el-icon class="stat-icon" :size="26"><User /></el-icon>
-          <div>
-            <div class="stat-title">{{ t('activeUsers') }}</div>
-            <div class="stat-value">
-              {{ data ? numberWithCommas(data.users_active) : '-' }}
-              <span class="stat-sub">/ {{ data ? numberWithCommas(data.total_user) : '-' }}</span>
-            </div>
+  <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="rounded-xl border border-border bg-card p-4">
+      <div class="flex items-start gap-3">
+        <Users class="mt-0.5 size-5 text-primary" />
+        <div class="min-w-0 flex-1">
+          <p class="text-sm text-muted-foreground">{{ t('activeUsers') }}</p>
+          <p class="text-2xl font-bold text-foreground">
+            {{ data ? numberWithCommas(data.users_active) : '-' }}
+            <span class="text-sm font-normal text-muted-foreground">
+              / {{ data ? numberWithCommas(data.total_user) : '-' }}
+            </span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="rounded-xl border border-border bg-card p-4">
+      <div class="flex items-start gap-3">
+        <Activity class="mt-0.5 size-5 text-primary" />
+        <div class="min-w-0 flex-1">
+          <p class="text-sm text-muted-foreground">{{ t('dataUsage') }}</p>
+          <p class="text-2xl font-bold text-foreground">
+            {{ data ? formatBytes(data.incoming_bandwidth + data.outgoing_bandwidth) : '-' }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="rounded-xl border border-border bg-card p-4">
+      <div class="flex items-start gap-3">
+        <Cpu class="mt-0.5 size-5 text-primary" />
+        <div class="min-w-0 flex-1">
+          <p class="text-sm text-muted-foreground">{{ t('memoryUsage') }}</p>
+          <p class="text-2xl font-bold text-foreground">
+            {{ data ? formatBytes(data.mem_used, 1) : '-' }}
+            <span class="text-sm font-normal text-muted-foreground">
+              / {{ data ? formatBytes(data.mem_total, 1) : '-' }}
+            </span>
+          </p>
+          <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+            <div
+              class="h-full rounded-full bg-primary transition-[width]"
+              :style="{ width: `${memPercent}%` }"
+            />
           </div>
         </div>
-      </el-card>
-    </el-col>
-    <el-col :xs="24" :sm="8">
-      <el-card shadow="never">
-        <div class="stat">
-          <el-icon class="stat-icon" :size="26"><DataLine /></el-icon>
-          <div>
-            <div class="stat-title">{{ t('dataUsage') }}</div>
-            <div class="stat-value">
-              {{ data ? formatBytes(data.incoming_bandwidth + data.outgoing_bandwidth) : '-' }}
-            </div>
-          </div>
-        </div>
-      </el-card>
-    </el-col>
-    <el-col :xs="24" :sm="8">
-      <el-card shadow="never">
-        <div class="stat">
-          <el-icon class="stat-icon" :size="26"><Cpu /></el-icon>
-          <div>
-            <div class="stat-title">{{ t('memoryUsage') }}</div>
-            <div class="stat-value">
-              {{ data ? formatBytes(data.mem_used, 1) : '-' }}
-              <span class="stat-sub">/ {{ data ? formatBytes(data.mem_total, 1) : '-' }}</span>
-            </div>
-          </div>
-        </div>
-      </el-card>
-    </el-col>
-  </el-row>
+      </div>
+    </div>
+  </div>
 </template>
-
-<style scoped>
-.stats {
-  margin-bottom: 16px;
-}
-
-.stat {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.stat-icon {
-  color: var(--el-color-primary);
-}
-
-.stat-title {
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: 600;
-}
-
-.stat-sub {
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--el-text-color-secondary);
-}
-</style>

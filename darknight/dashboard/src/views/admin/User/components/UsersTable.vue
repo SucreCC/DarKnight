@@ -1,12 +1,22 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { CopyDocument, Delete, Edit, Link as LinkIcon, Pointer } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { toast } from 'vue-sonner'
+import { ChevronLeft, ChevronRight, Copy, Link, Pencil, QrCode, Trash2 } from 'lucide-vue-next'
 import { formatBytes } from '@/utils/formatter'
 import { relativeExpiry, isExpired } from '@/utils/formatTime'
-import { STATUS_TAG_TYPE, type User } from '@/api/user/types'
+import { STATUS_BADGE, type User } from '@/api/user/types'
 import { absoluteSubscriptionUrl, isUnlimited, usagePercentage, usageTotalText } from '../helpers'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 
 const props = defineProps<{
   users: User[]
@@ -26,9 +36,11 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const asUser = (row: unknown): User => row as User
+const PAGE_SIZES = [10, 20, 30, 50, 100]
 
-const statusTagType = (status: User['status']) => STATUS_TAG_TYPE[status] ?? 'info'
+function statusBadge(status: User['status']) {
+  return STATUS_BADGE[status] ?? 'secondary'
+}
 
 function expiryText(user: User): string {
   if (!user.expire) return ''
@@ -37,12 +49,21 @@ function expiryText(user: User): string {
   return isExpired(user.expire) ? t('expired', { time: rel }) : t('expires', { time: rel })
 }
 
+function usageBarPercent(user: User): number {
+  if (isUnlimited(user.data_limit)) return 100
+  return usagePercentage(user.used_traffic, user.data_limit)
+}
+
+function usageBarExceeded(user: User): boolean {
+  return !isUnlimited(user.data_limit) && usagePercentage(user.used_traffic, user.data_limit) >= 100
+}
+
 async function copy(text: string, message: string) {
   try {
     await navigator.clipboard.writeText(text)
-    ElMessage.success(message)
+    toast.success(message)
   } catch {
-    ElMessage.error('Copy failed')
+    toast.error('Copy failed')
   }
 }
 
@@ -54,175 +75,184 @@ function copyConfigs(user: User) {
   copy(user.links.join('\r\n'), t('usersTable.copied'))
 }
 
-const currentPage = computed({
-  get: () => props.page,
-  set: (v: number) => emit('update:page', v)
-})
-const pageSize = computed({
-  get: () => props.limit,
-  set: (v: number) => emit('update:limit', v)
-})
+const totalPages = computed(() => Math.max(1, Math.ceil(props.total / props.limit) || 1))
+
+function goPrev() {
+  if (props.page > 1) emit('update:page', props.page - 1)
+}
+
+function goNext() {
+  if (props.page < totalPages.value) emit('update:page', props.page + 1)
+}
+
+function onPageSizeChange(value: string | number | bigint | Record<string, unknown> | null) {
+  const n = Number(value)
+  if (Number.isFinite(n) && n > 0) emit('update:limit', n)
+}
 </script>
 
 <template>
-  <div>
-    <el-table
-      :data="users"
-      v-loading="loading"
-      row-key="username"
-      style="width: 100%"
-      @row-click="(row: unknown) => emit('edit', asUser(row))"
-    >
-      <el-table-column :label="t('username')" min-width="180">
-        <template #default="{ row }">
-          <div class="username-cell">
-            <span class="online-dot" :class="{ online: row.online_at }" />
-            <span class="username-text">{{ row.username }}</span>
-          </div>
-        </template>
-      </el-table-column>
+  <div class="space-y-4">
+    <div class="overflow-x-auto rounded-xl border border-border bg-card">
+      <div v-if="loading && !users.length" class="space-y-3 p-4">
+        <Skeleton v-for="i in 5" :key="i" class="h-10 w-full" />
+      </div>
 
-      <el-table-column :label="t('usersTable.status')" min-width="160">
-        <template #default="{ row }">
-          <div class="status-cell">
-            <el-tag :type="statusTagType(row.status)" size="small" round>
-              {{ t(`status.${row.status}`) }}
-            </el-tag>
-            <span v-if="expiryText(asUser(row))" class="expiry">
-              {{ expiryText(asUser(row)) }}
-            </span>
-          </div>
-        </template>
-      </el-table-column>
+      <div
+        v-else-if="!users.length"
+        class="flex flex-col items-center gap-3 px-4 py-10 text-center text-muted-foreground"
+      >
+        <p class="text-sm">{{ t('usersTable.noUser') }}</p>
+      </div>
 
-      <el-table-column :label="t('usersTable.dataUsage')" min-width="240">
-        <template #default="{ row }">
-          <div class="usage-cell">
-            <el-progress
-              :percentage="
-                isUnlimited(row.data_limit)
-                  ? 100
-                  : usagePercentage(row.used_traffic, row.data_limit)
-              "
-              :status="
-                !isUnlimited(row.data_limit) &&
-                usagePercentage(row.used_traffic, row.data_limit) >= 100
-                  ? 'exception'
-                  : undefined
-              "
-              :show-text="false"
-              :stroke-width="6"
-            />
-            <div class="usage-text">
-              <span>
-                {{ formatBytes(row.used_traffic) }} /
-                {{ usageTotalText(row.data_limit, row.data_limit_reset_strategy, t) }}
-              </span>
-              <span class="usage-total">
-                {{ t('usersTable.total') }}: {{ formatBytes(row.lifetime_used_traffic) }}
-              </span>
-            </div>
-          </div>
-        </template>
-      </el-table-column>
+      <table v-else class="w-full min-w-[720px] text-sm">
+        <thead class="border-b border-border text-muted-foreground">
+          <tr>
+            <th class="px-4 py-3 text-start font-medium">{{ t('username') }}</th>
+            <th class="px-4 py-3 text-start font-medium">{{ t('usersTable.status') }}</th>
+            <th class="px-4 py-3 text-start font-medium">{{ t('usersTable.dataUsage') }}</th>
+            <th class="px-4 py-3 text-end font-medium" />
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="row in users"
+            :key="row.username"
+            class="cursor-pointer border-b border-border last:border-0 hover:bg-muted/40"
+            @click="emit('edit', row)"
+          >
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-2">
+                <span
+                  class="size-2 shrink-0 rounded-full"
+                  :class="row.online_at ? 'bg-emerald-500' : 'bg-muted-foreground/40'"
+                />
+                <span class="text-foreground">{{ row.username }}</span>
+              </div>
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex flex-col gap-0.5">
+                <Badge :variant="statusBadge(row.status)">
+                  {{ t(`status.${row.status}`) }}
+                </Badge>
+                <span v-if="expiryText(row)" class="text-xs text-muted-foreground">
+                  {{ expiryText(row) }}
+                </span>
+              </div>
+            </td>
+            <td class="px-4 py-3">
+              <div class="min-w-[180px] space-y-1">
+                <div class="h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div
+                    class="h-full rounded-full transition-[width]"
+                    :class="usageBarExceeded(row) ? 'bg-destructive' : 'bg-primary'"
+                    :style="{ width: `${usageBarPercent(row)}%` }"
+                  />
+                </div>
+                <div class="flex justify-between gap-2 text-xs text-muted-foreground">
+                  <span>
+                    {{ formatBytes(row.used_traffic) }} /
+                    {{ usageTotalText(row.data_limit, row.data_limit_reset_strategy, t) }}
+                  </span>
+                  <span>
+                    {{ t('usersTable.total') }}: {{ formatBytes(row.lifetime_used_traffic) }}
+                  </span>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-3 text-end" @click.stop>
+              <div class="inline-flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  :title="t('usersTable.copyLink')"
+                  @click="copySubLink(row)"
+                >
+                  <Link class="size-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  :title="t('usersTable.copyConfigs')"
+                  @click="copyConfigs(row)"
+                >
+                  <Copy class="size-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  title="QR Code"
+                  @click="emit('qr', row)"
+                >
+                  <QrCode class="size-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  :title="t('userDialog.editUser')"
+                  @click="emit('edit', row)"
+                >
+                  <Pencil class="size-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  :title="t('delete')"
+                  @click="emit('remove', row)"
+                >
+                  <Trash2 class="size-4 text-destructive" />
+                </Button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-      <el-table-column :label="''" width="180" align="right">
-        <template #default="{ row }">
-          <div class="actions" @click.stop>
-            <el-tooltip :content="t('usersTable.copyLink')" placement="top">
-              <el-button circle text :icon="LinkIcon" @click="copySubLink(asUser(row))" />
-            </el-tooltip>
-            <el-tooltip :content="t('usersTable.copyConfigs')" placement="top">
-              <el-button circle text :icon="CopyDocument" @click="copyConfigs(asUser(row))" />
-            </el-tooltip>
-            <el-tooltip content="QR Code" placement="top">
-              <el-button circle text :icon="Pointer" @click="emit('qr', asUser(row))" />
-            </el-tooltip>
-            <el-tooltip :content="t('userDialog.editUser')" placement="top">
-              <el-button circle text :icon="Edit" @click="emit('edit', asUser(row))" />
-            </el-tooltip>
-            <el-tooltip :content="t('delete')" placement="top">
-              <el-button
-                circle
-                text
-                type="danger"
-                :icon="Delete"
-                @click="emit('remove', asUser(row))"
-              />
-            </el-tooltip>
-          </div>
-        </template>
-      </el-table-column>
-
-      <template #empty>
-        <el-empty :description="t('usersTable.noUser')" />
-      </template>
-    </el-table>
-
-    <div class="pagination">
-      <el-pagination
-        v-model:current-page="currentPage"
-        v-model:page-size="pageSize"
-        :total="total"
-        :page-sizes="[10, 20, 30, 50, 100]"
-        layout="total, sizes, prev, pager, next"
-        background
-      />
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <p class="text-sm text-muted-foreground">
+        {{ total }}
+      </p>
+      <div class="flex flex-wrap items-center gap-2">
+        <Select :model-value="String(limit)" @update:model-value="onPageSizeChange">
+          <SelectTrigger class="w-[100px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="size in PAGE_SIZES" :key="size" :value="String(size)">
+              {{ size }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <Button
+          variant="outline"
+          size="sm"
+          type="button"
+          :disabled="page <= 1"
+          @click="goPrev"
+        >
+          <ChevronLeft class="size-4" />
+          {{ t('previous') }}
+        </Button>
+        <span class="px-1 text-sm text-muted-foreground">
+          {{ page }} / {{ totalPages }}
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          type="button"
+          :disabled="page >= totalPages"
+          @click="goNext"
+        >
+          {{ t('next') }}
+          <ChevronRight class="size-4" />
+        </Button>
+      </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.username-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.online-dot {
-  width: 8px;
-  height: 8px;
-  background: var(--el-color-info);
-  border-radius: 50%;
-  flex: 0 0 auto;
-}
-
-.online-dot.online {
-  background: var(--el-color-success);
-}
-
-.status-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.expiry {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-.usage-cell {
-  min-width: 200px;
-}
-
-.usage-text {
-  display: flex;
-  margin-top: 2px;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  justify-content: space-between;
-}
-
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 2px;
-}
-
-.pagination {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
-}
-</style>
