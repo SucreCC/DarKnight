@@ -19,7 +19,7 @@ import { useConfirm } from '@/composables/useConfirm'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import LoadingOverlay from '@/components/LoadingOverlay/index.vue'
-import { getCycleLabelKey, getPlanMeta } from '../Buy/plans'
+import { usePlanCatalog } from '../Buy/usePlanCatalog'
 import { preloadPayPalSdk } from '../Buy/paypalPreload'
 
 const { t } = useI18n()
@@ -35,10 +35,14 @@ const paymentError = ref('')
 const paymentFormReady = ref(false)
 const paymentInitFailed = ref(false)
 
+const { getPlan, getCycle } = usePlanCatalog()
+
 const planName = computed(() =>
-  order.value ? (getPlanMeta(order.value.plan_id)?.name ?? order.value.plan_id) : ''
+  order.value ? (getPlan(order.value.plan_id)?.name ?? order.value.plan_id) : ''
 )
-const cycleLabel = computed(() => (order.value ? t(getCycleLabelKey(order.value.cycle_id)) : ''))
+const cycleLabel = computed(() =>
+  order.value ? (getCycle(order.value.plan_id, order.value.cycle_id)?.label ?? order.value.cycle_id) : ''
+)
 const isPaid = computed(() => order.value?.status === 'paid')
 
 const showCheckoutBoot = computed(() => {

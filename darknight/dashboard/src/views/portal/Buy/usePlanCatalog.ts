@@ -1,31 +1,32 @@
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useQuery } from '@tanstack/vue-query'
 import { fetchPlanCatalog } from '@/api/portal/orders'
-import {
-  PLAN_META,
-  getCycleLabelKey,
-  getPlanMeta,
-  type BillingCycleId,
-  type PlanFilter,
-  type PlanMeta
-} from './plans'
+import { pickLocale, type PlanCategory, type PlanFilter } from './plans'
 
 export interface PricedCycle {
-  id: BillingCycleId
-  labelKey: string
+  id: string
+  label: string
   price: number
   dataLimitGb: number
   durationDays: number
 }
 
-export interface PricedPlan extends PlanMeta {
+export interface PricedPlan {
+  id: string
+  name: string
+  category: PlanCategory
+  features: string[]
+  displayCycleId: string
+  sortOrder: number
   cycles: PricedCycle[]
 }
 
 export const planCatalogQueryKey = ['portal', 'plans'] as const
 
-/** 套餐展示数据：文案取自本地 i18n，价格与额度一律来自后端 `/plans`。 */
+/** 套餐展示数据完全来自后端 `/plans`（含中英文案）。 */
 export function usePlanCatalog() {
+  const { locale } = useI18n()
   const query = useQuery({
     queryKey: planCatalogQueryKey,
     queryFn: fetchPlanCatalog,
@@ -39,23 +40,24 @@ export function usePlanCatalog() {
     const catalog = query.data.value
     if (!catalog) return []
 
-    const byId = new Map(catalog.plans.map((plan) => [plan.plan_id, plan]))
-    return PLAN_META.flatMap((meta) => {
-      const priced = byId.get(meta.id)
-      if (!priced?.cycles.length) return []
-      return [
-        {
-          ...meta,
-          cycles: priced.cycles.map((cycle) => ({
-            id: cycle.cycle_id as BillingCycleId,
-            labelKey: getCycleLabelKey(cycle.cycle_id),
-            price: cycle.price,
-            dataLimitGb: cycle.data_limit_gb,
-            durationDays: cycle.duration_days
-          }))
-        }
-      ]
-    })
+    const loc = locale.value
+    return [...catalog.plans]
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((plan) => ({
+        id: plan.plan_id,
+        name: pickLocale(loc, plan.name_zh, plan.name_en),
+        category: plan.category,
+        features: pickLocale(loc, plan.features_zh, plan.features_en),
+        displayCycleId: plan.display_cycle_id,
+        sortOrder: plan.sort_order,
+        cycles: plan.cycles.map((cycle) => ({
+          id: cycle.cycle_id,
+          label: pickLocale(loc, cycle.label_zh, cycle.label_en),
+          price: cycle.price,
+          dataLimitGb: cycle.data_limit_gb,
+          durationDays: cycle.duration_days
+        }))
+      }))
   })
 
   function getPlan(planId: string): PricedPlan | undefined {
@@ -78,7 +80,6 @@ export function usePlanCatalog() {
     isError: query.isError,
     getPlan,
     getCycle,
-    filterPlans,
-    hasMeta: (planId: string) => Boolean(getPlanMeta(planId))
+    filterPlans
   }
 }

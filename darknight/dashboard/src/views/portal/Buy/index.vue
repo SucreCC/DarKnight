@@ -78,16 +78,16 @@ function subscribe(planId: string) {
           <span class="text-4xl font-bold leading-none tracking-tight text-foreground">
             {{ formatPrice(displayCycle(plan).price) }}
           </span>
-          <span class="text-sm text-muted-foreground">{{ t(displayCycle(plan).labelKey) }}</span>
+          <span class="text-sm text-muted-foreground">{{ displayCycle(plan).label }}</span>
         </div>
         <ul class="mt-6 flex-1 space-y-2.5">
           <li
-            v-for="key in plan.featureKeys"
-            :key="key"
+            v-for="(feature, index) in plan.features"
+            :key="index"
             class="flex items-start gap-2 text-sm leading-relaxed text-muted-foreground"
           >
             <Check class="mt-0.5 size-4 shrink-0 text-primary" />
-            <span>{{ t(key) }}</span>
+            <span>{{ feature }}</span>
           </li>
         </ul>
         <Button class="mt-7 h-11 w-full" @click="subscribe(plan.id)">

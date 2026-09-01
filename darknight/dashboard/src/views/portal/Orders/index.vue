@@ -8,7 +8,8 @@ import {
   type OrderStatus,
   type PortalOrder
 } from '@/api/portal/orders'
-import { currencySymbol, formatPrice, getCycleLabelKey, getPlanMeta } from '../Buy/plans'
+import { currencySymbol, formatPrice } from '../Buy/plans'
+import { usePlanCatalog } from '../Buy/usePlanCatalog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -33,8 +34,14 @@ const { data, isLoading, isError } = useQuery({
   refetchOnWindowFocus: false
 })
 
+const { getPlan, getCycle } = usePlanCatalog()
+
 function planName(order: PortalOrder) {
-  return getPlanMeta(order.plan_id)?.name ?? order.plan_id
+  return getPlan(order.plan_id)?.name ?? order.plan_id
+}
+
+function cycleLabel(order: PortalOrder) {
+  return getCycle(order.plan_id, order.cycle_id)?.label ?? order.cycle_id
 }
 
 function openOrder(order: PortalOrder) {
@@ -90,7 +97,7 @@ function openOrder(order: PortalOrder) {
               </button>
             </td>
             <td class="px-4 py-3">
-              {{ planName(row) }} · {{ t(getCycleLabelKey(row.cycle_id)) }}
+              {{ planName(row) }} · {{ cycleLabel(row) }}
             </td>
             <td class="px-4 py-3">
               {{ currencySymbol(row.currency) }}{{ formatPrice(row.amount) }}

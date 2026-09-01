@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
-import { currencySymbol, formatPrice, getCycleLabelKey, getPlanMeta } from '../plans'
+import { currencySymbol, formatPrice } from '../plans'
 import { usePlanCatalog } from '../usePlanCatalog'
 
 const props = withDefaults(
@@ -38,13 +38,13 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const { currency: catalogCurrency, getCycle } = usePlanCatalog()
+const { currency: catalogCurrency, getCycle, getPlan } = usePlanCatalog()
 const couponInput = ref(props.coupon ?? '')
 const verifying = ref(false)
 /** 已通过后端校验的折扣；仅用于展示，最终金额仍由后端下单时计算 */
 const verifiedDiscount = ref(0)
 
-const planName = computed(() => getPlanMeta(props.planId)?.name ?? props.planId)
+const planName = computed(() => getPlan(props.planId)?.name ?? props.planId)
 const currencyCode = computed(() => props.currency ?? catalogCurrency.value)
 const symbol = computed(() => currencySymbol(currencyCode.value))
 
@@ -64,7 +64,7 @@ const total = computed(() => {
   return Math.round((listPrice.value - discount.value) * 100) / 100
 })
 
-const cycleLabel = computed(() => t(getCycleLabelKey(props.cycleId)))
+const cycleLabel = computed(() => getCycle(props.planId, props.cycleId)?.label ?? props.cycleId)
 // 价目表还没加载时 durationDays 拿不到，此时宁可不显示描述，也不要显示「0 天」。
 const durationDays = computed(() => getCycle(props.planId, props.cycleId)?.durationDays ?? 0)
 const planDescription = computed(() =>

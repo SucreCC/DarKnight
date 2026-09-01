@@ -40,10 +40,19 @@ export interface PlanCycle {
   price: number
   data_limit_gb: number
   duration_days: number
+  label_zh: string
+  label_en: string
 }
 
 export interface Plan {
   plan_id: string
+  name_zh: string
+  name_en: string
+  category: 'period' | 'traffic'
+  features_zh: string[]
+  features_en: string[]
+  display_cycle_id: string
+  sort_order: number
   cycles: PlanCycle[]
 }
 
