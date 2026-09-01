@@ -61,10 +61,19 @@ class PlanCycleResponse(BaseModel):
     price: float
     data_limit_gb: int
     duration_days: int
+    label_zh: str = ""
+    label_en: str = ""
 
 
 class PlanResponse(BaseModel):
     plan_id: str
+    name_zh: str = ""
+    name_en: str = ""
+    category: str = "period"
+    features_zh: list[str] = Field(default_factory=list)
+    features_en: list[str] = Field(default_factory=list)
+    display_cycle_id: str = ""
+    sort_order: int = 0
     cycles: list[PlanCycleResponse]
 
 
