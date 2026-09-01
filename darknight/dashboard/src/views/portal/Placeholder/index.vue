@@ -7,18 +7,10 @@ const route = useRoute()
 </script>
 
 <template>
-  <el-card shadow="never" class="portal-placeholder">
-    <el-empty :description="t('portal.comingSoon')">
-      <template #description>
-        <p>{{ t(route.meta.title as string) }}</p>
-        <p>{{ t('portal.comingSoon') }}</p>
-      </template>
-    </el-empty>
-  </el-card>
+  <div
+    class="flex min-h-80 flex-col items-center justify-center gap-2 rounded-xl border border-border bg-card p-8 text-center"
+  >
+    <p class="font-medium text-foreground">{{ t(route.meta.title as string) }}</p>
+    <p class="text-sm text-muted-foreground">{{ t('portal.comingSoon') }}</p>
+  </div>
 </template>
-
-<style scoped>
-.portal-placeholder {
-  min-height: 320px;
-}
-</style>
