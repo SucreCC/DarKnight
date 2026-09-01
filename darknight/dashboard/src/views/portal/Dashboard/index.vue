@@ -99,8 +99,8 @@ function onShortcut(item: (typeof shortcuts)[number]) {
 </script>
 
 <template>
-  <div class="flex max-w-6xl flex-col gap-4">
-    <div class="rounded-xl border border-border border-s-4 border-s-primary bg-card p-5 shadow-sm">
+  <div class="flex max-w-6xl flex-col gap-5">
+    <div class="rounded-2xl border border-slate-200/80 bg-card p-6 shadow-sm dark:border-border">
       <Badge>{{ t('portal.dashboard.announcement') }}</Badge>
       <p class="mt-3 text-sm text-foreground">{{ t('portal.dashboard.announcementText') }}</p>
       <p class="mt-2 text-xs text-muted-foreground">2026-08-19</p>
@@ -108,9 +108,9 @@ function onShortcut(item: (typeof shortcuts)[number]) {
 
     <div
       v-if="hasSubscription && user"
-      class="rounded-xl border border-border bg-card p-5 shadow-sm"
+      class="rounded-2xl border border-slate-200/80 bg-card p-6 shadow-sm dark:border-border"
     >
-      <div class="mb-3 flex items-center justify-between gap-3">
+      <div class="mb-4 flex items-center justify-between gap-3">
         <h2 class="flex items-center gap-2 text-base font-semibold text-foreground">
           <Activity class="size-4 text-primary" />
           {{ t('portal.dashboard.trafficUsage') }}
@@ -124,7 +124,7 @@ function onShortcut(item: (typeof shortcuts)[number]) {
       </div>
 
       <template v-if="!isUnlimited(user.data_limit)">
-        <div class="mb-3 h-2.5 overflow-hidden rounded-full bg-muted">
+        <div class="mb-3 h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-muted">
           <div
             class="h-full rounded-full transition-[width] duration-300"
             :class="trafficBarClass"
@@ -155,8 +155,8 @@ function onShortcut(item: (typeof shortcuts)[number]) {
       </p>
     </div>
 
-    <div class="grid gap-4 md:grid-cols-2">
-      <div class="rounded-xl border border-border bg-card p-5 shadow-sm">
+    <div class="grid gap-5 md:grid-cols-2">
+      <div class="rounded-2xl border border-slate-200/80 bg-card p-6 shadow-sm dark:border-border">
         <h2 class="mb-4 text-base font-semibold text-foreground">
           {{ t('portal.dashboard.mySubscription') }}
         </h2>
@@ -167,7 +167,7 @@ function onShortcut(item: (typeof shortcuts)[number]) {
           </p>
           <div class="flex gap-2">
             <Input :model-value="user.subscription_url" readonly class="flex-1" />
-            <Button type="button" variant="outline" @click="copySubscription">
+            <Button type="button" @click="copySubscription">
               {{ t('portal.dashboard.copy') }}
             </Button>
           </div>
@@ -175,15 +175,15 @@ function onShortcut(item: (typeof shortcuts)[number]) {
         <button
           v-else
           type="button"
-          class="flex min-h-44 w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border text-muted-foreground transition-colors hover:bg-muted/50"
+          class="flex min-h-44 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 text-muted-foreground transition-colors hover:bg-slate-50 dark:border-border dark:hover:bg-muted/50"
           @click="router.push({ name: 'portal-buy' })"
         >
-          <Plus class="size-10" />
+          <Plus class="size-10 text-primary" />
           <span>{{ t('portal.dashboard.buySubscription') }}</span>
         </button>
       </div>
 
-      <div class="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div class="rounded-2xl border border-slate-200/80 bg-card p-6 shadow-sm dark:border-border">
         <h2 class="mb-2 text-base font-semibold text-foreground">
           {{ t('portal.dashboard.shortcuts') }}
         </h2>
@@ -191,14 +191,14 @@ function onShortcut(item: (typeof shortcuts)[number]) {
           v-for="item in shortcuts"
           :key="item.title"
           type="button"
-          class="flex w-full items-center justify-between gap-3 border-b border-border py-3.5 text-start last:border-b-0"
+          class="flex w-full items-center justify-between gap-3 rounded-xl px-2 py-3.5 text-start transition-colors hover:bg-slate-50 last:border-b-0 dark:hover:bg-muted/50"
           @click="onShortcut(item)"
         >
           <div>
             <div class="font-semibold text-foreground">{{ t(item.title) }}</div>
             <div class="mt-1 text-[13px] text-muted-foreground">{{ t(item.desc) }}</div>
           </div>
-          <component :is="item.icon" class="size-5 shrink-0 text-muted-foreground" />
+          <component :is="item.icon" class="size-5 shrink-0 text-primary/70" />
         </button>
       </div>
     </div>
