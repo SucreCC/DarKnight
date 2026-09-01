@@ -1648,7 +1648,9 @@ def add_product_cycle(db: Session, product: Product, payload: ProductCycleCreate
 
 
 def update_product_cycle(db: Session, cycle: ProductCycle, payload: ProductCycleModify) -> ProductCycle:
-    if payload.cycle_key is not None:
+    if payload.cycle_key is not None and payload.cycle_key != cycle.cycle_key:
+        if cycle.cycle_key == cycle.product.display_cycle_key:
+            cycle.product.display_cycle_key = payload.cycle_key
         cycle.cycle_key = payload.cycle_key
     if payload.label_zh is not None:
         cycle.label_zh = payload.label_zh
