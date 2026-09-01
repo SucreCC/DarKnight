@@ -23,6 +23,8 @@ from darknight.db.models import (
     NotificationReminder,
     PortalOrder,
     PortalOrderStatus,
+    Product,
+    ProductCycle,
     Proxy,
     ProxyHost,
     ProxyInbound,
@@ -34,6 +36,12 @@ from darknight.db.models import (
 )
 from darknight.models.admin import AdminCreate, AdminModify, AdminPartialModify
 from darknight.models.node import NodeCreate, NodeModify, NodeStatus, NodeUsageResponse
+from darknight.models.product import (
+    ProductCreate,
+    ProductCycleCreate,
+    ProductCycleModify,
+    ProductModify,
+)
 from darknight.models.proxy import ProxyHost as ProxyHostModify
 from darknight.models.user import (
     ReminderType,
@@ -1553,6 +1561,174 @@ def delete_verification_codes(db: Session, email: str) -> None:
     db.commit()
 
 
+def list_products(db: Session) -> list[Product]:
+    return (
+        db.query(Product)
+        .order_by(Product.sort_order.asc(), Product.id.asc())
+        .all()
+    )
+
+
+def get_product(db: Session, product_id: int) -> Product | None:
+    return db.query(Product).filter(Product.id == product_id).first()
+
+
+def get_product_by_slug(db: Session, slug: str) -> Product | None:
+    return db.query(Product).filter(Product.slug == slug).first()
+
+
+def create_product(db: Session, payload: ProductCreate) -> Product:
+    keys = {c.cycle_key for c in payload.cycles}
+    if payload.cycles and payload.display_cycle_key not in keys:
+        raise ValueError("display_cycle_key must match a cycle")
+    product = Product(
+        slug=payload.slug,
+        name_zh=payload.name_zh,
+        name_en=payload.name_en,
+        category=payload.category,
+        features_zh=payload.features_zh,
+        features_en=payload.features_en,
+        display_cycle_key=payload.display_cycle_key,
+        sort_order=payload.sort_order,
+        is_listed=payload.is_listed,
+    )
+    for c in payload.cycles:
+        product.cycles.append(ProductCycle(**c.model_dump()))
+    db.add(product)
+    db.commit()
+    db.refresh(product)
+    return product
+
+
+def update_product(db: Session, product: Product, payload: ProductModify) -> Product:
+    if payload.display_cycle_key is not None:
+        keys = {c.cycle_key for c in product.cycles}
+        if payload.display_cycle_key not in keys:
+            raise ValueError("display_cycle_key must match a cycle")
+
+    if payload.slug is not None:
+        product.slug = payload.slug
+    if payload.name_zh is not None:
+        product.name_zh = payload.name_zh
+    if payload.name_en is not None:
+        product.name_en = payload.name_en
+    if payload.category is not None:
+        product.category = payload.category
+    if payload.features_zh is not None:
+        product.features_zh = payload.features_zh
+    if payload.features_en is not None:
+        product.features_en = payload.features_en
+    if payload.display_cycle_key is not None:
+        product.display_cycle_key = payload.display_cycle_key
+    if payload.sort_order is not None:
+        product.sort_order = payload.sort_order
+    if payload.is_listed is not None:
+        product.is_listed = payload.is_listed
+
+    db.commit()
+    db.refresh(product)
+    return product
+
+
+def remove_product(db: Session, product: Product) -> None:
+    db.delete(product)
+    db.commit()
+
+
+def get_product_cycle(db: Session, cycle_id: int) -> ProductCycle | None:
+    return db.query(ProductCycle).filter(ProductCycle.id == cycle_id).first()
+
+
+def add_product_cycle(db: Session, product: Product, payload: ProductCycleCreate) -> ProductCycle:
+    cycle = ProductCycle(**payload.model_dump())
+    product.cycles.append(cycle)
+    db.commit()
+    db.refresh(cycle)
+    return cycle
+
+
+def update_product_cycle(db: Session, cycle: ProductCycle, payload: ProductCycleModify) -> ProductCycle:
+    if payload.cycle_key is not None:
+        cycle.cycle_key = payload.cycle_key
+    if payload.label_zh is not None:
+        cycle.label_zh = payload.label_zh
+    if payload.label_en is not None:
+        cycle.label_en = payload.label_en
+    if payload.price is not None:
+        cycle.price = payload.price
+    if payload.data_limit_gb is not None:
+        cycle.data_limit_gb = payload.data_limit_gb
+    if payload.duration_days is not None:
+        cycle.duration_days = payload.duration_days
+    if payload.is_listed is not None:
+        cycle.is_listed = payload.is_listed
+    if payload.sort_order is not None:
+        cycle.sort_order = payload.sort_order
+
+    db.commit()
+    db.refresh(cycle)
+    return cycle
+
+
+def remove_product_cycle(db: Session, cycle: ProductCycle) -> None:
+    if cycle.cycle_key == cycle.product.display_cycle_key:
+        raise ValueError("cannot delete display cycle")
+    db.delete(cycle)
+    db.commit()
+
+
+def list_listed_products(db: Session) -> list[Product]:
+    products = (
+        db.query(Product)
+        .filter(Product.is_listed.is_(True))
+        .order_by(Product.sort_order.asc(), Product.id.asc())
+        .all()
+    )
+    result = []
+    for p in products:
+        listed = [c for c in p.cycles if c.is_listed]
+        if not listed:
+            continue
+        # 调用方只应暴露 listed cycles；可在 router 层过滤
+        result.append(p)
+    return result
+
+
+def get_listed_cycle(db: Session, slug: str, cycle_key: str) -> tuple[Product, ProductCycle] | None:
+    product = get_product_by_slug(db, slug)
+    if not product or not product.is_listed:
+        return None
+    cycle = next((c for c in product.cycles if c.cycle_key == cycle_key and c.is_listed), None)
+    if not cycle:
+        return None
+    return product, cycle
+
+
+def has_pending_orders_for_product(db: Session, slug: str) -> bool:
+    return (
+        db.query(PortalOrder)
+        .filter(
+            PortalOrder.plan_id == slug,
+            PortalOrder.status == PortalOrderStatus.pending,
+        )
+        .first()
+        is not None
+    )
+
+
+def has_pending_orders_for_cycle(db: Session, slug: str, cycle_key: str) -> bool:
+    return (
+        db.query(PortalOrder)
+        .filter(
+            PortalOrder.plan_id == slug,
+            PortalOrder.cycle_id == cycle_key,
+            PortalOrder.status == PortalOrderStatus.pending,
+        )
+        .first()
+        is not None
+    )
+
+
 def create_portal_order(
     db: Session,
     *,
@@ -1565,6 +1741,9 @@ def create_portal_order(
     paypal_order_id: str | None = None,
     coupon: str | None = None,
     discount: float = 0.0,
+    snapshot_data_limit_gb: int | None = None,
+    snapshot_duration_days: int | None = None,
+    snapshot_product_name: str | None = None,
 ) -> PortalOrder:
     order = PortalOrder(
         id=order_id,
@@ -1578,6 +1757,9 @@ def create_portal_order(
         discount=discount,
         status=PortalOrderStatus.pending,
         payment_provider="paypal",
+        snapshot_data_limit_gb=snapshot_data_limit_gb,
+        snapshot_duration_days=snapshot_duration_days,
+        snapshot_product_name=snapshot_product_name,
     )
     db.add(order)
     db.commit()
