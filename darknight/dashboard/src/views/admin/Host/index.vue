@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { toast } from 'vue-sonner'
+import { Loader2, Plus } from 'lucide-vue-next'
 import { extractErrorDetail } from '@/config/axios'
 import { useHostsQuery, useSaveHosts } from '@/api/host'
 import { defaultHost, type HostEntry, type HostsSchema } from '@/api/host/types'
+import { Button } from '@/components/ui/button'
 import HostForm from './components/HostForm.vue'
 
 const { t } = useI18n()
@@ -13,7 +14,6 @@ const { data, isFetching } = useHostsQuery()
 const saveHosts = useSaveHosts()
 
 const model = ref<HostsSchema>({})
-const activeTags = ref<string[]>([])
 
 function normalize(hosts: HostsSchema): HostsSchema {
   const result: HostsSchema = {}
@@ -36,7 +36,6 @@ watch(
   (value) => {
     if (!value) return
     model.value = normalize(value)
-    activeTags.value = Object.keys(model.value)
   },
   { immediate: true }
 )
@@ -56,44 +55,52 @@ function updateHost(tag: string, index: number, value: HostEntry) {
 async function onSave() {
   try {
     await saveHosts.mutateAsync(model.value)
-    ElMessage.success(t('hostsDialog.savedSuccess'))
+    toast.success(t('hostsDialog.savedSuccess'))
   } catch (err: unknown) {
     const detail = extractErrorDetail(err)
-    ElMessage.error(typeof detail === 'string' ? detail : t('core.generalErrorMessage'))
+    toast.error(typeof detail === 'string' ? detail : t('core.generalErrorMessage'))
   }
 }
 </script>
 
 <template>
-  <div class="dk-page" v-loading="isFetching">
-    <div class="dk-toolbar">
-      <span class="hint">{{ t('hostsDialog.title') }}</span>
-      <div class="dk-spacer" />
-      <el-button type="primary" :loading="saveHosts.isPending.value" @click="onSave">
-        {{ t('hostsDialog.apply') }}
-      </el-button>
+  <div class="relative flex max-w-6xl flex-col gap-4">
+    <div
+      v-if="isFetching"
+      class="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-background/60"
+    >
+      <Loader2 class="size-8 animate-spin text-primary" />
     </div>
 
-    <el-collapse v-model="activeTags">
-      <el-collapse-item v-for="(entries, tag) in model" :key="tag" :name="tag" :title="tag">
+    <div class="flex flex-wrap items-center gap-3">
+      <span class="text-sm text-muted-foreground">{{ t('hostsDialog.title') }}</span>
+      <div class="flex-1" />
+      <Button :disabled="saveHosts.isPending.value" @click="onSave">
+        <Loader2 v-if="saveHosts.isPending.value" class="size-4 animate-spin" />
+        {{ t('hostsDialog.apply') }}
+      </Button>
+    </div>
+
+    <details
+      v-for="(entries, tag) in model"
+      :key="tag"
+      class="mb-4 rounded-xl border border-border bg-card p-4"
+      open
+    >
+      <summary class="cursor-pointer font-semibold text-foreground">{{ tag }}</summary>
+      <div class="mt-4 space-y-3">
         <HostForm
           v-for="(host, index) in entries"
           :key="index"
           :model-value="host"
-          @update:model-value="(v) => updateHost(tag, index, v)"
-          @remove="removeHost(tag, index)"
+          @update:model-value="(v) => updateHost(String(tag), index, v)"
+          @remove="removeHost(String(tag), index)"
         />
-        <el-button :icon="Plus" @click="addHost(tag)">
+        <Button variant="outline" type="button" @click="addHost(String(tag))">
+          <Plus class="size-4" />
           {{ t('hostsDialog.addHost') }}
-        </el-button>
-      </el-collapse-item>
-    </el-collapse>
+        </Button>
+      </div>
+    </details>
   </div>
 </template>
-
-<style scoped>
-.hint {
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-}
-</style>
