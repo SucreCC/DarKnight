@@ -203,5 +203,9 @@
   "usersTable.noUser": "В системе нет созданных пользователей",
   "usersTable.noUserMatched": "Похоже, нет пользователя, соответствующего вашему запросу",
   "usersTable.status": "Статус",
-  "usersTable.total": "Всего"
+  "usersTable.total": "Всего",
+  "portal.dashboard.trafficUsage": "Использование трафика",
+  "portal.dashboard.trafficRemaining": "Осталось {remaining}",
+  "portal.dashboard.trafficUnlimited": "Безлимит",
+  "portal.dashboard.trafficUsedOf": "{used} / {total}"
 }

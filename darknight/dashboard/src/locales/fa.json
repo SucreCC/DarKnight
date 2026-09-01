@@ -208,5 +208,9 @@
   "usersTable.noUser": "کاربری افزوده نشده است",
   "usersTable.noUserMatched": "به‌نظر میرسه کاربری که جستجو کردید، وجود ندارد",
   "usersTable.status": "وضعیت",
-  "usersTable.total": "مجموع"
+  "usersTable.total": "مجموع",
+  "portal.dashboard.trafficUsage": "مصرف ترافیک",
+  "portal.dashboard.trafficRemaining": "{remaining} باقی‌مانده",
+  "portal.dashboard.trafficUnlimited": "نامحدود",
+  "portal.dashboard.trafficUsedOf": "{used} / {total}"
 }
