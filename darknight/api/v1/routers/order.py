@@ -28,7 +28,6 @@ from darknight.services.payment.paypal import (
     create_order,
     verify_webhook,
 )
-from darknight.services.payment.plans import get_plan_cycle, group_plan_catalog
 from darknight.utils import responses
 
 router = APIRouter(tags=["Orders"], responses={401: responses._401})
@@ -69,24 +68,35 @@ def paypal_config():
 
 
 @router.get("/plans", response_model=PlanCatalogResponse)
-def list_plans():
+def list_plans(db: Session = Depends(get_db)):
     """Authoritative price list. The dashboard renders copy but never prices."""
+    products = crud.list_listed_products(db)
     return PlanCatalogResponse(
         currency=get_app_config().paypal.currency,
         plans=[
             PlanResponse(
-                plan_id=plan_id,
+                plan_id=p.slug,
+                name_zh=p.name_zh,
+                name_en=p.name_en,
+                category=p.category,
+                features_zh=list(p.features_zh or []),
+                features_en=list(p.features_en or []),
+                display_cycle_id=p.display_cycle_key,
+                sort_order=p.sort_order,
                 cycles=[
                     PlanCycleResponse(
-                        cycle_id=cycle_id,
-                        price=cycle.price,
-                        data_limit_gb=cycle.data_limit_gb,
-                        duration_days=cycle.duration_days,
+                        cycle_id=c.cycle_key,
+                        price=c.price,
+                        data_limit_gb=c.data_limit_gb,
+                        duration_days=c.duration_days,
+                        label_zh=c.label_zh,
+                        label_en=c.label_en,
                     )
-                    for cycle_id, cycle in cycles
+                    for c in sorted(p.cycles, key=lambda x: x.sort_order)
+                    if c.is_listed
                 ],
             )
-            for plan_id, cycles in group_plan_catalog().items()
+            for p in products
         ],
     )
 
@@ -95,22 +105,24 @@ def list_plans():
 def preview_coupon(
     body: CouponPreviewRequest,
     portal_user: PortalUser = Depends(PortalUser.get_current),
+    db: Session = Depends(get_db),
 ):
-    plan = get_plan_cycle(body.plan_id, body.cycle_id)
-    if not plan:
+    pair = crud.get_listed_cycle(db, body.plan_id, body.cycle_id)
+    if not pair:
         raise HTTPException(status_code=400, detail="Invalid plan or billing cycle")
 
+    _, cycle = pair
     try:
-        code, discount = resolve_discount(body.coupon, plan.price)
+        code, discount = resolve_discount(body.coupon, cycle.price)
     except CouponError as exc:
         raise HTTPException(status_code=400, detail="Coupon is invalid or expired") from exc
 
     return CouponPreviewResponse(
         coupon=code or "",
         currency=get_app_config().paypal.currency,
-        original_amount=plan.price,
+        original_amount=cycle.price,
         discount=discount,
-        amount=round(plan.price - discount, 2),
+        amount=round(cycle.price - discount, 2),
     )
 
 
@@ -120,16 +132,17 @@ def create_portal_order(
     portal_user: PortalUser = Depends(PortalUser.get_current),
     db: Session = Depends(get_db),
 ):
-    plan = get_plan_cycle(body.plan_id, body.cycle_id)
-    if not plan:
+    pair = crud.get_listed_cycle(db, body.plan_id, body.cycle_id)
+    if not pair:
         raise HTTPException(status_code=400, detail="Invalid plan or billing cycle")
 
     dbuser = crud.get_user(db, portal_user.username)
     if not dbuser:
         raise HTTPException(status_code=404, detail="User not found")
 
+    product, cycle = pair
     try:
-        coupon_code, discount = resolve_discount(body.coupon, plan.price)
+        coupon_code, discount = resolve_discount(body.coupon, cycle.price)
     except CouponError as exc:
         raise HTTPException(status_code=400, detail="Coupon is invalid or expired") from exc
 
@@ -138,13 +151,16 @@ def create_portal_order(
         db,
         order_id=generate_order_id(),
         user_id=dbuser.id,
-        plan_id=body.plan_id,
-        cycle_id=body.cycle_id,
-        amount=round(plan.price - discount, 2),
+        plan_id=product.slug,
+        cycle_id=cycle.cycle_key,
+        amount=round(cycle.price - discount, 2),
         currency=cfg.currency,
         paypal_order_id=None,
         coupon=coupon_code,
         discount=discount,
+        snapshot_data_limit_gb=cycle.data_limit_gb,
+        snapshot_duration_days=cycle.duration_days,
+        snapshot_product_name=product.name_zh,
     )
     return OrderResponse.model_validate(order)
 
