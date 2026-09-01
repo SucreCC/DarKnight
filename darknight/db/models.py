@@ -386,6 +386,50 @@ class NotificationReminder(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class Product(Base):
+    __tablename__ = "products"
+
+    id = Column(Integer, primary_key=True)
+    slug = Column(String(32), nullable=False, unique=True, index=True)
+    name_zh = Column(String(128), nullable=False)
+    name_en = Column(String(128), nullable=False)
+    category = Column(String(16), nullable=False)  # period | traffic
+    features_zh = Column(JSON, nullable=False, default=list)
+    features_en = Column(JSON, nullable=False, default=list)
+    display_cycle_key = Column(String(32), nullable=False)
+    sort_order = Column(Integer, nullable=False, default=0)
+    is_listed = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    cycles = relationship(
+        "ProductCycle",
+        back_populates="product",
+        cascade="all, delete-orphan",
+        order_by="ProductCycle.sort_order",
+    )
+
+
+class ProductCycle(Base):
+    __tablename__ = "product_cycles"
+    __table_args__ = (
+        UniqueConstraint("product_id", "cycle_key", name="uq_product_cycle_key"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True)
+    cycle_key = Column(String(32), nullable=False)
+    label_zh = Column(String(64), nullable=False)
+    label_en = Column(String(64), nullable=False)
+    price = Column(Float, nullable=False)
+    data_limit_gb = Column(Integer, nullable=False)
+    duration_days = Column(Integer, nullable=False)
+    is_listed = Column(Boolean, nullable=False, default=False)
+    sort_order = Column(Integer, nullable=False, default=0)
+
+    product = relationship("Product", back_populates="cycles")
+
+
 class PortalOrder(Base):
     __tablename__ = "portal_orders"
 
@@ -403,3 +447,6 @@ class PortalOrder(Base):
     discount = Column(Float, nullable=False, default=0.0)
     paid_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    snapshot_data_limit_gb = Column(Integer, nullable=True)
+    snapshot_duration_days = Column(Integer, nullable=True)
+    snapshot_product_name = Column(String(128), nullable=True)
