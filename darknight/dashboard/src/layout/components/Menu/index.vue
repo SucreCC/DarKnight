@@ -2,7 +2,7 @@
 import { computed, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Link, Network, Settings, Users } from 'lucide-vue-next'
+import { Link, Network, Settings, ShoppingBag, Users } from 'lucide-vue-next'
 import { routes } from '@/router'
 import { useAppStore } from '@/store/modules/app'
 import { cn } from '@/lib/utils'
@@ -23,6 +23,7 @@ const iconMap: Record<string, Component> = {
   Users,
   Network,
   Link,
+  ShoppingBag,
   Settings
 }
 
