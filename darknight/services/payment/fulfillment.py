@@ -36,9 +36,11 @@ def try_mark_order_paid(db: Session, order: PortalOrder) -> bool:
 
 def fulfill_portal_order(db: Session, dbuser: User, order: PortalOrder) -> User:
     """Apply a paid order to the user: full quota, reset usage, extend expiry."""
-    plan = get_plan_cycle(order.plan_id, order.cycle_id)
-    if not plan:
-        raise ValueError(f"Unknown plan: {order.plan_id}/{order.cycle_id}")
+    if order.snapshot_data_limit_gb is None or order.snapshot_duration_days is None:
+        raise ValueError(
+            f"Order {order.id} missing fulfillment snapshot "
+            f"({order.plan_id}/{order.cycle_id})"
+        )
 
     if dbuser.used_traffic:
         db.add(
@@ -50,11 +52,11 @@ def fulfill_portal_order(db: Session, dbuser: User, order: PortalOrder) -> User:
     dbuser.used_traffic = 0
     dbuser.node_usages.clear()
 
-    dbuser.data_limit = plan.data_limit_gb * 1024**3
+    dbuser.data_limit = order.snapshot_data_limit_gb * 1024**3
 
     now_ts = int(datetime.utcnow().timestamp())
     base_expire = max(dbuser.expire or now_ts, now_ts)
-    dbuser.expire = base_expire + plan.duration_days * 86400
+    dbuser.expire = base_expire + order.snapshot_duration_days * 86400
 
     if dbuser.status != UserStatus.active:
         dbuser.status = UserStatus.active
