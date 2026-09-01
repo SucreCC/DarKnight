@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 import { useNodesStore } from '@/store/modules/node'
 import { useNodesQuery, useNodeMutations } from '@/api/node'
 import type { NodeType } from '@/api/node/types'
+import { useConfirm } from '@/composables/useConfirm'
+import { Button } from '@/components/ui/button'
 import NodesTable from './components/NodesTable.vue'
 import NodeDialog from './components/NodeDialog.vue'
 
 const { t } = useI18n()
+const { confirm } = useConfirm()
 const store = useNodesStore()
 const pollInterval = ref<number | undefined>(5000)
 const { data, isFetching } = useNodesQuery(pollInterval)
@@ -25,32 +28,35 @@ const dialogVisible = computed({
 })
 
 async function onRemove(node: NodeType) {
-  const ok = await ElMessageBox.confirm(
-    t('deleteNode.prompt', { name: node.name }),
-    t('deleteNode.title'),
-    { type: 'warning', dangerouslyUseHTMLString: true }
-  )
-    .then(() => true)
-    .catch(() => false)
-  if (!ok || node.id == null) return
+  try {
+    await confirm({
+      title: t('deleteNode.title'),
+      description: t('deleteNode.prompt', { name: node.name }).replace(/<\/?b>/gi, ''),
+      destructive: true
+    })
+  } catch {
+    return
+  }
+  if (node.id == null) return
   await deleteNode.mutateAsync(node.id)
-  ElMessage.success(t('deleteNode.deleteSuccess', { name: node.name }))
+  toast.success(t('deleteNode.deleteSuccess', { name: node.name }))
 }
 
 async function onReconnect(node: NodeType) {
   if (node.id == null) return
   await reconnectNode.mutateAsync(node.id)
-  ElMessage.success(t('nodes.reconnecting'))
+  toast.success(t('nodes.reconnecting'))
 }
 </script>
 
 <template>
-  <div class="dk-page">
-    <div class="dk-toolbar">
-      <div class="dk-spacer" />
-      <el-button type="primary" :icon="Plus" @click="store.openCreate()">
+  <div class="flex max-w-6xl flex-col gap-4">
+    <div class="flex items-center gap-3">
+      <div class="flex-1" />
+      <Button @click="store.openCreate()">
+        <Plus class="size-4" />
         {{ t('nodes.addNode') }}
-      </el-button>
+      </Button>
     </div>
 
     <NodesTable

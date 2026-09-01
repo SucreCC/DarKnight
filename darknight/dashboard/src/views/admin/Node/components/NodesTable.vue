@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { Connection, Delete, Edit } from '@element-plus/icons-vue'
-import { NODE_STATUS_TAG, type NodeStatus, type NodeType } from '@/api/node/types'
+import { Pencil, RefreshCw, Trash2 } from 'lucide-vue-next'
+import type { NodeStatus, NodeType } from '@/api/node/types'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 
 defineProps<{ nodes: NodeType[]; loading: boolean }>()
 const emit = defineEmits<{
@@ -11,42 +14,97 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const asNode = (row: unknown) => row as NodeType
-const statusTag = (status?: NodeStatus | null) => (status ? NODE_STATUS_TAG[status] : 'info')
+
+const STATUS_VARIANT: Record<
+  NodeStatus,
+  'default' | 'secondary' | 'outline' | 'destructive'
+> = {
+  connected: 'default',
+  connecting: 'outline',
+  error: 'destructive',
+  disabled: 'secondary'
+}
+
+function statusVariant(status?: NodeStatus | null) {
+  return status ? STATUS_VARIANT[status] : 'secondary'
+}
 </script>
 
 <template>
-  <el-table :data="nodes" v-loading="loading" row-key="id" style="width: 100%">
-    <el-table-column :label="t('nodes.nodeName')" prop="name" min-width="140" />
-    <el-table-column :label="t('nodes.nodeAddress')" prop="address" min-width="160" />
-    <el-table-column :label="t('nodes.nodePort')" prop="port" width="100" />
-    <el-table-column :label="t('nodes.nodeAPIPort')" prop="api_port" width="100" />
-    <el-table-column label="Xray" prop="xray_version" width="110">
-      <template #default="{ row }">{{ row.xray_version || '-' }}</template>
-    </el-table-column>
-    <el-table-column :label="t('usersTable.status')" min-width="140">
-      <template #default="{ row }">
-        <el-tooltip v-if="row.message" :content="row.message" placement="top">
-          <el-tag :type="statusTag(row.status)" size="small" round>
-            {{ t(`nodeModal.status.${row.status || 'disabled'}`) }}
-          </el-tag>
-        </el-tooltip>
-        <el-tag v-else :type="statusTag(row.status)" size="small" round>
-          {{ t(`nodeModal.status.${row.status || 'disabled'}`) }}
-        </el-tag>
-      </template>
-    </el-table-column>
-    <el-table-column :label="''" width="150" align="right">
-      <template #default="{ row }">
-        <el-tooltip :content="t('nodes.reconnect')" placement="top">
-          <el-button circle text :icon="Connection" @click="emit('reconnect', asNode(row))" />
-        </el-tooltip>
-        <el-button circle text :icon="Edit" @click="emit('edit', asNode(row))" />
-        <el-button circle text type="danger" :icon="Delete" @click="emit('remove', asNode(row))" />
-      </template>
-    </el-table-column>
-    <template #empty>
-      <el-empty :description="t('nodes.title')" />
-    </template>
-  </el-table>
+  <div class="overflow-x-auto rounded-xl border border-border bg-card">
+    <div v-if="loading && !nodes.length" class="space-y-3 p-4">
+      <Skeleton v-for="i in 5" :key="i" class="h-10 w-full" />
+    </div>
+
+    <div
+      v-else-if="!nodes.length"
+      class="flex flex-col items-center gap-3 px-4 py-10 text-center text-muted-foreground"
+    >
+      <p class="text-sm">{{ t('nodes.title') }}</p>
+    </div>
+
+    <table v-else class="w-full min-w-[720px] text-sm">
+      <thead class="border-b border-border text-muted-foreground">
+        <tr>
+          <th class="px-4 py-3 text-start font-medium">{{ t('nodes.nodeName') }}</th>
+          <th class="px-4 py-3 text-start font-medium">{{ t('nodes.nodeAddress') }}</th>
+          <th class="px-4 py-3 text-start font-medium">{{ t('nodes.nodePort') }}</th>
+          <th class="px-4 py-3 text-start font-medium">{{ t('nodes.nodeAPIPort') }}</th>
+          <th class="px-4 py-3 text-start font-medium">Xray</th>
+          <th class="px-4 py-3 text-start font-medium">{{ t('usersTable.status') }}</th>
+          <th class="px-4 py-3 text-end font-medium" />
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          v-for="row in nodes"
+          :key="row.id ?? row.name"
+          class="border-b border-border last:border-0"
+        >
+          <td class="px-4 py-3 text-foreground">{{ row.name }}</td>
+          <td class="px-4 py-3 text-foreground">{{ row.address }}</td>
+          <td class="px-4 py-3 text-foreground">{{ row.port }}</td>
+          <td class="px-4 py-3 text-foreground">{{ row.api_port }}</td>
+          <td class="px-4 py-3 text-muted-foreground">{{ row.xray_version || '-' }}</td>
+          <td class="px-4 py-3">
+            <Badge
+              :variant="statusVariant(row.status)"
+              :title="row.message || undefined"
+            >
+              {{ t(`nodeModal.status.${row.status || 'disabled'}`) }}
+            </Badge>
+          </td>
+          <td class="px-4 py-3 text-end">
+            <div class="inline-flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                type="button"
+                :title="t('nodes.reconnect')"
+                @click="emit('reconnect', row)"
+              >
+                <RefreshCw class="size-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                type="button"
+                @click="emit('edit', row)"
+              >
+                <Pencil class="size-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                type="button"
+                @click="emit('remove', row)"
+              >
+                <Trash2 class="size-4 text-destructive" />
+              </Button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </template>
