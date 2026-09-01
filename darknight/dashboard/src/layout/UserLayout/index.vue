@@ -128,9 +128,9 @@ function logout() {
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col bg-muted/40">
+  <div class="flex min-h-screen flex-col bg-muted">
     <header
-      class="grid h-14 shrink-0 items-center border-b border-border bg-card px-5 grid-cols-[1fr_auto_1fr]"
+      class="grid h-14 shrink-0 items-center border-b border-border bg-card px-5 shadow-sm grid-cols-[1fr_auto_1fr]"
     >
       <div class="text-lg font-bold tracking-tight text-foreground">
         {{ t('portal.siteName') }}
@@ -154,7 +154,9 @@ function logout() {
     </header>
 
     <div class="flex min-h-0 flex-1 overflow-hidden">
-      <aside class="w-[220px] shrink-0 overflow-auto border-e border-border bg-card">
+      <aside
+        class="w-[220px] shrink-0 overflow-auto border-e border-border bg-primary/[0.03]"
+      >
         <nav class="flex flex-col gap-1 p-3">
           <template v-for="(group, gi) in menuGroups" :key="gi">
             <div
@@ -172,7 +174,7 @@ function logout() {
                   'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors',
                   activeMenu === item.name
                     ? 'bg-primary/10 font-medium text-primary'
-                    : 'text-foreground hover:bg-muted'
+                    : 'text-foreground hover:bg-primary/5'
                 )
               "
               @click="onSelect(item.name as string)"

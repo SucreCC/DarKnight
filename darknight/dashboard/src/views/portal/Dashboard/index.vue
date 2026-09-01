@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { BookOpen, LifeBuoy, Link2, Plus, ShoppingCart } from 'lucide-vue-next'
+import { Activity, BookOpen, LifeBuoy, Link2, Plus, ShoppingCart } from 'lucide-vue-next'
 import type { Component } from 'vue'
 import { fetchPortalMe } from '@/api/portal'
 import type { PortalUser } from '@/api/portal/types'
@@ -100,18 +100,19 @@ function onShortcut(item: (typeof shortcuts)[number]) {
 
 <template>
   <div class="flex max-w-6xl flex-col gap-4">
-    <div class="rounded-xl border border-border bg-card p-5">
-      <Badge variant="secondary">{{ t('portal.dashboard.announcement') }}</Badge>
+    <div class="rounded-xl border border-primary/15 bg-primary/5 p-5">
+      <Badge>{{ t('portal.dashboard.announcement') }}</Badge>
       <p class="mt-3 text-sm text-foreground">{{ t('portal.dashboard.announcementText') }}</p>
       <p class="mt-2 text-xs text-muted-foreground">2026-08-19</p>
     </div>
 
     <div
       v-if="hasSubscription && user"
-      class="rounded-xl border border-border bg-card p-5"
+      class="rounded-xl border border-primary/10 bg-primary/[0.03] p-5"
     >
       <div class="mb-3 flex items-center justify-between gap-3">
-        <h2 class="text-base font-semibold text-foreground">
+        <h2 class="flex items-center gap-2 text-base font-semibold text-foreground">
+          <Activity class="size-4 text-primary" />
           {{ t('portal.dashboard.trafficUsage') }}
         </h2>
         <template v-if="isUnlimited(user.data_limit)">
@@ -155,7 +156,7 @@ function onShortcut(item: (typeof shortcuts)[number]) {
     </div>
 
     <div class="grid gap-4 md:grid-cols-2">
-      <div class="rounded-xl border border-border bg-card p-5">
+      <div class="rounded-xl border border-border bg-card p-5 shadow-sm">
         <h2 class="mb-4 text-base font-semibold text-foreground">
           {{ t('portal.dashboard.mySubscription') }}
         </h2>
@@ -182,7 +183,7 @@ function onShortcut(item: (typeof shortcuts)[number]) {
         </button>
       </div>
 
-      <div class="rounded-xl border border-border bg-card p-5">
+      <div class="rounded-xl border border-border bg-card p-5 shadow-sm">
         <h2 class="mb-2 text-base font-semibold text-foreground">
           {{ t('portal.dashboard.shortcuts') }}
         </h2>
