@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage } from 'element-plus'
+import { toast } from 'vue-sonner'
 import {
   buildLogsWebsocketUrl,
   useCoreConfigQuery,
@@ -9,6 +9,8 @@ import {
   useRestartCore,
   useUpdateConfig
 } from '@/api/setting'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 
 const { t } = useI18n()
 const { data: core } = useCoreQuery()
@@ -31,27 +33,26 @@ async function onSave() {
   try {
     parsed = JSON.parse(configText.value)
   } catch {
-    ElMessage.error('Invalid JSON')
+    toast.error('Invalid JSON')
     return
   }
   try {
     await updateConfig.mutateAsync(parsed)
-    ElMessage.success(t('core.successMessage'))
+    toast.success(t('core.successMessage'))
   } catch {
-    ElMessage.error(t('core.generalErrorMessage'))
+    toast.error(t('core.generalErrorMessage'))
   }
 }
 
 async function onRestart() {
   try {
     await restartCore.mutateAsync()
-    ElMessage.success(t('core.restarting'))
+    toast.success(t('core.restarting'))
   } catch {
-    ElMessage.error(t('core.generalErrorMessage'))
+    toast.error(t('core.generalErrorMessage'))
   }
 }
 
-// ---- logs websocket ----
 const logs = ref<string[]>([])
 const logsBox = ref<HTMLElement>()
 let socket: WebSocket | null = null
@@ -76,75 +77,42 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="dk-page">
-    <div class="dk-toolbar">
-      <span class="version">
+  <div class="flex max-w-6xl flex-col gap-4">
+    <div class="flex flex-wrap items-center gap-3">
+      <span class="inline-flex items-center gap-2 font-semibold text-foreground">
         Xray {{ core?.version || '-' }}
-        <el-tag :type="core?.started ? 'success' : 'info'" size="small" round>
+        <Badge :variant="core?.started ? 'default' : 'secondary'">
           {{ core?.started ? t('core.socket.connected') : t('core.socket.not_connected') }}
-        </el-tag>
+        </Badge>
       </span>
-      <div class="dk-spacer" />
-      <el-button :loading="restartCore.isPending.value" @click="onRestart">
+      <div class="flex-1" />
+      <Button variant="outline" :disabled="restartCore.isPending.value" @click="onRestart">
         {{ t('core.restartCore') }}
-      </el-button>
-      <el-button type="primary" :loading="updateConfig.isPending.value" @click="onSave">
+      </Button>
+      <Button :disabled="updateConfig.isPending.value" @click="onSave">
         {{ t('core.save') }}
-      </el-button>
+      </Button>
     </div>
 
-    <el-row :gutter="16">
-      <el-col :span="14">
-        <div class="section-title">{{ t('core.configuration') }}</div>
-        <el-input
+    <div class="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+      <div class="rounded-xl border border-border bg-card p-4">
+        <div class="mb-2 font-semibold text-foreground">{{ t('core.configuration') }}</div>
+        <textarea
           v-model="configText"
-          type="textarea"
-          :rows="24"
-          class="config-editor"
+          rows="24"
           spellcheck="false"
+          class="w-full rounded-lg border border-input bg-background p-3 font-mono text-xs text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
-      </el-col>
-      <el-col :span="10">
-        <div class="section-title">{{ t('core.logs') }}</div>
-        <div ref="logsBox" class="logs-box">
-          <div v-for="(line, i) in logs" :key="i" class="log-line">{{ line }}</div>
+      </div>
+      <div class="rounded-xl border border-border bg-card p-4">
+        <div class="mb-2 font-semibold text-foreground">{{ t('core.logs') }}</div>
+        <div
+          ref="logsBox"
+          class="h-[520px] overflow-y-auto rounded-lg bg-muted p-2.5 font-mono text-xs break-all whitespace-pre-wrap text-foreground"
+        >
+          <div v-for="(line, i) in logs" :key="i" class="leading-normal">{{ line }}</div>
         </div>
-      </el-col>
-    </el-row>
+      </div>
+    </div>
   </div>
 </template>
-
-<style scoped>
-.version {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-}
-
-.section-title {
-  margin-bottom: 8px;
-  font-weight: 600;
-}
-
-.config-editor :deep(textarea) {
-  font-family: 'JetBrains Mono', Consolas, monospace;
-  font-size: 12px;
-}
-
-.logs-box {
-  height: 520px;
-  padding: 10px;
-  overflow-y: auto;
-  font-family: Consolas, monospace;
-  font-size: 12px;
-  word-break: break-all;
-  white-space: pre-wrap;
-  background: var(--el-fill-color-darker);
-  border-radius: 6px;
-}
-
-.log-line {
-  line-height: 1.5;
-}
-</style>
