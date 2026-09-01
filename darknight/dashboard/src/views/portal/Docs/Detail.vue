@@ -60,7 +60,7 @@ function importShadowrocket() {
 <template>
   <div
     v-if="article"
-    class="max-w-3xl rounded-xl border border-border bg-card p-6 leading-relaxed text-foreground"
+    class="max-w-3xl rounded-2xl border border-slate-200/80 bg-card p-6 leading-relaxed text-foreground shadow-sm dark:border-border md:p-8"
   >
     <template v-for="(block, index) in article.blocks" :key="index">
       <p v-if="block.type === 'lead'" class="mb-7 text-base font-bold">
@@ -85,7 +85,7 @@ function importShadowrocket() {
         <a
           v-for="item in block.items"
           :key="item.url"
-          class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           :href="item.url"
           target="_blank"
           rel="noopener noreferrer"
@@ -97,14 +97,14 @@ function importShadowrocket() {
 
       <div
         v-else-if="block.type === 'note'"
-        class="my-3 rounded-lg bg-muted p-4 text-[13px] text-muted-foreground"
+        class="my-3 rounded-xl bg-slate-50 p-4 text-[13px] text-muted-foreground dark:bg-muted"
       >
         {{ t(block.textKey) }}
       </div>
 
       <Button
         v-else-if="block.type === 'copySub'"
-        class="mt-2 mb-1 w-full"
+        class="mt-2 mb-1 h-11 w-full rounded-xl"
         @click="copySubscription"
       >
         {{ t('portal.docs.copySub') }}
@@ -112,7 +112,7 @@ function importShadowrocket() {
 
       <Button
         v-else-if="block.type === 'importClash'"
-        class="mt-2 mb-1 w-full"
+        class="mt-2 mb-1 h-11 w-full rounded-xl"
         @click="importClash"
       >
         {{ t('portal.docs.importClash') }}
@@ -120,7 +120,7 @@ function importShadowrocket() {
 
       <Button
         v-else-if="block.type === 'importShadowrocket'"
-        class="mt-2 mb-1 w-full"
+        class="mt-2 mb-1 h-11 w-full rounded-xl"
         @click="importShadowrocket"
       >
         {{ t('portal.docs.importShadowrocket') }}
