@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import { Refresh } from '@element-plus/icons-vue'
+import { Loader2, RefreshCw } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 import { extractErrorDetail } from '@/config/axios'
 import { useInboundsQuery, useUserMutations } from '@/api/user'
 import {
@@ -12,6 +12,24 @@ import {
   type User,
   type UserCreate
 } from '@/api/user/types'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 
 const props = defineProps<{
   modelValue: boolean
@@ -36,11 +54,13 @@ const SS_METHODS = [
   'chacha20-ietf-poly1305',
   'xchacha20-ietf-poly1305'
 ]
+/** Reka Select disallows empty-string item values; map none ↔ sentinel. */
+const FLOW_NONE = '__none__'
 const VLESS_FLOWS = ['', 'xtls-rprx-vision']
 
 const isEditing = computed(() => !!props.user)
 const errorMsg = ref('')
-const formRef = ref<FormInstance>()
+const fieldErrors = reactive<Record<string, string>>({})
 
 type FormModel = {
   username: string
@@ -88,15 +108,27 @@ function tagsFor(protocol: string): string[] {
   return (inboundsByProtocol.value[protocol] ?? []).map((i) => i.tag)
 }
 
-const rules: FormRules = {
-  username: [{ required: true, message: () => t('login.fieldRequired'), trigger: 'blur' }],
-  selected_proxies: [
-    {
-      validator: (_r, value: ProxyKey[], cb) =>
-        value && value.length > 0 ? cb() : cb(new Error(t('userDialog.selectOneProtocol'))),
-      trigger: 'change'
-    }
-  ]
+function toFlowSelect(value: string) {
+  return value === '' ? FLOW_NONE : value
+}
+
+function fromFlowSelect(value: string | number | bigint | Record<string, unknown> | null) {
+  const s = String(value ?? '')
+  return s === FLOW_NONE ? '' : s
+}
+
+function validate(): boolean {
+  Object.keys(fieldErrors).forEach((key) => delete fieldErrors[key])
+  let ok = true
+  if (!form.username.trim()) {
+    fieldErrors.username = t('login.fieldRequired')
+    ok = false
+  }
+  if (!form.selected_proxies.length) {
+    fieldErrors.selected_proxies = t('userDialog.selectOneProtocol')
+    ok = false
+  }
+  return ok
 }
 
 function resetToDefault() {
@@ -134,16 +166,24 @@ watch(
   () => props.modelValue,
   (open) => {
     errorMsg.value = ''
+    Object.keys(fieldErrors).forEach((key) => delete fieldErrors[key])
     if (!open) return
     if (props.user) loadUser(props.user)
     else resetToDefault()
   }
 )
 
-const expireDate = computed<Date | null>({
-  get: () => (form.expire ? new Date(form.expire * 1000) : null),
-  set: (d) => {
-    form.expire = d ? Math.floor(d.getTime() / 1000) : null
+const expireDateStr = computed({
+  get: () => {
+    if (!form.expire) return ''
+    const d = new Date(form.expire * 1000)
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  },
+  set: (s: string) => {
+    form.expire = s ? Math.floor(new Date(s).getTime() / 1000) : null
   }
 })
 
@@ -152,6 +192,39 @@ function randomUsername() {
   let result = ''
   for (let i = 0; i < 8; i++) result += chars.charAt(Math.floor(Math.random() * chars.length))
   form.username = result
+}
+
+function toggleProtocol(protocol: ProxyKey, checked: boolean) {
+  if (checked) {
+    if (!form.selected_proxies.includes(protocol)) form.selected_proxies.push(protocol)
+  } else {
+    form.selected_proxies = form.selected_proxies.filter((p) => p !== protocol)
+  }
+}
+
+function isInboundChecked(protocol: string, tag: string) {
+  return (form.inbounds[protocol] ?? []).includes(tag)
+}
+
+function toggleInbound(protocol: string, tag: string, checked: boolean) {
+  const current = form.inbounds[protocol] ?? []
+  if (checked) {
+    if (!current.includes(tag)) form.inbounds[protocol] = [...current, tag]
+  } else {
+    form.inbounds[protocol] = current.filter((t) => t !== tag)
+  }
+}
+
+function setNullableNumber(
+  field: 'data_limit' | 'on_hold_expire_duration',
+  value: string | number
+) {
+  if (value === '' || value === null || value === undefined) {
+    form[field] = null
+    return
+  }
+  const n = typeof value === 'number' ? value : Number(value)
+  form[field] = Number.isFinite(n) ? n : null
 }
 
 function buildProxies(): UserCreate['proxies'] {
@@ -188,9 +261,7 @@ function buildInbounds(): Record<string, string[]> {
 const submitting = ref(false)
 
 async function onSubmit() {
-  if (!formRef.value) return
-  const valid = await formRef.value.validate().catch(() => false)
-  if (!valid) return
+  if (!validate()) return
 
   errorMsg.value = ''
   const dataLimitBytes = form.data_limit ? Number((form.data_limit * GB).toFixed(0)) : 0
@@ -216,7 +287,7 @@ async function onSubmit() {
     if (isEditing.value) await updateUser.mutateAsync(body)
     else await createUser.mutateAsync(body)
     emit('update:modelValue', false)
-    ElMessage.success(
+    toast.success(
       t(isEditing.value ? 'userDialog.userEdited' : 'userDialog.userCreated', {
         username: form.username
       })
@@ -236,160 +307,244 @@ function close() {
 </script>
 
 <template>
-  <el-dialog
-    :model-value="modelValue"
-    :title="isEditing ? t('userDialog.editUserTitle') : t('createNewUser')"
-    width="640px"
-    @update:model-value="(v: boolean) => emit('update:modelValue', v)"
+  <Dialog
+    :open="modelValue"
+    @update:open="(v: boolean) => emit('update:modelValue', v)"
   >
-    <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
-      <el-form-item :label="t('username')" prop="username">
-        <div class="username-row">
-          <el-input v-model="form.username" :disabled="isEditing" />
-          <el-button v-if="!isEditing" :icon="Refresh" @click="randomUsername" />
-        </div>
-      </el-form-item>
+    <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+      <DialogHeader>
+        <DialogTitle>
+          {{ isEditing ? t('userDialog.editUserTitle') : t('createNewUser') }}
+        </DialogTitle>
+      </DialogHeader>
 
-      <el-form-item :label="t('userDialog.protocols')" prop="selected_proxies">
-        <el-checkbox-group v-model="form.selected_proxies">
-          <el-checkbox v-for="p in ALL_PROTOCOLS" :key="p" :value="p" :label="p" />
-        </el-checkbox-group>
-      </el-form-item>
-
-      <el-form-item v-if="form.selected_proxies.includes('vless')" label="VLESS flow">
-        <el-select v-model="form.proxies.vless.flow" style="width: 100%">
-          <el-option v-for="f in VLESS_FLOWS" :key="f" :label="f || 'none'" :value="f" />
-        </el-select>
-      </el-form-item>
-
-      <el-form-item
-        v-if="form.selected_proxies.includes('shadowsocks')"
-        :label="t('userDialog.method')"
-      >
-        <el-select v-model="form.proxies.shadowsocks.method" style="width: 100%">
-          <el-option v-for="m in SS_METHODS" :key="m" :label="m" :value="m" />
-        </el-select>
-      </el-form-item>
-
-      <el-form-item
-        v-for="protocol in form.selected_proxies"
-        :key="protocol"
-        :label="`${t('inbound')} · ${protocol}`"
-      >
-        <el-select
-          v-model="form.inbounds[protocol]"
-          multiple
-          collapse-tags
-          collapse-tags-tooltip
-          style="width: 100%"
-          :placeholder="protocol"
-        >
-          <el-option v-for="tag in tagsFor(protocol)" :key="tag" :label="tag" :value="tag" />
-        </el-select>
-      </el-form-item>
-
-      <div class="grid-2">
-        <el-form-item :label="t('userDialog.dataLimit') + ' (GB)'">
-          <el-input-number
-            v-model="form.data_limit"
-            :min="0"
-            :step="1"
-            :controls="false"
-            style="width: 100%"
-            :placeholder="t('userDialog.generatedByDefault')"
-          />
-        </el-form-item>
-        <el-form-item
-          v-if="form.data_limit && form.data_limit > 0"
-          :label="t('userDialog.periodicUsageReset')"
-        >
-          <el-select v-model="form.data_limit_reset_strategy" style="width: 100%">
-            <el-option
-              v-for="s in RESET_STRATEGIES"
-              :key="s.value"
-              :label="t(`userDialog.${s.title}`)"
-              :value="s.value"
+      <form class="grid gap-4" @submit.prevent="onSubmit">
+        <div class="space-y-2">
+          <Label for="user-username">{{ t('username') }}</Label>
+          <div class="flex gap-2">
+            <Input
+              id="user-username"
+              v-model="form.username"
+              class="flex-1"
+              :disabled="isEditing"
+              :aria-invalid="!!fieldErrors.username"
             />
-          </el-select>
-        </el-form-item>
-      </div>
-
-      <el-form-item :label="t('status.active') + ' / ' + t('userDialog.onHold')">
-        <el-radio-group v-model="form.status">
-          <el-radio-button value="active">{{ t('status.active') }}</el-radio-button>
-          <el-radio-button value="on_hold">{{ t('userDialog.onHold') }}</el-radio-button>
-        </el-radio-group>
-      </el-form-item>
-
-      <el-form-item
-        v-if="form.status === 'on_hold'"
-        :label="t('userDialog.onHoldExpireDuration') + ' (' + t('userDialog.days') + ')'"
-      >
-        <el-input-number
-          v-model="form.on_hold_expire_duration"
-          :min="0"
-          :step="1"
-          :controls="false"
-          style="width: 100%"
-        />
-      </el-form-item>
-      <el-form-item v-else :label="t('userDialog.expiryDate')">
-        <el-date-picker
-          v-model="expireDate"
-          type="date"
-          style="width: 100%"
-          :placeholder="t('userDialog.optional')"
-        />
-      </el-form-item>
-
-      <el-form-item :label="t('userDialog.note')">
-        <el-input v-model="form.note" type="textarea" :rows="2" />
-      </el-form-item>
-
-      <el-alert v-if="errorMsg" :title="errorMsg" type="error" :closable="false" show-icon />
-    </el-form>
-
-    <template #footer>
-      <div class="footer">
-        <div v-if="isEditing && user" class="footer-left">
-          <el-button text @click="emit('resetUsage', user)">
-            {{ t('userDialog.resetUsage') }}
-          </el-button>
-          <el-button text @click="emit('revokeSub', user)">
-            {{ t('userDialog.revokeSubscription') }}
-          </el-button>
+            <Button
+              v-if="!isEditing"
+              type="button"
+              variant="outline"
+              size="icon"
+              @click="randomUsername"
+            >
+              <RefreshCw class="size-4" />
+            </Button>
+          </div>
+          <p v-if="fieldErrors.username" class="text-xs text-destructive">
+            {{ fieldErrors.username }}
+          </p>
         </div>
-        <div class="dk-spacer" />
-        <el-button @click="close">{{ t('cancel') }}</el-button>
-        <el-button type="primary" :loading="submitting" @click="onSubmit">
-          {{ isEditing ? t('core.save') : t('createUser') }}
-        </el-button>
-      </div>
-    </template>
-  </el-dialog>
+
+        <div class="space-y-2">
+          <Label>{{ t('userDialog.protocols') }}</Label>
+          <div class="flex flex-wrap gap-3">
+            <label
+              v-for="p in ALL_PROTOCOLS"
+              :key="p"
+              class="flex items-center gap-2 text-sm text-foreground"
+            >
+              <input
+                type="checkbox"
+                class="size-4 rounded border border-input accent-primary"
+                :checked="form.selected_proxies.includes(p)"
+                @change="
+                  toggleProtocol(p, ($event.target as HTMLInputElement).checked)
+                "
+              />
+              <span>{{ p }}</span>
+            </label>
+          </div>
+          <p v-if="fieldErrors.selected_proxies" class="text-xs text-destructive">
+            {{ fieldErrors.selected_proxies }}
+          </p>
+        </div>
+
+        <div v-if="form.selected_proxies.includes('vless')" class="space-y-2">
+          <Label>VLESS flow</Label>
+          <Select
+            :model-value="toFlowSelect(form.proxies.vless.flow)"
+            @update:model-value="(v) => (form.proxies.vless.flow = fromFlowSelect(v))"
+          >
+            <SelectTrigger class="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem
+                v-for="f in VLESS_FLOWS"
+                :key="toFlowSelect(f)"
+                :value="toFlowSelect(f)"
+              >
+                {{ f || 'none' }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div v-if="form.selected_proxies.includes('shadowsocks')" class="space-y-2">
+          <Label>{{ t('userDialog.method') }}</Label>
+          <Select
+            :model-value="form.proxies.shadowsocks.method"
+            @update:model-value="(v) => (form.proxies.shadowsocks.method = String(v))"
+          >
+            <SelectTrigger class="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="m in SS_METHODS" :key="m" :value="m">
+                {{ m }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div
+          v-for="protocol in form.selected_proxies"
+          :key="protocol"
+          class="space-y-2"
+        >
+          <Label>{{ `${t('inbound')} · ${protocol}` }}</Label>
+          <div v-if="tagsFor(protocol).length" class="flex flex-wrap gap-3">
+            <label
+              v-for="tag in tagsFor(protocol)"
+              :key="tag"
+              class="flex items-center gap-2 text-sm text-foreground"
+            >
+              <input
+                type="checkbox"
+                class="size-4 rounded border border-input accent-primary"
+                :checked="isInboundChecked(protocol, tag)"
+                @change="
+                  toggleInbound(protocol, tag, ($event.target as HTMLInputElement).checked)
+                "
+              />
+              <span>{{ tag }}</span>
+            </label>
+          </div>
+          <p v-else class="text-xs text-muted-foreground">{{ protocol }}</p>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div class="space-y-2">
+            <Label for="user-data-limit">{{ t('userDialog.dataLimit') + ' (GB)' }}</Label>
+            <Input
+              id="user-data-limit"
+              type="number"
+              min="0"
+              step="1"
+              :model-value="form.data_limit ?? ''"
+              :placeholder="t('userDialog.generatedByDefault')"
+              @update:model-value="(v) => setNullableNumber('data_limit', v)"
+            />
+          </div>
+          <div
+            v-if="form.data_limit && form.data_limit > 0"
+            class="space-y-2"
+          >
+            <Label>{{ t('userDialog.periodicUsageReset') }}</Label>
+            <Select
+              :model-value="form.data_limit_reset_strategy"
+              @update:model-value="(v) => (form.data_limit_reset_strategy = String(v))"
+            >
+              <SelectTrigger class="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem
+                  v-for="s in RESET_STRATEGIES"
+                  :key="s.value"
+                  :value="s.value"
+                >
+                  {{ t(`userDialog.${s.title}`) }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <Label>{{ t('status.active') + ' / ' + t('userDialog.onHold') }}</Label>
+          <Select
+            :model-value="form.status"
+            @update:model-value="(v) => (form.status = String(v) as 'active' | 'on_hold')"
+          >
+            <SelectTrigger class="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="active">{{ t('status.active') }}</SelectItem>
+              <SelectItem value="on_hold">{{ t('userDialog.onHold') }}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div v-if="form.status === 'on_hold'" class="space-y-2">
+          <Label for="user-on-hold">
+            {{ t('userDialog.onHoldExpireDuration') + ' (' + t('userDialog.days') + ')' }}
+          </Label>
+          <Input
+            id="user-on-hold"
+            type="number"
+            min="0"
+            step="1"
+            :model-value="form.on_hold_expire_duration ?? ''"
+            @update:model-value="(v) => setNullableNumber('on_hold_expire_duration', v)"
+          />
+        </div>
+        <div v-else class="space-y-2">
+          <Label for="user-expire">{{ t('userDialog.expiryDate') }}</Label>
+          <Input
+            id="user-expire"
+            type="date"
+            :model-value="expireDateStr"
+            :placeholder="t('userDialog.optional')"
+            @update:model-value="(v) => (expireDateStr = String(v))"
+          />
+        </div>
+
+        <div class="space-y-2">
+          <Label for="user-note">{{ t('userDialog.note') }}</Label>
+          <textarea
+            id="user-note"
+            v-model="form.note"
+            rows="2"
+            class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          />
+        </div>
+
+        <Alert v-if="errorMsg" variant="destructive">
+          <AlertDescription>{{ errorMsg }}</AlertDescription>
+        </Alert>
+      </form>
+
+      <DialogFooter class="sm:justify-between">
+        <div v-if="isEditing && user" class="flex flex-wrap gap-1">
+          <Button variant="ghost" type="button" @click="emit('resetUsage', user)">
+            {{ t('userDialog.resetUsage') }}
+          </Button>
+          <Button variant="ghost" type="button" @click="emit('revokeSub', user)">
+            {{ t('userDialog.revokeSubscription') }}
+          </Button>
+        </div>
+        <div v-else />
+        <div class="flex gap-2">
+          <Button variant="outline" type="button" @click="close">
+            {{ t('cancel') }}
+          </Button>
+          <Button type="button" :disabled="submitting" @click="onSubmit">
+            <Loader2 v-if="submitting" class="size-4 animate-spin" />
+            {{ isEditing ? t('core.save') : t('createUser') }}
+          </Button>
+        </div>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
-
-<style scoped>
-.username-row {
-  display: flex;
-  gap: 8px;
-  width: 100%;
-}
-
-.grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.footer {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.footer-left {
-  display: flex;
-  gap: 4px;
-}
-</style>

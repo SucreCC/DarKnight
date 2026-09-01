@@ -2,9 +2,16 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import QrcodeVue from 'qrcode.vue'
-import { ElMessage } from 'element-plus'
+import { toast } from 'vue-sonner'
 import type { User } from '@/api/user/types'
 import { absoluteSubscriptionUrl } from '../helpers'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 
 const props = defineProps<{
   modelValue: boolean
@@ -21,47 +28,39 @@ const links = computed(() => props.user?.links ?? [])
 
 async function copySub() {
   await navigator.clipboard.writeText(subUrl.value)
-  ElMessage.success(t('usersTable.copied'))
+  toast.success(t('usersTable.copied'))
 }
 </script>
 
 <template>
-  <el-dialog
-    :model-value="modelValue"
-    :title="t('qrcodeDialog.sublink')"
-    width="420px"
-    @update:model-value="(v: boolean) => emit('update:modelValue', v)"
+  <Dialog
+    :open="modelValue"
+    @update:open="(v: boolean) => emit('update:modelValue', v)"
   >
-    <div class="qr-wrap">
-      <QrcodeVue v-if="subUrl" :value="subUrl" :size="220" level="M" />
-      <el-input :model-value="subUrl" readonly class="sub-input" @click="copySub" />
-      <el-divider v-if="links.length">Configs</el-divider>
-      <div v-if="links.length" class="links-grid">
-        <div v-for="(link, i) in links" :key="i" class="link-qr">
-          <QrcodeVue :value="link" :size="120" level="M" />
-        </div>
+    <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+      <DialogHeader>
+        <DialogTitle>{{ t('qrcodeDialog.sublink') }}</DialogTitle>
+      </DialogHeader>
+
+      <div class="flex flex-col items-center gap-3">
+        <QrcodeVue v-if="subUrl" :value="subUrl" :size="220" level="M" />
+        <Input
+          :model-value="subUrl"
+          readonly
+          class="cursor-pointer"
+          @click="copySub"
+        />
+        <template v-if="links.length">
+          <div class="w-full border-t border-border pt-3 text-center text-sm text-muted-foreground">
+            Configs
+          </div>
+          <div class="flex flex-wrap justify-center gap-3">
+            <div v-for="(link, i) in links" :key="i">
+              <QrcodeVue :value="link" :size="120" level="M" />
+            </div>
+          </div>
+        </template>
       </div>
-    </div>
-  </el-dialog>
+    </DialogContent>
+  </Dialog>
 </template>
-
-<style scoped>
-.qr-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-.sub-input {
-  width: 100%;
-  cursor: pointer;
-}
-
-.links-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
-}
-</style>
