@@ -30,13 +30,14 @@ function openEdit(product: Product) {
   dialogOpen.value = true
 }
 
-async function onToggleListed(product: Product) {
+async function onSetListed(product: Product, listed: boolean) {
+  if (product.is_listed === listed) return
   try {
     await updateProduct.mutateAsync({
       id: product.id,
-      body: { is_listed: !product.is_listed }
+      body: { is_listed: listed }
     })
-    toast.success(t('products.saveSuccess'))
+    toast.success(listed ? t('products.listedOn') : t('products.listedOff'))
   } catch (err: unknown) {
     const detail = extractErrorDetail(err)
     toast.error(typeof detail === 'string' ? detail : t('portal.requestFailed'))
@@ -78,7 +79,7 @@ async function onRemove(product: Product) {
       :loading="isFetching"
       @edit="openEdit"
       @remove="onRemove"
-      @toggle-listed="onToggleListed"
+      @set-listed="onSetListed"
     />
 
     <ProductDialog v-model="dialogOpen" :product="editingProduct" />

@@ -1578,9 +1578,14 @@ def get_product_by_slug(db: Session, slug: str) -> Product | None:
 
 
 def create_product(db: Session, payload: ProductCreate) -> Product:
+    if not payload.cycles:
+        raise ValueError("at least one cycle is required")
     keys = {c.cycle_key for c in payload.cycles}
-    if payload.cycles and payload.display_cycle_key not in keys:
-        raise ValueError("display_cycle_key must match a cycle")
+    display_key = payload.display_cycle_key or payload.cycles[0].cycle_key
+    if display_key not in keys:
+        display_key = payload.cycles[0].cycle_key
+    max_sort = db.query(func.max(Product.sort_order)).scalar()
+    sort_order = payload.sort_order if payload.sort_order is not None else (max_sort or 0) + 1
     product = Product(
         slug=payload.slug,
         name_zh=payload.name_zh,
@@ -1588,12 +1593,15 @@ def create_product(db: Session, payload: ProductCreate) -> Product:
         category=payload.category,
         features_zh=payload.features_zh,
         features_en=payload.features_en,
-        display_cycle_key=payload.display_cycle_key,
-        sort_order=payload.sort_order,
+        display_cycle_key=display_key,
+        sort_order=sort_order,
         is_listed=payload.is_listed,
     )
     for c in payload.cycles:
-        product.cycles.append(ProductCycle(**c.model_dump()))
+        cycle = ProductCycle(**c.model_dump())
+        cycle.data_limit_gb = 0
+        cycle.is_listed = payload.is_listed
+        product.cycles.append(cycle)
     db.add(product)
     db.commit()
     db.refresh(product)
@@ -1624,6 +1632,9 @@ def update_product(db: Session, product: Product, payload: ProductModify) -> Pro
         product.sort_order = payload.sort_order
     if payload.is_listed is not None:
         product.is_listed = payload.is_listed
+        # 商品级上架/下架时同步所有周期，避免后台显示已上架但门户不可见
+        for cycle in product.cycles:
+            cycle.is_listed = payload.is_listed
 
     db.commit()
     db.refresh(product)
@@ -1641,6 +1652,7 @@ def get_product_cycle(db: Session, cycle_id: int) -> ProductCycle | None:
 
 def add_product_cycle(db: Session, product: Product, payload: ProductCycleCreate) -> ProductCycle:
     cycle = ProductCycle(**payload.model_dump())
+    cycle.data_limit_gb = 0
     product.cycles.append(cycle)
     db.commit()
     db.refresh(cycle)
@@ -1658,8 +1670,6 @@ def update_product_cycle(db: Session, cycle: ProductCycle, payload: ProductCycle
         cycle.label_en = payload.label_en
     if payload.price is not None:
         cycle.price = payload.price
-    if payload.data_limit_gb is not None:
-        cycle.data_limit_gb = payload.data_limit_gb
     if payload.duration_days is not None:
         cycle.duration_days = payload.duration_days
     if payload.is_listed is not None:
@@ -1667,15 +1677,25 @@ def update_product_cycle(db: Session, cycle: ProductCycle, payload: ProductCycle
     if payload.sort_order is not None:
         cycle.sort_order = payload.sort_order
 
+    cycle.data_limit_gb = 0
+
     db.commit()
     db.refresh(cycle)
     return cycle
 
 
 def remove_product_cycle(db: Session, cycle: ProductCycle) -> None:
-    if cycle.cycle_key == cycle.product.display_cycle_key:
-        raise ValueError("cannot delete display cycle")
+    product = cycle.product
+    was_display = cycle.cycle_key == product.display_cycle_key
+    cycle_id = cycle.id
     db.delete(cycle)
+    db.flush()
+    if was_display:
+        remaining = [c for c in product.cycles if c.id != cycle_id]
+        if not remaining:
+            raise ValueError("cannot delete last cycle")
+        first = min(remaining, key=lambda c: (c.sort_order, c.id))
+        product.display_cycle_key = first.cycle_key
     db.commit()
 
 

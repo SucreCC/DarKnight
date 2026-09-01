@@ -34,12 +34,9 @@ export type ProductCreateBody = {
   slug: string
   name_zh: string
   name_en: string
-  category: ProductCategory
   features_zh: string[]
   features_en: string[]
-  display_cycle_key: string
-  sort_order: number
-  is_listed: boolean
+  display_cycle_key?: string
   cycles: ProductCycleInput[]
 }
 

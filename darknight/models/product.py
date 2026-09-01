@@ -1,10 +1,31 @@
 from datetime import datetime
-from typing import Literal, Optional
+import json
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
 
 ProductCategory = Literal["period", "traffic"]
+
+
+def coerce_feature_list(value: Any) -> list[str]:
+    """SQLite 迁移里若用 json.dumps 写入 JSON 列，读出来可能是 str 而非 list。"""
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return []
+        try:
+            parsed = json.loads(text)
+            if isinstance(parsed, list):
+                return [str(item).strip() for item in parsed if str(item).strip()]
+        except json.JSONDecodeError:
+            pass
+        return [text]
+    return []
 
 
 class ProductCycleCreate(BaseModel):
@@ -24,11 +45,18 @@ class ProductCycleCreate(BaseModel):
             raise ValueError("price must be > 0")
         return v
 
-    @field_validator("data_limit_gb", "duration_days")
+    @field_validator("data_limit_gb")
     @classmethod
-    def positive_int(cls, v: int) -> int:
+    def data_limit_non_negative(cls, v: int) -> int:
+        if v < 0:
+            raise ValueError("data_limit_gb must be >= 0")
+        return v
+
+    @field_validator("duration_days")
+    @classmethod
+    def duration_positive(cls, v: int) -> int:
         if v <= 0:
-            raise ValueError("must be > 0")
+            raise ValueError("duration_days must be > 0")
         return v
 
 
@@ -49,11 +77,18 @@ class ProductCycleModify(BaseModel):
             raise ValueError("price must be > 0")
         return v
 
-    @field_validator("data_limit_gb", "duration_days")
+    @field_validator("data_limit_gb")
     @classmethod
-    def positive_int(cls, v: Optional[int]) -> Optional[int]:
+    def data_limit_non_negative(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and v < 0:
+            raise ValueError("data_limit_gb must be >= 0")
+        return v
+
+    @field_validator("duration_days")
+    @classmethod
+    def duration_positive(cls, v: Optional[int]) -> Optional[int]:
         if v is not None and v <= 0:
-            raise ValueError("must be > 0")
+            raise ValueError("duration_days must be > 0")
         return v
 
 
@@ -75,11 +110,11 @@ class ProductCreate(BaseModel):
     slug: str = Field(min_length=1, max_length=32)
     name_zh: str = Field(min_length=1, max_length=128)
     name_en: str = Field(min_length=1, max_length=128)
-    category: ProductCategory
+    category: ProductCategory = "period"
     features_zh: list[str] = Field(default_factory=list)
     features_en: list[str] = Field(default_factory=list)
-    display_cycle_key: str = Field(min_length=1, max_length=32)
-    sort_order: int = 0
+    display_cycle_key: Optional[str] = Field(default=None, min_length=1, max_length=32)
+    sort_order: Optional[int] = None
     is_listed: bool = False
     cycles: list[ProductCycleCreate] = Field(default_factory=list)
 
@@ -112,3 +147,8 @@ class ProductResponse(BaseModel):
     cycles: list[ProductCycleResponse] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
+
+    @field_validator("features_zh", "features_en", mode="before")
+    @classmethod
+    def parse_features(cls, value: Any) -> list[str]:
+        return coerce_feature_list(value)

@@ -18,6 +18,7 @@ from darknight.models.order import (
     generate_order_id,
 )
 from darknight.models.portal_auth import PortalUser
+from darknight.models.product import coerce_feature_list
 from darknight.services.config.settings import get_app_config
 from darknight.services.payment.coupons import CouponError, resolve_discount
 from darknight.services.payment.fulfillment import fulfill_portal_order, try_mark_order_paid
@@ -79,8 +80,8 @@ def list_plans(db: Session = Depends(get_db)):
                 name_zh=p.name_zh,
                 name_en=p.name_en,
                 category=p.category,
-                features_zh=list(p.features_zh or []),
-                features_en=list(p.features_en or []),
+                features_zh=coerce_feature_list(p.features_zh),
+                features_en=coerce_feature_list(p.features_en),
                 display_cycle_id=p.display_cycle_key,
                 sort_order=p.sort_order,
                 cycles=[

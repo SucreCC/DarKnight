@@ -3,7 +3,9 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from darknight.models.product import coerce_feature_list
 
 
 class PortalOrderStatus(str, Enum):
@@ -75,6 +77,11 @@ class PlanResponse(BaseModel):
     display_cycle_id: str = ""
     sort_order: int = 0
     cycles: list[PlanCycleResponse]
+
+    @field_validator("features_zh", "features_en", mode="before")
+    @classmethod
+    def parse_features(cls, value) -> list[str]:
+        return coerce_feature_list(value)
 
 
 class PlanCatalogResponse(BaseModel):

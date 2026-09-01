@@ -27,8 +27,13 @@ const coupon = ref('')
 const submitting = ref(false)
 
 watch(
-  plan,
-  (value) => {
+  [plan, () => route.query.cycle],
+  ([value, cycleQuery]) => {
+    const fromQuery = typeof cycleQuery === 'string' ? cycleQuery : ''
+    if (fromQuery && value?.cycles.some((c) => c.id === fromQuery)) {
+      selectedCycleId.value = fromQuery
+      return
+    }
     if (value?.cycles[0]) {
       selectedCycleId.value = value.cycles[0].id
     }
@@ -94,7 +99,10 @@ async function placeOrder() {
         </ul>
       </div>
 
-      <div class="rounded-xl border border-border bg-card p-7">
+      <div
+        v-if="plan.cycles.length > 1"
+        class="rounded-xl border border-border bg-card p-7"
+      >
         <p class="mb-4 text-base font-semibold text-foreground">
           {{ t('portal.buy.paymentCycle') }}
         </p>

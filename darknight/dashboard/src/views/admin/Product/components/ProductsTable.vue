@@ -2,18 +2,22 @@
 import { useI18n } from 'vue-i18n'
 import { Pencil, Trash2 } from 'lucide-vue-next'
 import type { Product } from '@/api/product/types'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Switch } from '@/components/ui/switch'
 
 defineProps<{ products: Product[]; loading: boolean }>()
 const emit = defineEmits<{
   edit: [product: Product]
   remove: [product: Product]
-  toggleListed: [product: Product]
+  setListed: [product: Product, listed: boolean]
 }>()
 
 const { t } = useI18n()
+
+function primaryCycle(product: Product) {
+  return product.cycles[0]
+}
 </script>
 
 <template>
@@ -32,11 +36,10 @@ const { t } = useI18n()
     <table v-else class="w-full min-w-[880px] text-sm">
       <thead class="border-b border-border text-muted-foreground">
         <tr>
-          <th class="px-4 py-3 text-start font-medium">{{ t('products.sortOrder') }}</th>
           <th class="px-4 py-3 text-start font-medium">{{ t('products.slug') }}</th>
           <th class="px-4 py-3 text-start font-medium">{{ t('products.nameZh') }}</th>
-          <th class="px-4 py-3 text-start font-medium">{{ t('products.category') }}</th>
-          <th class="px-4 py-3 text-start font-medium">{{ t('products.cycles') }}</th>
+          <th class="px-4 py-3 text-start font-medium">{{ t('products.price') }}</th>
+          <th class="px-4 py-3 text-start font-medium">{{ t('products.durationDays') }}</th>
           <th class="px-4 py-3 text-start font-medium">{{ t('products.listed') }}</th>
           <th class="px-4 py-3 text-end font-medium" />
         </tr>
@@ -47,17 +50,19 @@ const { t } = useI18n()
           :key="row.id"
           class="border-b border-border last:border-0"
         >
-          <td class="px-4 py-3 text-foreground">{{ row.sort_order }}</td>
           <td class="px-4 py-3 font-mono text-foreground">{{ row.slug }}</td>
           <td class="px-4 py-3 text-foreground">{{ row.name_zh }}</td>
-          <td class="px-4 py-3 text-muted-foreground">{{ row.category }}</td>
-          <td class="px-4 py-3 text-foreground">{{ row.cycles.length }}</td>
+          <td class="px-4 py-3 text-foreground">
+            {{ primaryCycle(row)?.price ?? '—' }}
+          </td>
+          <td class="px-4 py-3 text-foreground">
+            {{ primaryCycle(row)?.duration_days ?? '—' }}
+          </td>
           <td class="px-4 py-3">
-            <button type="button" @click="emit('toggleListed', row)">
-              <Badge :variant="row.is_listed ? 'default' : 'secondary'">
-                {{ row.is_listed ? t('products.listedYes') : t('products.listedNo') }}
-              </Badge>
-            </button>
+            <Switch
+              :model-value="row.is_listed"
+              @update:model-value="(v: boolean) => emit('setListed', row, v)"
+            />
           </td>
           <td class="px-4 py-3 text-end">
             <div class="inline-flex items-center gap-1">

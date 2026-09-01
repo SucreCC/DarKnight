@@ -68,9 +68,23 @@ export function usePlanCatalog() {
     return getPlan(planId)?.cycles.find((cycle) => cycle.id === cycleId)
   }
 
-  function filterPlans(filter: PlanFilter): PricedPlan[] {
-    if (filter === 'all') return plans.value
-    return plans.value.filter((plan) => plan.category === filter)
+  function displayCycle(plan: PricedPlan) {
+    return plan.cycles.find((cycle) => cycle.id === plan.displayCycleId) ?? plan.cycles[0]
+  }
+
+  function sortPlans(filter: PlanFilter): PricedPlan[] {
+    const list = [...plans.value]
+    if (filter === 'all') {
+      return list.sort((a, b) => a.sortOrder - b.sortOrder)
+    }
+    return list.sort((a, b) => {
+      const cycleA = displayCycle(a)
+      const cycleB = displayCycle(b)
+      if (filter === 'period') {
+        return cycleA.durationDays - cycleB.durationDays
+      }
+      return cycleA.dataLimitGb - cycleB.dataLimitGb
+    })
   }
 
   return {
@@ -80,6 +94,6 @@ export function usePlanCatalog() {
     isError: query.isError,
     getPlan,
     getCycle,
-    filterPlans
+    sortPlans
   }
 }

@@ -32,22 +32,22 @@ const isDark = computed({
       <div class="flex items-center justify-between py-3">
         <span class="text-sm text-foreground">{{ t('layout.darkMode') }}</span>
         <Switch
-          :checked="isDark"
-          @update:checked="(v: boolean) => (isDark = v)"
+          :model-value="isDark"
+          @update:model-value="(v: boolean) => (isDark = v)"
         />
       </div>
       <div class="flex items-center justify-between py-3">
         <span class="text-sm text-foreground">{{ t('layout.breadcrumb') }}</span>
         <Switch
-          :checked="appStore.showBreadcrumb"
-          @update:checked="(v: boolean) => appStore.setShowBreadcrumb(v)"
+          :model-value="appStore.showBreadcrumb"
+          @update:model-value="(v: boolean) => appStore.setShowBreadcrumb(v)"
         />
       </div>
       <div class="flex items-center justify-between py-3">
         <span class="text-sm text-foreground">{{ t('layout.tagsView') }}</span>
         <Switch
-          :checked="appStore.showTagsView"
-          @update:checked="(v: boolean) => appStore.setShowTagsView(v)"
+          :model-value="appStore.showTagsView"
+          @update:model-value="(v: boolean) => appStore.setShowTagsView(v)"
         />
       </div>
     </aside>

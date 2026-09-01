@@ -53,8 +53,8 @@ function onPortUpdate(value: string | number) {
       <div class="flex items-center gap-2">
         <span class="text-sm text-muted-foreground">{{ t('status.disabled') }}</span>
         <Switch
-          :checked="host.is_disabled"
-          @update:checked="(v: boolean) => (host.is_disabled = v)"
+          :model-value="host.is_disabled"
+          @update:model-value="(v: boolean) => (host.is_disabled = v)"
         />
       </div>
       <Button variant="ghost" size="icon" type="button" @click="$emit('remove')">
@@ -191,29 +191,29 @@ function onPortUpdate(value: string | number) {
           <div class="flex flex-wrap gap-x-6 gap-y-3">
             <div class="flex items-center gap-2">
               <Switch
-                :checked="host.allowinsecure"
-                @update:checked="(v: boolean) => (host.allowinsecure = v)"
+                :model-value="host.allowinsecure"
+                @update:model-value="(v: boolean) => (host.allowinsecure = v)"
               />
               <span class="text-sm text-foreground">{{ t('hostsDialog.allowinsecure') }}</span>
             </div>
             <div class="flex items-center gap-2">
               <Switch
-                :checked="host.mux_enable"
-                @update:checked="(v: boolean) => (host.mux_enable = v)"
+                :model-value="host.mux_enable"
+                @update:model-value="(v: boolean) => (host.mux_enable = v)"
               />
               <span class="text-sm text-foreground">{{ t('hostsDialog.muxEnable') }}</span>
             </div>
             <div class="flex items-center gap-2">
               <Switch
-                :checked="host.random_user_agent"
-                @update:checked="(v: boolean) => (host.random_user_agent = v)"
+                :model-value="host.random_user_agent"
+                @update:model-value="(v: boolean) => (host.random_user_agent = v)"
               />
               <span class="text-sm text-foreground">{{ t('hostsDialog.randomUserAgent') }}</span>
             </div>
             <div class="flex items-center gap-2">
               <Switch
-                :checked="host.use_sni_as_host"
-                @update:checked="(v: boolean) => (host.use_sni_as_host = v)"
+                :model-value="host.use_sni_as_host"
+                @update:model-value="(v: boolean) => (host.use_sni_as_host = v)"
               />
               <span class="text-sm text-foreground">{{ t('hostsDialog.useSniAsHost') }}</span>
             </div>

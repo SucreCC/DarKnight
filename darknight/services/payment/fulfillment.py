@@ -51,7 +51,10 @@ def fulfill_portal_order(db: Session, dbuser: User, order: PortalOrder) -> User:
     dbuser.used_traffic = 0
     dbuser.node_usages.clear()
 
-    dbuser.data_limit = order.snapshot_data_limit_gb * 1024**3
+    if order.snapshot_data_limit_gb == 0:
+        dbuser.data_limit = 0
+    else:
+        dbuser.data_limit = order.snapshot_data_limit_gb * 1024**3
 
     now_ts = int(datetime.utcnow().timestamp())
     base_expire = max(dbuser.expire or now_ts, now_ts)
