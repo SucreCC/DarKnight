@@ -82,17 +82,26 @@ function onPortUpdate(value: string | number) {
       <div class="grid gap-3 sm:grid-cols-2">
         <div class="space-y-2">
           <Label>{{ t('hostsDialog.host') }}</Label>
-          <Input v-model="host.host" />
+          <Input
+            :model-value="host.host ?? ''"
+            @update:model-value="(v) => (host.host = String(v))"
+          />
         </div>
         <div class="space-y-2">
           <Label>{{ t('hostsDialog.sni') }}</Label>
-          <Input v-model="host.sni" />
+          <Input
+            :model-value="host.sni ?? ''"
+            @update:model-value="(v) => (host.sni = String(v))"
+          />
         </div>
       </div>
 
       <div class="space-y-2">
         <Label>{{ t('hostsDialog.path') }}</Label>
-        <Input v-model="host.path" />
+        <Input
+          :model-value="host.path ?? ''"
+          @update:model-value="(v) => (host.path = String(v))"
+        />
       </div>
 
       <div class="grid gap-3 sm:grid-cols-3">
@@ -166,15 +175,17 @@ function onPortUpdate(value: string | number) {
           <div class="space-y-2">
             <Label>{{ t('hostsDialog.fragment') }}</Label>
             <Input
-              v-model="host.fragment_setting"
-              :placeholder="t('hostsDialog.fragment.info')"
+              :model-value="String(host.fragment_setting ?? '')"
+              :placeholder="String(t('hostsDialog.fragment.info'))"
+              @update:model-value="(v) => (host.fragment_setting = String(v))"
             />
           </div>
           <div class="space-y-2">
             <Label>{{ t('hostsDialog.noise') }}</Label>
             <Input
-              v-model="host.noise_setting"
-              :placeholder="t('hostsDialog.noise.info')"
+              :model-value="String(host.noise_setting ?? '')"
+              :placeholder="String(t('hostsDialog.noise.info'))"
+              @update:model-value="(v) => (host.noise_setting = String(v))"
             />
           </div>
           <div class="flex flex-wrap gap-x-6 gap-y-3">

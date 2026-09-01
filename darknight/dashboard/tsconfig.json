@@ -15,7 +15,7 @@
     "noEmit": true,
     "jsx": "preserve",
     "baseUrl": ".",
-    "types": ["node", "vite/client", "element-plus/global"],
+    "types": ["node", "vite/client"],
     "paths": {
       "@/*": ["src/*"]
     }
