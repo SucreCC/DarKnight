@@ -69,13 +69,59 @@ docker compose restart darknight
 
 ## Cloudflare / DNS
 
-| 用途 | 记录 | 代理模式 |
-| --- | --- | --- |
-| 网站面板 | `darkight.com` A → VPS | 橙云（可） |
-| 邮件 | `mail.darkight.com` A → VPS | 灰云（必须） |
-| 代理节点 | `darkight.com:8443` 或子域如 `node.darkight.com` | **灰云**（必须） |
+### 橙云（Proxied）要加什么
 
-Cloudflare 橙云**不会**转发 8443、8444、8445、1080 等自定义端口。代理域名须灰云直连 VPS IP。
+仅 **网站 / 面板 HTTPS** 走橙云。在 Cloudflare DNS 添加：
+
+| 类型 | 名称 | 内容 | 代理状态 |
+| --- | --- | --- | --- |
+| A | `@` | VPS 公网 IP | **橙云**（已代理） |
+
+效果：用户访问 `https://darkight.com` → Cloudflare 443 → 你的 VPS 443（mailcow nginx）→ 面板 `33100`。
+
+若使用 `www`，可再加 CNAME `www` → `darkight.com`，同样 **橙云**。
+
+**Cloudflare 控制台建议设置（SSL/TLS）：**
+
+| 项 | 推荐值 | 说明 |
+| --- | --- | --- |
+| SSL/TLS 加密模式 | **Full (strict)** | 源站 nginx 已有 Let's Encrypt 有效证书 |
+| 始终使用 HTTPS | 开启（可选） | HTTP 自动跳 HTTPS |
+| 最低 TLS 版本 | TLS 1.2 | 一般默认即可 |
+
+橙云 **不需要** 为 8443、8444、8445、1080 单独加 DNS 或 Page Rule；Cloudflare 橙云只代理 **80 / 443**，自定义端口不会经橙云转发。
+
+---
+
+### 灰云（DNS only）要加什么
+
+**邮件**与 **代理节点** 必须灰云，直连 VPS IP：
+
+| 类型 | 名称 | 内容 | 代理状态 | 用途 |
+| --- | --- | --- | --- | --- |
+| A | `mail` | VPS 公网 IP | **灰云** | 邮件 SMTP/IMAP/Webmail |
+| A | `node`（推荐） | VPS 公网 IP | **灰云** | VLESS/VMess/Trojan/SS 代理 |
+| MX | `@` | `mail.darkight.com`（优先级 10） | — | 收信 |
+
+代理 **不要** 用橙云的 `darkight.com:8443`（橙云不转发该端口）。推荐单独子域：
+
+- 客户端地址：`node.darkight.com`
+- 端口：`8443` / `8444` / `8445` / `1080`
+- SNI（TLS 三类）：`darkight.com`（与 Let's Encrypt 证书 SAN 一致）
+
+管理后台 Host 里「地址」填 `node.darkight.com` 或 VPS IP 均可；SNI 仍填 `darkight.com`。
+
+---
+
+### 对照总表
+
+| 用途 | 域名 | Cloudflare | 对外端口 |
+| --- | --- | --- | --- |
+| 网站 / 面板 | `darkight.com` | **橙云** | 443（经 CF） |
+| 邮件 | `mail.darkight.com` | **灰云** | 25 / 443 等 |
+| 代理（VLESS 等） | `node.darkight.com`（推荐） | **灰云** | 8443–8445、1080 |
+
+Cloudflare 橙云**不会**转发 8443、8444、8445、1080。代理域名须 **灰云** 直连 VPS IP，并在 VPS 防火墙放行上述端口。
 
 ---
 
@@ -115,7 +161,7 @@ docker compose up -d --build
 
 | Inbound | 地址 | 端口 | SNI | 安全 |
 | --- | --- | --- | --- | --- |
-| VLESS TCP TLS | VPS IP 或 `node.darkight.com` | 8443 | `darkight.com` | tls |
+| VLESS TCP TLS | `node.darkight.com` 或 VPS IP | 8443 | `darkight.com` | tls |
 | VMess TCP TLS | 同上 | 8444 | `darkight.com` | tls |
 | Trojan TCP TLS | 同上 | 8445 | `darkight.com` | tls |
 | Shadowsocks TCP | 同上 | 1080 | — | none |
@@ -130,10 +176,10 @@ docker compose up -d --build
 
 | 协议 | 地址 | 端口 | 备注 |
 | --- | --- | --- | --- |
-| VLESS | `1.2.3.4` 或 `node.darkight.com` | 8443 | TLS，flow 按面板生成 |
-| VMess | 同上 | 8444 | TLS |
-| Trojan | 同上 | 8445 | TLS |
-| Shadowsocks | 同上 | 1080 | 密码/加密方式见订阅 |
+| VLESS | `node.darkight.com` | 8443 | TLS，SNI 为 `darkight.com` |
+| VMess | `node.darkight.com` | 8444 | TLS |
+| Trojan | `node.darkight.com` | 8445 | TLS |
+| Shadowsocks | `node.darkight.com` | 1080 | 密码/加密方式见订阅 |
 
 推荐使用订阅链接导入，避免手动填错 SNI 或端口。
 
