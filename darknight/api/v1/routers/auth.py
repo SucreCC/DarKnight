@@ -108,6 +108,14 @@ def register(body: RegisterRequest, bg: BackgroundTasks, db: Session = Depends(g
                 detail=f"Protocol {proxy_type} is disabled on your server",
             )
 
+    referrer_user_id = None
+    invite_code = (body.invite_code or "").strip()
+    if invite_code:
+        invite = crud.get_invite_code_by_code(db, invite_code)
+        if not invite:
+            raise HTTPException(status_code=400, detail="Invalid invite code")
+        referrer_user_id = invite.owner_user_id
+
     try:
         dbuser = crud.create_user(
             db,
@@ -115,6 +123,7 @@ def register(body: RegisterRequest, bg: BackgroundTasks, db: Session = Depends(g
             email=email,
             hashed_password=hash_password(body.password),
             email_verified_at=datetime.utcnow(),
+            referrer_user_id=referrer_user_id,
         )
     except IntegrityError:
         db.rollback()
@@ -128,6 +137,7 @@ def register(body: RegisterRequest, bg: BackgroundTasks, db: Session = Depends(g
                 email=email,
                 hashed_password=hash_password(body.password),
                 email_verified_at=datetime.utcnow(),
+                referrer_user_id=referrer_user_id,
             )
         except IntegrityError:
             db.rollback()

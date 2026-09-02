@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onMounted, onBeforeUnmount, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
 import { registerUser, sendVerificationCode } from '@/api/portal'
@@ -15,6 +15,7 @@ import SlideCaptchaDialog from './components/SlideCaptchaDialog.vue'
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 
 const form = reactive({
   email: '',
@@ -71,6 +72,10 @@ onMounted(() => {
   form.code = ''
   form.password = ''
   form.confirmPassword = ''
+  const inviteFromQuery = route.query.invite
+  if (typeof inviteFromQuery === 'string' && inviteFromQuery.trim()) {
+    form.inviteCode = inviteFromQuery.trim()
+  }
   for (const ms of [50, 200, 500, 1000]) {
     clearTimers.push(window.setTimeout(purgeAutofillNoise, ms))
   }

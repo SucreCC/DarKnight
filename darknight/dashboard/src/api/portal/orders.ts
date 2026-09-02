@@ -12,6 +12,7 @@ export interface PortalOrder {
   paypal_order_id?: string | null
   coupon?: string | null
   discount: number
+  wallet_credit?: number
   created_at: string
   paid_at?: string | null
   expires_at?: string | null

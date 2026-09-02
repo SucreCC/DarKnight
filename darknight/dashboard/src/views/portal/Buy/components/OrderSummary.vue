@@ -22,6 +22,12 @@ const props = withDefaults(
     amount?: number
     /** 订单页传入下单时锁定的折扣 */
     discount?: number
+    /** 订单页传入下单时锁定的佣金抵扣 */
+    walletCredit?: number
+    /** 套餐原价；订单页优先用价目表原价，避免明细缺失 */
+    listPriceOverride?: number
+    /** 配置页预览：当前可用佣金余额 */
+    availableCommission?: number
     currency?: string
     hideSubmit?: boolean
     readonlyCoupon?: boolean
@@ -49,19 +55,36 @@ const currencyCode = computed(() => props.currency ?? catalogCurrency.value)
 const symbol = computed(() => currencySymbol(currencyCode.value))
 
 const discount = computed(() => props.discount ?? verifiedDiscount.value)
+const walletCredit = computed(() => props.walletCredit ?? 0)
+const isPreview = computed(() => props.availableCommission !== undefined && props.amount === undefined)
 
-/** 订单页显示下单时锁定的原价，配置页显示当前价目表原价 */
+/** 套餐原价 */
 const listPrice = computed(() => {
+  if (props.listPriceOverride !== undefined) return props.listPriceOverride
   if (props.amount !== undefined) {
-    return Math.round((props.amount + discount.value) * 100) / 100
+    return Math.round((props.amount + discount.value + walletCredit.value) * 100) / 100
   }
   return plan.value?.price
+})
+
+/** 实际或预计佣金抵扣 */
+const commissionCredit = computed(() => {
+  if (walletCredit.value > 0) return walletCredit.value
+  if (props.amount !== undefined && listPrice.value !== undefined) {
+    const implied = Math.round((listPrice.value - discount.value - props.amount) * 100) / 100
+    return implied > 0 ? implied : 0
+  }
+  if (isPreview.value && listPrice.value !== undefined) {
+    const payable = Math.round((listPrice.value - discount.value) * 100) / 100
+    return Math.round(Math.min(props.availableCommission ?? 0, payable) * 100) / 100
+  }
+  return 0
 })
 
 const total = computed(() => {
   if (props.amount !== undefined) return props.amount
   if (listPrice.value === undefined) return undefined
-  return Math.round((listPrice.value - discount.value) * 100) / 100
+  return Math.round((listPrice.value - discount.value - commissionCredit.value) * 100) / 100
 })
 
 const durationDays = computed(() => plan.value?.durationDays ?? 0)
@@ -157,6 +180,17 @@ async function verifyCoupon() {
       <div v-if="discount > 0" class="flex items-center justify-between">
         <span class="text-muted-foreground">{{ coupon || t('portal.buy.discount') }}</span>
         <span class="font-medium text-primary">-{{ symbol }}{{ formatPrice(discount) }}</span>
+      </div>
+
+      <div v-if="commissionCredit > 0" class="flex items-center justify-between">
+        <span class="text-muted-foreground">
+          {{
+            isPreview
+              ? t('portal.buy.commissionCreditPreview')
+              : t('portal.buy.commissionCredit')
+          }}
+        </span>
+        <span class="font-medium text-primary">-{{ symbol }}{{ formatPrice(commissionCredit) }}</span>
       </div>
     </div>
 

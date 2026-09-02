@@ -40,6 +40,10 @@ const { getPlan } = usePlanCatalog()
 const planName = computed(() =>
   order.value ? (getPlan(order.value.plan_id)?.name ?? order.value.plan_id) : ''
 )
+const planListPrice = computed(() => {
+  if (!order.value) return undefined
+  return getPlan(order.value.plan_id)?.price
+})
 const isPaid = computed(() => order.value?.status === 'paid')
 const isPending = computed(() => order.value?.status === 'pending')
 const isTerminal = computed(() => {
@@ -184,6 +188,8 @@ function goBuyAgain() {
           :coupon="order.coupon || undefined"
           :amount="order.amount"
           :discount="order.discount"
+          :wallet-credit="order.wallet_credit ?? 0"
+          :list-price-override="planListPrice"
           :currency="order.currency"
           :submit-label="t('portal.buy.checkout')"
           variant="panel"

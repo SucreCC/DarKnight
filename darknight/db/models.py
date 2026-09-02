@@ -97,6 +97,12 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=True)
     hashed_password = Column(String(128), nullable=True)
     email_verified_at = Column(DateTime, nullable=True)
+    referrer_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    referrer = relationship("User", remote_side="User.id", foreign_keys=[referrer_user_id])
+    wallet_balance = Column(Float, nullable=False, default=0.0)
+    auto_renewal = Column(Boolean, nullable=False, default=False)
+    notify_expire_email = Column(Boolean, nullable=False, default=True)
+    notify_traffic_email = Column(Boolean, nullable=False, default=True)
     proxies = relationship("Proxy", back_populates="user", cascade="all, delete-orphan")
     status = Column(Enum(UserStatus), nullable=False, default=UserStatus.active)
     used_traffic = Column(BigInteger, default=0)
@@ -404,6 +410,57 @@ class Product(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
 
+class InviteCode(Base):
+    __tablename__ = "invite_codes"
+    __table_args__ = (
+        UniqueConstraint("code", name="uq_invite_codes_code"),
+        UniqueConstraint("owner_user_id", name="uq_invite_codes_owner_user_id"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    code = Column(String(16), unique=True, index=True, nullable=False)
+    owner_user_id = Column(Integer, ForeignKey("users.id"), unique=True, index=True, nullable=False)
+    owner = relationship("User", foreign_keys=[owner_user_id])
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class ReferralCommission(Base):
+    __tablename__ = "referral_commissions"
+    __table_args__ = (UniqueConstraint("order_id", name="uq_referral_commissions_order_id"),)
+
+    id = Column(Integer, primary_key=True)
+    referrer_user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
+    referred_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    order_id = Column(String(64), ForeignKey("portal_orders.id"), nullable=False)
+    amount = Column(Float, nullable=False)
+    currency = Column(String(8), nullable=False, default="USD")
+    status = Column(String(16), nullable=False, default="pending")
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    available_at = Column(DateTime, nullable=False)
+    transferred_at = Column(DateTime, nullable=True)
+
+
+class CommissionPayout(Base):
+    __tablename__ = "commission_payouts"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
+    amount = Column(Float, nullable=False)
+    currency = Column(String(8), nullable=False, default="USD")
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class WalletRedemption(Base):
+    __tablename__ = "wallet_redemptions"
+    __table_args__ = (UniqueConstraint("user_id", "coupon_code", name="uq_wallet_redemptions_user_coupon"),)
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    coupon_code = Column(String(64), nullable=False)
+    amount = Column(Float, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 class PortalOrder(Base):
     __tablename__ = "portal_orders"
 
@@ -419,6 +476,7 @@ class PortalOrder(Base):
     paypal_order_id = Column(String(64), nullable=True, index=True)
     coupon = Column(String(64), nullable=True)
     discount = Column(Float, nullable=False, default=0.0)
+    wallet_credit = Column(Float, nullable=False, default=0.0)
     paid_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     snapshot_data_limit_gb = Column(Integer, nullable=True)

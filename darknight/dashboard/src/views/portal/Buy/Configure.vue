@@ -2,8 +2,10 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { useQuery } from '@tanstack/vue-query'
 import { Check, Loader2 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
+import { fetchInviteSummary } from '@/api/portal/invite'
 import { createPortalOrder, preparePortalOrderPayment } from '@/api/portal/orders'
 import { finishCheckoutBoot, startCheckoutBoot } from './checkoutBoot'
 import { preloadPayPalSdk } from './paypalPreload'
@@ -22,6 +24,14 @@ const planId = computed(() => String(route.params.planId || ''))
 const plan = computed(() => getPlan(planId.value))
 const coupon = ref('')
 const submitting = ref(false)
+
+const inviteSummaryQuery = useQuery({
+  queryKey: ['portal', 'invite', 'summary'],
+  queryFn: fetchInviteSummary,
+  refetchOnWindowFocus: false
+})
+
+const availableCommission = computed(() => inviteSummaryQuery.data.value?.balance ?? 0)
 
 watch([planId, isLoading], () => {
   if (!isLoading.value && !plan.value) {
@@ -84,6 +94,7 @@ async function placeOrder() {
     <OrderSummary
       :plan-id="plan.id"
       :coupon="coupon"
+      :available-commission="availableCommission"
       :loading="submitting"
       :submit-label="t('portal.buy.placeOrder')"
       @update:coupon="coupon = $event"

@@ -22,6 +22,7 @@ from darknight.models.product import coerce_feature_list
 from darknight.services.config.settings import get_app_config
 from darknight.services.payment.coupons import CouponError, resolve_discount
 from darknight.services.payment.fulfillment import fulfill_portal_order, try_mark_order_paid
+from darknight.services.payment.referral import create_referral_commission_for_order
 from darknight.services.payment.paypal import (
     PayPalDeclined,
     PayPalError,
@@ -147,17 +148,22 @@ def create_portal_order(
     except CouponError as exc:
         raise HTTPException(status_code=400, detail="Coupon is invalid or expired") from exc
 
+    payable = round(product.price - discount, 2)
+    wallet_credit = crud.apply_wallet_credit(db, dbuser.id, payable)
+    amount = round(payable - wallet_credit, 2)
+
     cfg = get_app_config().paypal
     order = crud.create_portal_order(
         db,
         order_id=generate_order_id(),
         user_id=dbuser.id,
         plan_id=product.slug,
-        amount=round(product.price - discount, 2),
+        amount=amount,
         currency=cfg.currency,
         paypal_order_id=None,
         coupon=coupon_code,
         discount=discount,
+        wallet_credit=wallet_credit,
         snapshot_data_limit_gb=0,
         snapshot_duration_days=product.duration_days,
         snapshot_product_name=product.name_zh,
@@ -168,15 +174,24 @@ def create_portal_order(
 @router.post("/orders/{order_id}/prepare-payment", response_model=OrderResponse)
 def prepare_order_payment(
     order_id: str,
+    bg: BackgroundTasks,
     refresh: bool = False,
     portal_user: PortalUser = Depends(PortalUser.get_current),
     db: Session = Depends(get_db),
 ):
-    _ensure_paypal_configured()
-    order, _ = _get_user_order(order_id, portal_user, db)
+    order, dbuser = _get_user_order(order_id, portal_user, db)
 
     if order.status != PortalOrderStatus.pending:
         raise HTTPException(status_code=400, detail="Order is not payable")
+
+    if order.amount <= 0:
+        if try_mark_order_paid(db, order):
+            fulfill_portal_order(db, dbuser, order)
+            create_referral_commission_for_order(db, dbuser, order)
+            bg.add_task(xray.operations.update_user, dbuser=dbuser)
+        return _order_response(order)
+
+    _ensure_paypal_configured()
 
     # 一张卡提交过之后 PayPal 订单就不可再用，重试必须换一个新的，
     # 否则前端会反复对着已作废的订单提交。
@@ -226,10 +241,12 @@ def close_order(
     portal_user: PortalUser = Depends(PortalUser.get_current),
     db: Session = Depends(get_db),
 ):
-    order, _ = _get_user_order(order_id, portal_user, db)
+    order, dbuser = _get_user_order(order_id, portal_user, db)
     if order.status != PortalOrderStatus.pending:
         raise HTTPException(status_code=400, detail="Only pending orders can be closed")
-    order = crud.update_portal_order(db, order, status=PortalOrderStatus.closed)
+    if order.wallet_credit > 0:
+        crud.refund_wallet_credit(db, dbuser.id, order.wallet_credit)
+    order = crud.update_portal_order(db, order, status=PortalOrderStatus.closed, wallet_credit=0)
     return _order_response(order)
 
 
@@ -267,6 +284,7 @@ def capture_portal_order(
 
     if try_mark_order_paid(db, order):
         fulfill_portal_order(db, dbuser, order)
+        create_referral_commission_for_order(db, dbuser, order)
         bg.add_task(xray.operations.update_user, dbuser=dbuser)
         logger.info(f"Order paid: {order.id} user={dbuser.username}")
 
@@ -328,6 +346,7 @@ async def paypal_webhook(
         return {"detail": "Already fulfilled"}
 
     fulfill_portal_order(db, dbuser, order)
+    create_referral_commission_for_order(db, dbuser, order)
     bg.add_task(xray.operations.update_user, dbuser=dbuser)
     logger.info(f"Webhook fulfilled order: {order.id} user={dbuser.username}")
     return {"detail": "Order fulfilled"}

@@ -2,6 +2,8 @@
 Functions for managing proxy hosts, users, user templates, nodes, and administrative tasks.
 """
 
+import secrets
+import string
 from datetime import datetime, timedelta
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union
@@ -12,7 +14,11 @@ from sqlalchemy.sql.functions import coalesce
 
 from darknight.db.models import (
     EmailVerificationCode,
+    CommissionPayout,
+    InviteCode,
     JWT,
+    ReferralCommission,
+    WalletRedemption,
     TLS,
     Admin,
     AdminUsageLogs,
@@ -374,6 +380,7 @@ def create_user(
     email: Optional[str] = None,
     hashed_password: Optional[str] = None,
     email_verified_at: Optional[datetime] = None,
+    referrer_user_id: Optional[int] = None,
 ) -> User:
     """
     Creates a new user with provided details.
@@ -403,6 +410,7 @@ def create_user(
         email=email,
         hashed_password=hashed_password,
         email_verified_at=email_verified_at,
+        referrer_user_id=referrer_user_id,
         proxies=proxies,
         status=user.status,
         data_limit=(user.data_limit or None),
@@ -1666,6 +1674,7 @@ def create_portal_order(
     paypal_order_id: str | None = None,
     coupon: str | None = None,
     discount: float = 0.0,
+    wallet_credit: float = 0.0,
     snapshot_data_limit_gb: int | None = None,
     snapshot_duration_days: int | None = None,
     snapshot_product_name: str | None = None,
@@ -1680,6 +1689,7 @@ def create_portal_order(
         paypal_order_id=paypal_order_id,
         coupon=coupon,
         discount=discount,
+        wallet_credit=wallet_credit,
         status=PortalOrderStatus.pending,
         payment_provider="paypal",
         snapshot_data_limit_gb=snapshot_data_limit_gb,
@@ -1719,16 +1729,273 @@ def update_portal_order(db: Session, order: PortalOrder, **fields) -> PortalOrde
 
 def close_stale_portal_orders(db: Session, created_before: datetime) -> int:
     """Close pending orders that were never paid, returning how many were closed."""
-    closed = (
+    orders = (
         db.query(PortalOrder)
         .filter(
             PortalOrder.status == PortalOrderStatus.pending,
             PortalOrder.created_at < created_before,
         )
-        .update(
-            {PortalOrder.status: PortalOrderStatus.closed},
-            synchronize_session=False,
-        )
+        .all()
     )
+    if not orders:
+        return 0
+
+    closed = 0
+    for order in orders:
+        if order.wallet_credit > 0:
+            refund_wallet_credit(db, order.user_id, order.wallet_credit)
+            order.wallet_credit = 0
+        order.status = PortalOrderStatus.closed
+        db.add(order)
+        closed += 1
     db.commit()
-    return int(closed)
+    return closed
+
+
+_INVITE_CODE_ALPHABET = string.ascii_letters + string.digits
+_INVITE_CODE_LENGTH = 8
+_INVITE_CODE_MAX_ATTEMPTS = 10
+
+
+def _generate_invite_code_value() -> str:
+    return "".join(secrets.choice(_INVITE_CODE_ALPHABET) for _ in range(_INVITE_CODE_LENGTH))
+
+
+def get_invite_code_by_owner(db: Session, owner_user_id: int) -> Optional[InviteCode]:
+    return db.query(InviteCode).filter(InviteCode.owner_user_id == owner_user_id).first()
+
+
+def get_invite_code_by_code(db: Session, code: str) -> Optional[InviteCode]:
+    return db.query(InviteCode).filter(InviteCode.code == code).first()
+
+
+def list_invite_codes_for_user(db: Session, owner_user_id: int) -> list[InviteCode]:
+    row = get_invite_code_by_owner(db, owner_user_id)
+    return [row] if row else []
+
+
+def create_invite_code_for_user(db: Session, owner_user_id: int) -> InviteCode:
+    existing = get_invite_code_by_owner(db, owner_user_id)
+    if existing:
+        return existing
+
+    for _ in range(_INVITE_CODE_MAX_ATTEMPTS):
+        code = _generate_invite_code_value()
+        if get_invite_code_by_code(db, code):
+            continue
+        row = InviteCode(code=code, owner_user_id=owner_user_id)
+        db.add(row)
+        try:
+            db.commit()
+            db.refresh(row)
+            return row
+        except Exception:
+            db.rollback()
+            existing = get_invite_code_by_owner(db, owner_user_id)
+            if existing:
+                return existing
+
+    raise RuntimeError("Failed to generate a unique invite code")
+
+
+def count_referred_users(db: Session, referrer_user_id: int) -> int:
+    return db.query(User).filter(User.referrer_user_id == referrer_user_id).count()
+
+
+def get_referral_commission_by_order(db: Session, order_id: str) -> Optional[ReferralCommission]:
+    return db.query(ReferralCommission).filter(ReferralCommission.order_id == order_id).first()
+
+
+def create_referral_commission(
+    db: Session,
+    *,
+    referrer_user_id: int,
+    referred_user_id: int,
+    order_id: str,
+    amount: float,
+    currency: str,
+    available_at: datetime,
+) -> ReferralCommission:
+    row = ReferralCommission(
+        referrer_user_id=referrer_user_id,
+        referred_user_id=referred_user_id,
+        order_id=order_id,
+        amount=amount,
+        currency=currency,
+        available_at=available_at,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+def _credit_commissions_to_wallet(
+    db: Session,
+    rows: list[ReferralCommission],
+    *,
+    now: datetime,
+) -> None:
+    if not rows:
+        return
+
+    wallet_deltas: dict[int, float] = {}
+    for row in rows:
+        row.status = "transferred"
+        row.transferred_at = now
+        db.add(
+            CommissionPayout(
+                user_id=row.referrer_user_id,
+                amount=row.amount,
+                currency=row.currency or "USD",
+                created_at=now,
+            )
+        )
+        wallet_deltas[row.referrer_user_id] = wallet_deltas.get(row.referrer_user_id, 0) + row.amount
+
+    for user_id, delta in wallet_deltas.items():
+        dbuser = db.query(User).filter(User.id == user_id).first()
+        if dbuser:
+            dbuser.wallet_balance = round((dbuser.wallet_balance or 0) + delta, 2)
+            db.add(dbuser)
+
+
+def promote_due_referral_commissions(db: Session, referrer_user_id: int | None = None) -> None:
+    now = datetime.utcnow()
+    pending_q = db.query(ReferralCommission).filter(
+        ReferralCommission.status == "pending",
+        ReferralCommission.available_at <= now,
+    )
+    available_q = db.query(ReferralCommission).filter(ReferralCommission.status == "available")
+    if referrer_user_id is not None:
+        pending_q = pending_q.filter(ReferralCommission.referrer_user_id == referrer_user_id)
+        available_q = available_q.filter(ReferralCommission.referrer_user_id == referrer_user_id)
+
+    rows = pending_q.all() + available_q.all()
+    if not rows:
+        return
+
+    _credit_commissions_to_wallet(db, rows, now=now)
+    db.commit()
+
+
+def get_invite_commission_summary(db: Session, referrer_user_id: int) -> tuple[float, float, float, str]:
+    promote_due_referral_commissions(db, referrer_user_id)
+    dbuser = db.query(User).filter(User.id == referrer_user_id).first()
+    balance = round((dbuser.wallet_balance or 0) if dbuser else 0.0, 2)
+
+    now = datetime.utcnow()
+    rows = (
+        db.query(ReferralCommission)
+        .filter(ReferralCommission.referrer_user_id == referrer_user_id)
+        .all()
+    )
+    currency = "USD"
+    pending = 0.0
+    total = 0.0
+    for row in rows:
+        currency = row.currency or currency
+        total += row.amount
+        if row.status == "pending" and row.available_at > now:
+            pending += row.amount
+    return balance, round(pending, 2), round(total, 2), currency
+
+
+def apply_wallet_credit(db: Session, user_id: int, max_amount: float) -> float:
+    promote_due_referral_commissions(db, user_id)
+    if max_amount <= 0:
+        return 0.0
+
+    dbuser = db.query(User).filter(User.id == user_id).first()
+    if not dbuser:
+        return 0.0
+
+    credit = round(min(dbuser.wallet_balance or 0, max_amount), 2)
+    if credit <= 0:
+        return 0.0
+
+    dbuser.wallet_balance = round((dbuser.wallet_balance or 0) - credit, 2)
+    db.add(dbuser)
+    db.commit()
+    return credit
+
+
+def refund_wallet_credit(db: Session, user_id: int, amount: float) -> None:
+    if amount <= 0:
+        return
+
+    dbuser = db.query(User).filter(User.id == user_id).first()
+    if not dbuser:
+        return
+
+    dbuser.wallet_balance = round((dbuser.wallet_balance or 0) + amount, 2)
+    db.add(dbuser)
+    db.commit()
+
+
+def transfer_referral_commissions(
+    db: Session, user_id: int
+) -> tuple[float, str, CommissionPayout | None]:
+    promote_due_referral_commissions(db, user_id)
+    rows = (
+        db.query(ReferralCommission)
+        .filter(
+            ReferralCommission.referrer_user_id == user_id,
+            ReferralCommission.status == "available",
+        )
+        .all()
+    )
+    if not rows:
+        return 0.0, "USD", None
+
+    amount = round(sum(row.amount for row in rows), 2)
+    currency = rows[0].currency or "USD"
+    now = datetime.utcnow()
+    dbuser = db.query(User).filter(User.id == user_id).first()
+    if not dbuser:
+        return 0.0, currency, None
+
+    for row in rows:
+        row.status = "transferred"
+        row.transferred_at = now
+
+    dbuser.wallet_balance = round((dbuser.wallet_balance or 0) + amount, 2)
+    payout = CommissionPayout(user_id=user_id, amount=amount, currency=currency)
+    db.add(payout)
+    db.add(dbuser)
+    db.commit()
+    db.refresh(payout)
+    return amount, currency, payout
+
+
+def list_commission_payouts(db: Session, user_id: int) -> list[CommissionPayout]:
+    return (
+        db.query(CommissionPayout)
+        .filter(CommissionPayout.user_id == user_id)
+        .order_by(CommissionPayout.created_at.desc())
+        .all()
+    )
+
+
+def get_wallet_redemption(db: Session, user_id: int, coupon_code: str) -> Optional[WalletRedemption]:
+    return (
+        db.query(WalletRedemption)
+        .filter(
+            WalletRedemption.user_id == user_id,
+            WalletRedemption.coupon_code == coupon_code,
+        )
+        .first()
+    )
+
+
+def redeem_wallet_coupon(db: Session, user_id: int, coupon_code: str, amount: float) -> WalletRedemption:
+    dbuser = db.query(User).filter(User.id == user_id).first()
+    if not dbuser:
+        raise ValueError("User not found")
+    row = WalletRedemption(user_id=user_id, coupon_code=coupon_code, amount=amount)
+    dbuser.wallet_balance = round((dbuser.wallet_balance or 0) + amount, 2)
+    db.add(row)
+    db.add(dbuser)
+    db.commit()
+    db.refresh(row)
+    return row

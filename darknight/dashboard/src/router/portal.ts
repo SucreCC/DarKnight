@@ -94,7 +94,7 @@ export const portalRoutes: RouteRecordRaw[] = [
       {
         path: 'invite',
         name: 'portal-invite',
-        component: () => import('@/views/portal/Placeholder/index.vue'),
+        component: () => import('@/views/portal/Invite/index.vue'),
         meta: {
           title: 'portal.menu.invite',
           icon: 'UserPlus',
@@ -105,7 +105,7 @@ export const portalRoutes: RouteRecordRaw[] = [
       {
         path: 'profile',
         name: 'portal-profile',
-        component: () => import('@/views/portal/Placeholder/index.vue'),
+        component: () => import('@/views/portal/Profile/index.vue'),
         meta: {
           title: 'portal.menu.profile',
           icon: 'User',

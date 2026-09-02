@@ -30,6 +30,7 @@ class OrderResponse(BaseModel):
     paypal_order_id: Optional[str] = None
     coupon: Optional[str] = None
     discount: float = 0.0
+    wallet_credit: float = 0.0
     created_at: datetime
     paid_at: Optional[datetime] = None
     expires_at: Optional[datetime] = None
