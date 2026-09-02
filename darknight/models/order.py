@@ -32,6 +32,7 @@ class OrderResponse(BaseModel):
     discount: float = 0.0
     created_at: datetime
     paid_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 

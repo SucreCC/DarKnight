@@ -13,7 +13,7 @@ class PayPalConfig:
     webhook_id: str = ""
     currency: str = "USD"
     enabled: bool = False
-    order_timeout_minutes: int = 30
+    order_timeout_minutes: int = 1440
 
     @property
     def api_base(self) -> str:

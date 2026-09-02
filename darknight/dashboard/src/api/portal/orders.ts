@@ -14,6 +14,7 @@ export interface PortalOrder {
   discount: number
   created_at: string
   paid_at?: string | null
+  expires_at?: string | null
 }
 
 export interface CouponPreview {

@@ -18,6 +18,10 @@ router.beforeEach((to) => {
     return true
   }
 
+  if (zone === 'site' && hasUserToken) {
+    return { name: 'portal-dashboard' }
+  }
+
   if (authType === 'user') {
     if (!isPublic && !hasUserToken) {
       return { name: 'login', query: { redirect: to.fullPath } }

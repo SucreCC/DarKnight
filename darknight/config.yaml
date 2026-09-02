@@ -155,7 +155,7 @@ paypal:
   mode: sandbox                # sandbox | live
   webhook_id: ""               # 留空时 Webhook 一律拒绝，防止伪造回调白拿套餐
   currency: USD
-  order_timeout_minutes: 30    # 未支付订单多久自动关闭；<=0 表示不自动关闭
+  order_timeout_minutes: 1440   # 未支付订单多久自动关闭（24 小时）；<=0 表示不自动关闭
 
 # 优惠券：code 不区分大小写。percent_off 与 amount_off 可同时使用（先按比例再减固定额）。
 # 折扣最多把金额降到 0.01，PayPal 无法扣款 0 元订单。

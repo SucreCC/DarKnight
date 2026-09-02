@@ -1,9 +1,10 @@
 import json
+from datetime import timedelta
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 
 from darknight import logger, xray
-from darknight.db.models import PortalOrderStatus, User
+from darknight.db.models import PortalOrder, PortalOrderStatus, User
 from darknight.db import Session, crud, get_db
 from darknight.models.order import (
     CaptureOrderResponse,
@@ -60,6 +61,20 @@ def _get_user_order(
     if not dbuser or order.user_id != dbuser.id:
         raise HTTPException(status_code=404, detail="Order not found")
     return order, dbuser
+
+
+def _order_response(order: PortalOrder) -> OrderResponse:
+    response = OrderResponse.model_validate(order)
+    if order.status != PortalOrderStatus.pending:
+        return response
+
+    timeout_minutes = get_app_config().paypal.order_timeout_minutes
+    if timeout_minutes <= 0:
+        return response
+
+    return response.model_copy(
+        update={"expires_at": order.created_at + timedelta(minutes=timeout_minutes)}
+    )
 
 
 @router.get("/payments/paypal/config", response_model=PayPalConfigResponse)
@@ -147,7 +162,7 @@ def create_portal_order(
         snapshot_duration_days=product.duration_days,
         snapshot_product_name=product.name_zh,
     )
-    return OrderResponse.model_validate(order)
+    return _order_response(order)
 
 
 @router.post("/orders/{order_id}/prepare-payment", response_model=OrderResponse)
@@ -166,7 +181,7 @@ def prepare_order_payment(
     # 一张卡提交过之后 PayPal 订单就不可再用，重试必须换一个新的，
     # 否则前端会反复对着已作废的订单提交。
     if order.paypal_order_id and not refresh:
-        return OrderResponse.model_validate(order)
+        return _order_response(order)
 
     cfg = get_app_config().paypal
     try:
@@ -180,7 +195,7 @@ def prepare_order_payment(
         raise HTTPException(status_code=502, detail="Failed to create PayPal order") from exc
 
     order = crud.update_portal_order(db, order, paypal_order_id=paypal_order_id)
-    return OrderResponse.model_validate(order)
+    return _order_response(order)
 
 
 @router.get("/orders", response_model=list[OrderResponse])
@@ -192,7 +207,7 @@ def list_orders(
     if not dbuser:
         raise HTTPException(status_code=404, detail="User not found")
     orders = crud.list_portal_orders_for_user(db, dbuser.id)
-    return [OrderResponse.model_validate(order) for order in orders]
+    return [_order_response(order) for order in orders]
 
 
 @router.get("/orders/{order_id}", response_model=OrderResponse)
@@ -202,7 +217,7 @@ def get_order(
     db: Session = Depends(get_db),
 ):
     order, _ = _get_user_order(order_id, portal_user, db)
-    return OrderResponse.model_validate(order)
+    return _order_response(order)
 
 
 @router.post("/orders/{order_id}/close", response_model=OrderResponse)
@@ -215,7 +230,7 @@ def close_order(
     if order.status != PortalOrderStatus.pending:
         raise HTTPException(status_code=400, detail="Only pending orders can be closed")
     order = crud.update_portal_order(db, order, status=PortalOrderStatus.closed)
-    return OrderResponse.model_validate(order)
+    return _order_response(order)
 
 
 @router.post("/orders/{order_id}/capture", response_model=CaptureOrderResponse)
@@ -229,7 +244,7 @@ def capture_portal_order(
     order, dbuser = _get_user_order(order_id, portal_user, db)
 
     if order.status == PortalOrderStatus.paid:
-        return CaptureOrderResponse(order=OrderResponse.model_validate(order))
+        return CaptureOrderResponse(order=_order_response(order))
 
     if order.status != PortalOrderStatus.pending:
         raise HTTPException(status_code=400, detail="Order is not payable")
@@ -255,7 +270,7 @@ def capture_portal_order(
         bg.add_task(xray.operations.update_user, dbuser=dbuser)
         logger.info(f"Order paid: {order.id} user={dbuser.username}")
 
-    return CaptureOrderResponse(order=OrderResponse.model_validate(order))
+    return CaptureOrderResponse(order=_order_response(order))
 
 
 def _extract_paypal_order_id(resource: dict) -> str | None:
