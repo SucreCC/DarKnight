@@ -12,6 +12,9 @@ export const removeUserToken = (): void => {
   localStorage.removeItem(USER_TOKEN_KEY)
 }
 
+/** True when the current page is under the portal zone (history or hash mode). */
 export function isPortalRoute(): boolean {
-  return window.location.hash.startsWith('#/portal')
+  // createWebHistory uses /portal/... ; keep hash fallback for older builds.
+  if (window.location.hash.startsWith('#/portal')) return true
+  return /(?:^|\/)portal(?:\/|$)/.test(window.location.pathname)
 }

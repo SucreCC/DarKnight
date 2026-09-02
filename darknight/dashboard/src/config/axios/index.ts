@@ -29,21 +29,27 @@ instance.interceptors.request.use((config) => {
   return config
 })
 
+function isLoginPage(): boolean {
+  if (window.location.hash.startsWith('#/login')) return true
+  return /(?:^|\/)login(?:\/|$)/.test(window.location.pathname)
+}
+
+function redirectToLogin(): void {
+  if (isLoginPage()) return
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '')
+  window.location.assign(`${base}/login`)
+}
+
 instance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error?.response?.status === 401) {
       if (isPortalRoute()) {
         removeUserToken()
-        if (!window.location.hash.startsWith('#/login')) {
-          window.location.hash = '#/login'
-        }
       } else {
         removeToken()
-        if (!window.location.hash.startsWith('#/login')) {
-          window.location.hash = '#/login'
-        }
       }
+      redirectToLogin()
     }
     return Promise.reject(error)
   }
