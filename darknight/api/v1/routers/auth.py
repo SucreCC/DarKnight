@@ -173,6 +173,7 @@ def auth_me(
     if not dbuser:
         raise HTTPException(status_code=404, detail="User not found")
     user = UserResponse.model_validate(dbuser)
+    plan_id, plan_name_zh, plan_name_en = crud.get_user_current_plan(db, dbuser.id)
     return PortalUserResponse(
         username=user.username,
         email=portal_user.email,
@@ -183,4 +184,7 @@ def auth_me(
         subscription_url=user.subscription_url,
         links=user.links,
         created_at=user.created_at,
+        plan_id=plan_id,
+        plan_name_zh=plan_name_zh,
+        plan_name_en=plan_name_en,
     )

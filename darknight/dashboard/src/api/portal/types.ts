@@ -16,4 +16,7 @@ export interface PortalUser {
   subscription_url: string
   links: string[]
   created_at: string
+  plan_id?: string | null
+  plan_name_zh?: string | null
+  plan_name_en?: string | null
 }

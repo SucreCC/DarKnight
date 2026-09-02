@@ -79,6 +79,9 @@ class PortalUserResponse(BaseModel):
     subscription_url: str = ""
     links: list[str] = []
     created_at: datetime
+    plan_id: Optional[str] = None
+    plan_name_zh: Optional[str] = None
+    plan_name_en: Optional[str] = None
 
 
 def hash_password(password: str) -> str:

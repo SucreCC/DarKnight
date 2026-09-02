@@ -1719,6 +1719,30 @@ def list_portal_orders_for_user(db: Session, user_id: int) -> list[PortalOrder]:
     )
 
 
+def get_user_current_plan(
+    db: Session, user_id: int
+) -> tuple[Optional[str], Optional[str], Optional[str]]:
+    """Return (plan_id, name_zh, name_en) from the most recent paid portal order."""
+    order = (
+        db.query(PortalOrder)
+        .filter(
+            PortalOrder.user_id == user_id,
+            PortalOrder.status == PortalOrderStatus.paid,
+        )
+        .order_by(PortalOrder.paid_at.desc(), PortalOrder.created_at.desc())
+        .first()
+    )
+    if not order:
+        return None, None, None
+
+    product = get_product_by_slug(db, order.plan_id)
+    if product:
+        return product.slug, product.name_zh, product.name_en
+
+    snapshot = order.snapshot_product_name
+    return order.plan_id, snapshot, snapshot
+
+
 def update_portal_order(db: Session, order: PortalOrder, **fields) -> PortalOrder:
     for key, value in fields.items():
         setattr(order, key, value)
