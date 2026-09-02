@@ -797,7 +797,7 @@ class V2rayJsonConfig(str):
                         {
                             "id": id,
                             "alterId": 0,
-                            "email": "https://gozargah.github.io/marzban/",
+                            "email": "DarKnight",
                             "security": "auto"
                         }
                     ],
@@ -817,7 +817,7 @@ class V2rayJsonConfig(str):
                             "id": id,
                             "security": "auto",
                             "encryption": "none",
-                            "email": "https://gozargah.github.io/marzban/",
+                            "email": "DarKnight",
                             "alterId": 0,
                             "flow": flow
                         }
@@ -834,7 +834,7 @@ class V2rayJsonConfig(str):
                     "address": address,
                     "port": port,
                     "password": password,
-                    "email": "https://gozargah.github.io/marzban/",
+                    "email": "DarKnight",
                 }
             ]
         }
@@ -847,7 +847,7 @@ class V2rayJsonConfig(str):
                     "address": address,
                     "port": port,
                     "password": password,
-                    "email": "https://gozargah.github.io/marzban/",
+                    "email": "DarKnight",
                     "method": method,
                     "uot": False,
                 }

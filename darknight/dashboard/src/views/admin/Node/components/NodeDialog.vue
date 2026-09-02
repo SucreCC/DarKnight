@@ -92,7 +92,7 @@ async function onSubmit() {
     <DialogContent class="sm:max-w-lg">
       <DialogHeader>
         <DialogTitle>
-          {{ isEditing ? t('nodes.editNode') : t('nodes.addNewMarzbanNode') }}
+          {{ isEditing ? t('nodes.editNodeTitle') : t('nodes.createTitle') }}
         </DialogTitle>
       </DialogHeader>
 

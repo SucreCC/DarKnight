@@ -30,7 +30,7 @@ def add_host_if_needed(new_node: NodeCreate, db: Session):
     """Add a host if specified in the new node settings."""
     if new_node.add_as_new_host:
         host = ProxyHost(
-            remark=f"{new_node.name} ({{USERNAME}}) [{{PROTOCOL}} - {{TRANSPORT}}]",
+            remark=f"{new_node.name} · {{USERNAME}} · {{PROTOCOL}}",
             address=new_node.address,
         )
         for inbound_tag in xray.config.inbounds_by_tag:

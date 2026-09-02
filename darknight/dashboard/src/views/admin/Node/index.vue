@@ -51,6 +51,11 @@ async function onReconnect(node: NodeType) {
 
 <template>
   <div class="flex max-w-6xl flex-col gap-4">
+    <div>
+      <h1 class="text-lg font-semibold text-foreground">{{ t('nodes.pageTitle') }}</h1>
+      <p class="mt-1 text-sm text-muted-foreground">{{ t('nodes.pageDesc') }}</p>
+    </div>
+
     <div class="flex items-center gap-3">
       <div class="flex-1" />
       <Button @click="store.openCreate()">

@@ -40,7 +40,7 @@ function statusVariant(status?: NodeStatus | null) {
       v-else-if="!nodes.length"
       class="flex flex-col items-center gap-3 px-4 py-10 text-center text-muted-foreground"
     >
-      <p class="text-sm">{{ t('nodes.title') }}</p>
+      <p class="text-sm">{{ t('nodes.empty') }}</p>
     </div>
 
     <table v-else class="w-full min-w-[720px] text-sm">
