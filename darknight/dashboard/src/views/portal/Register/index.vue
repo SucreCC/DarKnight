@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onBeforeUnmount, reactive, ref } from 'vue'
+import { nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
@@ -10,6 +10,7 @@ import LanguageSwitch from '@/components/LanguageSwitch/index.vue'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 import SlideCaptchaDialog from './components/SlideCaptchaDialog.vue'
 
@@ -124,12 +125,9 @@ function validate(): boolean {
     fieldErrors.password = ''
   }
 
+  syncConfirmPasswordError()
   if (!form.confirmPassword) {
     fieldErrors.confirmPassword = t('portal.fieldRequired')
-  } else if (form.confirmPassword !== form.password) {
-    fieldErrors.confirmPassword = t('portal.passwordMismatch')
-  } else {
-    fieldErrors.confirmPassword = ''
   }
 
   return (
@@ -139,6 +137,18 @@ function validate(): boolean {
     !fieldErrors.confirmPassword
   )
 }
+
+function syncConfirmPasswordError() {
+  if (!form.confirmPassword) {
+    fieldErrors.confirmPassword = ''
+    return
+  }
+  fieldErrors.confirmPassword =
+    form.confirmPassword === form.password ? '' : t('portal.passwordMismatch')
+}
+
+watch(() => form.password, syncConfirmPasswordError)
+watch(() => form.confirmPassword, syncConfirmPasswordError)
 
 async function onSendCode() {
   if (sending.value || countdown.value > 0) return
@@ -257,10 +267,9 @@ async function onSubmit() {
 
           <div class="space-y-2">
             <Label for="register-password">{{ t('portal.password') }}</Label>
-            <Input
+            <PasswordInput
               id="register-password"
               v-model="form.password"
-              type="password"
               name="new-password"
               autocomplete="new-password"
               :readonly="passwordReadonly"
@@ -274,14 +283,14 @@ async function onSubmit() {
 
           <div class="space-y-2">
             <Label for="register-confirm">{{ t('portal.confirmPassword') }}</Label>
-            <Input
+            <PasswordInput
               id="register-confirm"
               v-model="form.confirmPassword"
-              type="password"
               name="confirm-new-password"
               autocomplete="new-password"
               :readonly="confirmReadonly"
               :placeholder="t('portal.confirmPassword')"
+              :aria-invalid="fieldErrors.confirmPassword ? true : undefined"
               @focus="unlockField('confirm')"
             />
             <p v-if="fieldErrors.confirmPassword" class="text-sm text-destructive">

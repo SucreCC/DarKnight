@@ -24,6 +24,4 @@ export function usageTotalText(
   return text
 }
 
-export function absoluteSubscriptionUrl(url: string): string {
-  return url.startsWith('/') ? window.location.origin + url : url
-}
+export { absoluteSubscriptionUrl } from '@/utils/subscription'

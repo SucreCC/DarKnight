@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import { toast } from 'vue-sonner'
+import QrcodeVue from 'qrcode.vue'
 import { BookOpen, LifeBuoy, Link2, Package, Plus, ShoppingCart } from 'lucide-vue-next'
 import type { Component } from 'vue'
-import { fetchPortalMe } from '@/api/portal'
-import type { PortalUser } from '@/api/portal/types'
+import { usePortalMe } from '@/composables/usePortalMe'
+import { absoluteSubscriptionUrl } from '@/utils/subscription'
 import { pickLocale } from '../Buy/plans'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -13,7 +15,8 @@ import { Input } from '@/components/ui/input'
 
 const { t, locale } = useI18n()
 const router = useRouter()
-const user = ref<PortalUser | null>(null)
+const meQuery = usePortalMe()
+const user = computed(() => meQuery.data.value ?? null)
 
 const shortcuts: {
   title: string
@@ -50,6 +53,10 @@ const shortcuts: {
 
 const hasSubscription = computed(() => !!user.value?.subscription_url)
 
+const subscriptionFullUrl = computed(() =>
+  user.value?.subscription_url ? absoluteSubscriptionUrl(user.value.subscription_url) : ''
+)
+
 const currentPlanName = computed(() => {
   const u = user.value
   if (!u) return ''
@@ -66,13 +73,10 @@ const expireLabel = computed(() => {
   return t('portal.dashboard.planExpires', { date: formatted })
 })
 
-onMounted(async () => {
-  user.value = await fetchPortalMe()
-})
-
 async function copySubscription() {
-  if (!user.value?.subscription_url) return
-  await navigator.clipboard.writeText(user.value.subscription_url)
+  if (!subscriptionFullUrl.value) return
+  await navigator.clipboard.writeText(subscriptionFullUrl.value)
+  toast.success(t('portal.docs.copySuccess'))
 }
 
 function onShortcut(item: (typeof shortcuts)[number]) {
@@ -129,6 +133,15 @@ function onShortcut(item: (typeof shortcuts)[number]) {
             <Button type="button" @click="copySubscription">
               {{ t('portal.dashboard.copy') }}
             </Button>
+          </div>
+          <div
+            v-if="subscriptionFullUrl"
+            class="flex flex-col items-center gap-2 rounded-xl border border-border bg-muted/30 px-4 py-5"
+          >
+            <QrcodeVue :key="subscriptionFullUrl" :value="subscriptionFullUrl" :size="180" level="M" />
+            <p class="text-center text-xs text-muted-foreground">
+              {{ t('portal.dashboard.scanQrHint') }}
+            </p>
           </div>
         </div>
         <button

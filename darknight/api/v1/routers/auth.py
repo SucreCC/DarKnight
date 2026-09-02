@@ -144,7 +144,7 @@ def register(body: RegisterRequest, bg: BackgroundTasks, db: Session = Depends(g
             raise HTTPException(status_code=409, detail="Registration failed, please try again")
 
     crud.delete_verification_codes(db, email)
-    bg.add_task(xray.operations.add_user, dbuser=dbuser)
+    bg.add_task(xray.operations.add_user, dbuser.username)
     logger.info(f'Portal user registered: "{dbuser.username}" ({email})')
     return Token(access_token=create_user_token(dbuser.username), access="user")
 

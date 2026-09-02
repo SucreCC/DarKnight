@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { AlertTriangle } from 'lucide-vue-next'
@@ -24,7 +24,7 @@ import {
   AlertDialogTrigger
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 
@@ -69,6 +69,18 @@ function onNotifyExpireChange(value: boolean) {
 function onNotifyTrafficChange(value: boolean) {
   patchProfile({ notify_traffic_email: value })
 }
+
+function syncConfirmPasswordError() {
+  if (!passwordForm.confirmPassword) {
+    passwordErrors.confirmPassword = ''
+    return
+  }
+  passwordErrors.confirmPassword =
+    passwordForm.confirmPassword === passwordForm.newPassword ? '' : t('portal.passwordMismatch')
+}
+
+watch(() => passwordForm.newPassword, syncConfirmPasswordError)
+watch(() => passwordForm.confirmPassword, syncConfirmPasswordError)
 
 function validatePasswordForm(): boolean {
   passwordErrors.oldPassword = passwordForm.oldPassword ? '' : t('portal.fieldRequired')
@@ -135,10 +147,9 @@ const revokeMutation = useMutation({
       <div class="flex max-w-md flex-col gap-4">
         <div class="space-y-2">
           <Label for="profile-old-password">{{ t('portal.profile.oldPassword') }}</Label>
-          <Input
+          <PasswordInput
             id="profile-old-password"
             v-model="passwordForm.oldPassword"
-            type="password"
             autocomplete="current-password"
             class="bg-slate-50 dark:bg-muted/40"
           />
@@ -148,10 +159,9 @@ const revokeMutation = useMutation({
         </div>
         <div class="space-y-2">
           <Label for="profile-new-password">{{ t('portal.profile.newPassword') }}</Label>
-          <Input
+          <PasswordInput
             id="profile-new-password"
             v-model="passwordForm.newPassword"
-            type="password"
             autocomplete="new-password"
             :placeholder="t('portal.profile.newPasswordPlaceholder')"
           />
@@ -161,12 +171,12 @@ const revokeMutation = useMutation({
         </div>
         <div class="space-y-2">
           <Label for="profile-confirm-password">{{ t('portal.confirmPassword') }}</Label>
-          <Input
+          <PasswordInput
             id="profile-confirm-password"
             v-model="passwordForm.confirmPassword"
-            type="password"
             autocomplete="new-password"
             :placeholder="t('portal.profile.newPasswordPlaceholder')"
+            :aria-invalid="passwordErrors.confirmPassword ? true : undefined"
           />
           <p v-if="passwordErrors.confirmPassword" class="text-sm text-destructive">
             {{ passwordErrors.confirmPassword }}

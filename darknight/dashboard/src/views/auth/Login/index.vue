@@ -9,6 +9,7 @@ import { removeUserToken, setUserToken } from '@/utils/userAuth'
 import LanguageSwitch from '@/components/LanguageSwitch/index.vue'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
@@ -107,10 +108,9 @@ async function onSubmit() {
           </div>
           <div class="space-y-2">
             <Label for="login-password">{{ t('password') }}</Label>
-            <Input
+            <PasswordInput
               id="login-password"
               v-model="form.password"
-              type="password"
               :placeholder="t('password')"
               autocomplete="current-password"
             />

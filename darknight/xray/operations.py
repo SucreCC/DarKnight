@@ -1,7 +1,7 @@
 from functools import lru_cache
 import logging
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -20,6 +20,36 @@ if TYPE_CHECKING:
 
     from darknight.db import User as DBUser
     from darknight.db.models import Node as DBNode
+
+DBUserRef = Union["DBUser", str]
+
+
+def _username_from_dbuser(dbuser: DBUserRef) -> str:
+    return dbuser if isinstance(dbuser, str) else dbuser.username
+
+
+def _load_user_response(username: str) -> tuple[UserResponse, str] | None:
+    """Load a user for xray sync inside a fresh DB session."""
+    with GetDB() as db:
+        dbuser = crud.get_user(db, username)
+        if not dbuser:
+            logger.warning("xray user op: user %s not found", username)
+            return None
+        # Warm lazy relationships before the session closes.
+        _ = dbuser.proxies
+        _ = dbuser.usage_logs
+        user = UserResponse.model_validate(dbuser)
+        email = f"{dbuser.id}.{dbuser.username}"
+        return user, email
+
+
+def _load_user_email(username: str) -> str | None:
+    with GetDB() as db:
+        dbuser = crud.get_user(db, username)
+        if not dbuser:
+            logger.warning("xray user op: user %s not found", username)
+            return None
+        return f"{dbuser.id}.{dbuser.username}"
 
 
 def _xray():
@@ -65,9 +95,11 @@ def _alter_inbound_user(api: XRayAPI, inbound_tag: str, account: Account):
         pass
 
 
-def add_user(dbuser: "DBUser"):
-    user = UserResponse.model_validate(dbuser)
-    email = f"{dbuser.id}.{dbuser.username}"
+def add_user(dbuser: DBUserRef):
+    loaded = _load_user_response(_username_from_dbuser(dbuser))
+    if not loaded:
+        return
+    user, email = loaded
 
     for proxy_type, inbound_tags in user.inbounds.items():
         for inbound_tag in inbound_tags:
@@ -99,8 +131,10 @@ def add_user(dbuser: "DBUser"):
                     _add_user_to_inbound(node.api, inbound_tag, account)
 
 
-def remove_user(dbuser: "DBUser"):
-    email = f"{dbuser.id}.{dbuser.username}"
+def remove_user(dbuser: DBUserRef):
+    email = _load_user_email(_username_from_dbuser(dbuser))
+    if not email:
+        return
 
     for inbound_tag in _xray().config.inbounds_by_tag:
         _remove_user_from_inbound(_xray().api, inbound_tag, email)
@@ -109,9 +143,11 @@ def remove_user(dbuser: "DBUser"):
                 _remove_user_from_inbound(node.api, inbound_tag, email)
 
 
-def update_user(dbuser: "DBUser"):
-    user = UserResponse.model_validate(dbuser)
-    email = f"{dbuser.id}.{dbuser.username}"
+def update_user(dbuser: DBUserRef):
+    loaded = _load_user_response(_username_from_dbuser(dbuser))
+    if not loaded:
+        return
+    user, email = loaded
 
     active_inbounds = []
     for proxy_type, inbound_tags in user.inbounds.items():
