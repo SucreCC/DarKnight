@@ -19,6 +19,7 @@ FROM python:${PYTHON_VERSION}-slim AS build
 ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
+COPY scripts/install_latest_xray.sh /tmp/install_latest_xray.sh
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         build-essential \
@@ -27,7 +28,8 @@ RUN apt-get update \
         gcc \
         python3-dev \
         libpq-dev \
-    && curl -fsSL https://github.com/Gozargah/Marzban-scripts/raw/master/install_latest_xray.sh | bash \
+    && bash /tmp/install_latest_xray.sh \
+    && rm -f /tmp/install_latest_xray.sh \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt /app/
