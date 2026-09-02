@@ -8,7 +8,8 @@ from urllib.parse import urlsplit
 
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
-from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.staticfiles import StaticFiles as StarletteStaticFiles
 
 from darknight.services.config.models import AppConfig
 
@@ -16,6 +17,18 @@ logger = logging.getLogger(__name__)
 base_dir = Path(__file__).parent
 build_dir = base_dir / "dist"
 statics_dir = build_dir / "assets"
+
+
+class SPAStaticFiles(StarletteStaticFiles):
+    """Serve static files and fall back to index.html for client-side routes."""
+
+    async def get_response(self, path: str, scope):
+        try:
+            return await super().get_response(path, scope)
+        except StarletteHTTPException as exc:
+            if exc.status_code == 404:
+                return await super().get_response("index.html", scope)
+            raise
 
 
 def split_api_base(vite_base_api: str) -> tuple[str, str]:
@@ -87,13 +100,13 @@ def register_dashboard(app: FastAPI, app_config: AppConfig) -> None:
 
     app.mount(
         dashboard_path,
-        StaticFiles(directory=build_dir, html=True),
+        SPAStaticFiles(directory=build_dir, html=True),
         name="dashboard",
     )
     if statics_dir.is_dir():
         app.mount(
             "/assets/",
-            StaticFiles(directory=statics_dir, html=True),
+            StarletteStaticFiles(directory=statics_dir, html=True),
             name="assets",
         )
 

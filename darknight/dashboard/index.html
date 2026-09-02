@@ -3,7 +3,38 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DarKnight VPN</title>
+    <title>DarKnight — Secure Network Service | Xray Node Management</title>
+    <meta
+      name="description"
+      content="DarKnight offers a secure network service with Xray core, multi-protocol support, subscription management, and powerful node administration."
+    />
+    <meta
+      name="keywords"
+      content="DarKnight, network service, Xray, VLESS, VMess, Trojan, node management, subscription, secure connection"
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://darkight.com/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="DarKnight" />
+    <meta property="og:title" content="DarKnight — Secure Network Service" />
+    <meta
+      property="og:description"
+      content="Subscribe, connect, and manage network services with DarKnight. Built on Xray with TLS and multi-protocol support."
+    />
+    <meta property="og:url" content="https://darkight.com/" />
+    <meta property="og:image" content="https://darkight.com/statics/logo.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="DarKnight — Secure Network Service" />
+    <meta
+      name="twitter:description"
+      content="Subscribe, connect, and manage network services with DarKnight. Built on Xray with TLS and multi-protocol support."
+    />
+    <meta name="twitter:image" content="https://darkight.com/statics/logo.png" />
+    <link rel="alternate" hreflang="en" href="https://darkight.com/" />
+    <link rel="alternate" hreflang="zh-CN" href="https://darkight.com/?lang=zh" />
+    <link rel="alternate" hreflang="ru" href="https://darkight.com/?lang=ru" />
+    <link rel="alternate" hreflang="fa" href="https://darkight.com/?lang=fa" />
+    <link rel="alternate" hreflang="x-default" href="https://darkight.com/" />
     <link rel="icon" type="image/x-icon" href="/statics/favicon/favicon.ico" />
     <link rel="icon" type="image/png" sizes="32x32" href="/statics/favicon/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/statics/favicon/favicon-16x16.png" />
@@ -11,6 +42,35 @@
     <link rel="manifest" href="/statics/favicon/site.webmanifest" />
     <link rel="mask-icon" href="/statics/favicon/safari-pinned-tab.svg" color="#8b3ff2" />
     <meta name="theme-color" content="#8b3ff2" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "name": "DarKnight",
+            "url": "https://darkight.com/",
+            "logo": "https://darkight.com/statics/logo.png",
+            "description": "Secure and reliable network service with Xray core and node management."
+          },
+          {
+            "@type": "WebSite",
+            "name": "DarKnight",
+            "url": "https://darkight.com/",
+            "description": "Subscribe, connect, and manage network services with ease."
+          }
+        ]
+      }
+    </script>
+    <script>
+      ;(function () {
+        var hash = window.location.hash
+        if (hash && hash.indexOf('#/') === 0) {
+          var path = hash.slice(1) || '/'
+          window.history.replaceState(null, '', path + window.location.search)
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>

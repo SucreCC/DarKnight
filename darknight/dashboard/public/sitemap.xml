@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://darkight.com/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://darkight.com/" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://darkight.com/?lang=zh" />
+    <xhtml:link rel="alternate" hreflang="ru" href="https://darkight.com/?lang=ru" />
+    <xhtml:link rel="alternate" hreflang="fa" href="https://darkight.com/?lang=fa" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://darkight.com/" />
+  </url>
+  <url>
+    <loc>https://darkight.com/login</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://darkight.com/portal/register</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>

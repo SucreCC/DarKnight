@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /portal/register
+Disallow: /admin/
+Disallow: /portal/
+
+Sitemap: https://darkight.com/sitemap.xml

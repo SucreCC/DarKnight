@@ -13,6 +13,10 @@ const features: { icon: Component; title: string; desc: string }[] = [
   { icon: Cable, title: 'site.home.feature2Title', desc: 'site.home.feature2Desc' },
   { icon: FileText, title: 'site.home.feature3Title', desc: 'site.home.feature3Desc' }
 ]
+
+const protocols = ['VLESS', 'VMess', 'Trojan', 'Shadowsocks'] as const
+
+const faqItems = [1, 2, 3, 4, 5] as const
 </script>
 
 <template>
@@ -42,15 +46,61 @@ const features: { icon: Component; title: string; desc: string }[] = [
     </div>
 
     <div class="grid gap-5 md:grid-cols-3">
-      <div
+      <article
         v-for="item in features"
         :key="item.title"
         class="min-h-44 rounded-xl border border-border bg-card p-6"
       >
-        <component :is="item.icon" class="mb-3 size-7 text-primary" />
-        <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t(item.title) }}</h3>
+        <component :is="item.icon" class="mb-3 size-7 text-primary" aria-hidden="true" />
+        <h2 class="mb-2 text-lg font-semibold text-foreground">{{ t(item.title) }}</h2>
         <p class="m-0 text-sm leading-relaxed text-muted-foreground">{{ t(item.desc) }}</p>
-      </div>
+      </article>
     </div>
+
+    <section class="rounded-xl border border-border bg-card p-6 sm:p-8">
+      <h2 class="m-0 text-xl font-semibold text-foreground">{{ t('site.home.protocolsTitle') }}</h2>
+      <p class="mt-3 mb-5 text-sm leading-relaxed text-muted-foreground">
+        {{ t('site.home.protocolsDesc') }}
+      </p>
+      <ul class="m-0 flex list-none flex-wrap gap-2 p-0">
+        <li
+          v-for="protocol in protocols"
+          :key="protocol"
+          class="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-sm font-medium text-primary"
+        >
+          {{ protocol }}
+        </li>
+      </ul>
+    </section>
+
+    <section class="rounded-xl border border-border bg-card p-6 sm:p-8">
+      <h2 class="m-0 text-xl font-semibold text-foreground">{{ t('site.home.aboutTitle') }}</h2>
+      <p class="mt-3 m-0 text-sm leading-relaxed text-muted-foreground">
+        {{ t('site.home.aboutDesc') }}
+      </p>
+    </section>
+
+    <section class="rounded-xl border border-border bg-card p-6 sm:p-8">
+      <h2 class="m-0 text-xl font-semibold text-foreground">{{ t('site.home.faqTitle') }}</h2>
+      <div class="mt-5 flex flex-col gap-3">
+        <details
+          v-for="item in faqItems"
+          :key="item"
+          class="group rounded-lg border border-border px-4 py-3 open:bg-muted/30"
+        >
+          <summary
+            class="cursor-pointer list-none text-sm font-medium text-foreground marker:content-none [&::-webkit-details-marker]:hidden"
+          >
+            <span class="flex items-start justify-between gap-3">
+              <span>{{ t(`site.home.faq${item}Q`) }}</span>
+              <span class="text-muted-foreground transition group-open:rotate-45">+</span>
+            </span>
+          </summary>
+          <p class="mb-0 mt-3 text-sm leading-relaxed text-muted-foreground">
+            {{ t(`site.home.faq${item}A`) }}
+          </p>
+        </details>
+      </div>
+    </section>
   </section>
 </template>

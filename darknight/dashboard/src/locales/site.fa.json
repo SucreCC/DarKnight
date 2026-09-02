@@ -1,5 +1,8 @@
 {
   "site.footer": "DarKnight — سرویس شبکه امن و پایدار",
+  "site.seo.title": "DarKnight — سرویس شبکه امن | مدیریت گره Xray",
+  "site.seo.description": "DarKnight سرویس شبکه امن مبتنی بر Xray با پشتیبانی چند پروتکل، مدیریت اشتراک و پنل قدرتمند مدیریت گره‌ها ارائه می‌دهد.",
+  "site.seo.keywords": "DarKnight, سرویس شبکه, Xray, VLESS, VMess, Trojan, مدیریت گره, اشتراک, اتصال امن, TLS",
   "site.home.title": "به DarKnight خوش آمدید",
   "site.home.subtitle": "DarKnight یک پورتال کاربری ساده و مدیریت قدرتمند گره‌ها ارائه می‌دهد تا بتوانید به‌راحتی اشتراک بگیرید، متصل شوید و سرویس‌های شبکه را مدیریت کنید.",
   "site.home.getStarted": "شروع کنید",
@@ -9,5 +12,20 @@
   "site.home.feature2Title": "مدیریت گره‌ها",
   "site.home.feature2Desc": "مدیران می‌توانند گره‌ها، inboundها و تنظیمات هاست را به‌صورت متمرکز برای عملیات کارآمد مدیریت کنند.",
   "site.home.feature3Title": "راهنمای تفصیلی",
-  "site.home.feature3Desc": "پس از ورود، آموزش‌های گام‌به‌گام نصب و وارد کردن کلاینت را در پورتال کاربری مشاهده کنید."
+  "site.home.feature3Desc": "پس از ورود، آموزش‌های گام‌به‌گام نصب و وارد کردن کلاینت را در پورتال کاربری مشاهده کنید.",
+  "site.home.protocolsTitle": "پشتیبانی چند پروتکل",
+  "site.home.protocolsDesc": "DarKnight بر پایه هسته Xray ساخته شده و از پروتکل‌های رایج با رمزنگاری TLS برای اتصالات پایدار و امن پشتیبانی می‌کند.",
+  "site.home.aboutTitle": "چرا DarKnight؟",
+  "site.home.aboutDesc": "DarKnight پورتال کاربری ساده را با مدیریت گره در سطح ادمین ترکیب می‌کند. در چند دقیقه اشتراک بگیرید، پیکربندی را در Clash، Shadowrocket یا سایر کلاینت‌ها وارد کنید و سرویس را از یک داشبورد مدیریت کنید.",
+  "site.home.faqTitle": "سوالات متداول",
+  "site.home.faq1Q": "DarKnight چیست؟",
+  "site.home.faq1A": "DarKnight پلتفرمی برای سرویس شبکه با مدیریت اشتراک، پورتال کاربری و مدیریت متمرکز گره‌ها بر پایه Xray است.",
+  "site.home.faq2Q": "کدام پروتکل‌ها پشتیبانی می‌شوند؟",
+  "site.home.faq2A": "DarKnight از VLESS، VMess، Trojan، Shadowsocks و سایر پروتکل‌های سازگار با Xray همراه با TLS و گزینه‌های انتقال انعطاف‌پذیر پشتیبانی می‌کند.",
+  "site.home.faq3Q": "چگونه شروع کنم؟",
+  "site.home.faq3A": "ثبت‌نام کنید، یک پلن انتخاب کنید، لینک اشتراک را کپی کنید و آن را در Clash Verge Rev، Shadowrocket یا کلاینت دلخواه خود وارد کنید.",
+  "site.home.faq4Q": "از کدام کلاینت‌ها می‌توانم استفاده کنم؟",
+  "site.home.faq4A": "Clash Verge Rev را برای Windows و macOS، Shadowrocket را برای iOS و Clash Meta for Android را برای Android توصیه می‌کنیم. پس از ورود راهنماهای تنظیم در دسترس است.",
+  "site.home.faq5Q": "آیا اتصال امن است؟",
+  "site.home.faq5A": "بله. DarKnight از هسته Xray با TLS و رمزنگاری مدرن برای کمک به محافظت از ترافیک بین کلاینت و گره استفاده می‌کند."
 }

@@ -1,11 +1,27 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import LanguageSwitch from '@/components/LanguageSwitch/index.vue'
 import { Button } from '@/components/ui/button'
+import { useSiteSeo } from '@/composables/useSiteSeo'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
+const route = useRoute()
 const router = useRouter()
+
+useSiteSeo()
+
+watch(locale, (value) => {
+  if (route.meta.zone !== 'site') return
+  const query = { ...route.query }
+  if (value === 'en') {
+    delete query.lang
+  } else {
+    query.lang = value
+  }
+  router.replace({ query })
+})
 </script>
 
 <template>

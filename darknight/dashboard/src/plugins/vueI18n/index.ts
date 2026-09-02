@@ -1,4 +1,5 @@
 import { createI18n } from 'vue-i18n'
+import type { Router } from 'vue-router'
 import en from '@/locales/en.json'
 import zh from '@/locales/zh.json'
 import ruBase from '@/locales/ru.json'
@@ -40,6 +41,21 @@ export const i18n = createI18n({
 export function setLocale(locale: LocaleCode): void {
   i18n.global.locale.value = locale
   localStorage.setItem(LANG_KEY, locale)
-  document.documentElement.setAttribute('lang', locale)
+  document.documentElement.setAttribute('lang', locale === 'zh' ? 'zh-CN' : locale)
   document.documentElement.setAttribute('dir', locale === 'fa' ? 'rtl' : 'ltr')
+}
+
+function parseLocaleQuery(value: unknown): LocaleCode | null {
+  if (typeof value !== 'string') return null
+  return SUPPORTED_LOCALES.some((item) => item.value === value) ? (value as LocaleCode) : null
+}
+
+export function applyLocaleFromQuery(router: Router): void {
+  const sync = (queryLang: unknown) => {
+    const locale = parseLocaleQuery(queryLang)
+    if (locale) setLocale(locale)
+  }
+
+  sync(router.currentRoute.value.query.lang)
+  router.afterEach((to) => sync(to.query.lang))
 }
