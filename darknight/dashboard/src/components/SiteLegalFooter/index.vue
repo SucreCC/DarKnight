@@ -3,12 +3,24 @@ import { useI18n } from 'vue-i18n'
 import { SITE_CONTACT_EMAIL } from '@/config/site'
 
 const { t } = useI18n()
+
+const extraLinks = [
+  { name: 'site-pricing' as const, labelKey: 'site.menu.pricing' },
+  { name: 'site-guides' as const, labelKey: 'site.menu.guides' },
+  { name: 'site-faq' as const, labelKey: 'site.menu.faq' }
+]
 </script>
 
 <template>
   <footer class="border-t border-border bg-card px-6 py-5 text-center text-[13px] text-muted-foreground">
     <p class="m-0">{{ t('site.footer') }}</p>
     <nav class="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+      <template v-for="item in extraLinks" :key="item.name">
+        <router-link :to="{ name: item.name }" class="hover:text-foreground">
+          {{ t(item.labelKey) }}
+        </router-link>
+        <span aria-hidden="true">·</span>
+      </template>
       <router-link :to="{ name: 'site-privacy' }" class="hover:text-foreground">
         {{ t('site.legal.privacy') }}
       </router-link>

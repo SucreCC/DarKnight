@@ -11,7 +11,7 @@ export const LOCALE_HREFLANG: Record<LocaleCode, string> = {
   fa: 'fa'
 }
 
-export const PUBLIC_SITEMAP_PATHS = ['/', '/privacy', '/terms'] as const
+export const PUBLIC_SITEMAP_PATHS = ['/', '/pricing', '/guides', '/faq', '/privacy', '/terms'] as const
 
 export function buildCanonicalUrl(path: string, locale: LocaleCode): string {
   const normalized = path === '/' ? '' : path

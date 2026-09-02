@@ -20,6 +20,12 @@ const features: { icon: Component; title: string; desc: string }[] = [
 const protocols = ['VLESS', 'VMess', 'Trojan', 'Shadowsocks'] as const
 
 const faqItems = [1, 2, 3, 4, 5] as const
+
+const quickLinks = [
+  { name: 'site-pricing' as const, titleKey: 'site.menu.pricing', descKey: 'site.home.quickPricing' },
+  { name: 'site-guides' as const, titleKey: 'site.menu.guides', descKey: 'site.home.quickGuides' },
+  { name: 'site-faq' as const, titleKey: 'site.menu.faq', descKey: 'site.home.quickFaq' }
+]
 </script>
 
 <template>
@@ -27,7 +33,7 @@ const faqItems = [1, 2, 3, 4, 5] as const
     <div
       class="rounded-2xl bg-primary px-6 py-12 text-center text-primary-foreground sm:px-10 sm:py-14"
     >
-      <h1 class="m-0 text-3xl font-bold sm:text-4xl">{{ t('site.home.title') }}</h1>
+      <h1 class="m-0 text-3xl font-bold sm:text-4xl">{{ t('site.home.heroTitle') }}</h1>
       <p class="mx-auto mb-7 mt-4 max-w-xl text-base leading-relaxed opacity-90">
         {{ t('site.home.subtitle') }}
       </p>
@@ -41,11 +47,24 @@ const faqItems = [1, 2, 3, 4, 5] as const
         <Button
           variant="outline"
           class="h-11 border-primary-foreground/40 bg-transparent text-primary-foreground hover:bg-primary-foreground/10"
-          @click="router.push({ name: 'login' })"
+          @click="router.push({ name: 'site-pricing' })"
         >
-          {{ t('site.home.login') }}
+          {{ t('site.menu.pricing') }}
         </Button>
       </div>
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-3">
+      <button
+        v-for="link in quickLinks"
+        :key="link.name"
+        type="button"
+        class="rounded-xl border border-border bg-card p-5 text-left transition hover:border-primary/40 hover:bg-primary/5"
+        @click="router.push({ name: link.name })"
+      >
+        <p class="m-0 text-base font-semibold text-foreground">{{ t(link.titleKey) }}</p>
+        <p class="mb-0 mt-2 text-sm leading-relaxed text-muted-foreground">{{ t(link.descKey) }}</p>
+      </button>
     </div>
 
     <div class="grid gap-5 md:grid-cols-3">
@@ -84,7 +103,12 @@ const faqItems = [1, 2, 3, 4, 5] as const
     </section>
 
     <section class="rounded-xl border border-border bg-card p-6 sm:p-8">
-      <h2 class="m-0 text-xl font-semibold text-foreground">{{ t('site.home.faqTitle') }}</h2>
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <h2 class="m-0 text-xl font-semibold text-foreground">{{ t('site.home.faqTitle') }}</h2>
+        <Button variant="link" class="h-auto p-0" @click="router.push({ name: 'site-faq' })">
+          {{ t('site.home.viewAllFaq') }}
+        </Button>
+      </div>
       <div class="mt-5 flex flex-col gap-3">
         <details
           v-for="item in faqItems"

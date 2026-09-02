@@ -35,6 +35,12 @@ export const i18n = createI18n({
   legacy: false,
   locale: detectLocale(),
   fallbackLocale: 'en',
+  // Flat locale keys + emails with "@" must not be parsed as linked messages.
+  messageResolver: (obj, path) => {
+    const msg = (obj as Record<string, unknown>)[path]
+    if (typeof msg !== 'string') return null
+    return msg.includes('@') ? msg.replaceAll('@', "{'@'}") : msg
+  },
   messages: { en, zh, ru, fa }
 })
 

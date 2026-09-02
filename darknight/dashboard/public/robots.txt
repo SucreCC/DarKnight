@@ -1,5 +1,8 @@
 User-agent: *
 Allow: /
+Allow: /pricing
+Allow: /guides
+Allow: /faq
 Allow: /privacy
 Allow: /terms
 Disallow: /login

@@ -13,6 +13,24 @@ export const siteRoutes: RouteRecordRaw[] = [
         meta: { title: 'site.menu.home', public: true, zone: 'site' }
       },
       {
+        path: 'pricing',
+        name: 'site-pricing',
+        component: () => import('@/views/site/Pricing/index.vue'),
+        meta: { title: 'site.menu.pricing', public: true, zone: 'site' }
+      },
+      {
+        path: 'faq',
+        name: 'site-faq',
+        component: () => import('@/views/site/Faq/index.vue'),
+        meta: { title: 'site.menu.faq', public: true, zone: 'site' }
+      },
+      {
+        path: 'guides',
+        name: 'site-guides',
+        component: () => import('@/views/site/Guides/index.vue'),
+        meta: { title: 'site.menu.guides', public: true, zone: 'site' }
+      },
+      {
         path: 'privacy',
         name: 'site-privacy',
         component: () => import('@/views/site/Privacy/index.vue'),

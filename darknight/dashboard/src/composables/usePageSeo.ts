@@ -17,6 +17,12 @@ export interface PageSeoOptions {
   noindex?: boolean
   withHreflang?: boolean
   withFaqSchema?: boolean
+  /** FAQ schema key pattern. Default uses site.home.faq{n}Q / site.home.faq{n}A */
+  faqSchema?: {
+    count: number
+    questionKey: (index: number) => string
+    answerKey: (index: number) => string
+  }
 }
 
 export function usePageSeo(options: PageSeoOptions): void {
@@ -80,6 +86,14 @@ export function usePageSeo(options: PageSeoOptions): void {
     script: computed(() => {
       if (!options.withFaqSchema) return []
 
+      const faq =
+        options.faqSchema ??
+        ({
+          count: 5,
+          questionKey: (i: number) => `site.home.faq${i}Q`,
+          answerKey: (i: number) => `site.home.faq${i}A`
+        } as const)
+
       return [
         {
           type: 'application/ld+json',
@@ -102,14 +116,17 @@ export function usePageSeo(options: PageSeoOptions): void {
               },
               {
                 '@type': 'FAQPage',
-                mainEntity: [1, 2, 3, 4, 5].map((i) => ({
-                  '@type': 'Question',
-                  name: t(`site.home.faq${i}Q`),
-                  acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: t(`site.home.faq${i}A`)
+                mainEntity: Array.from({ length: faq.count }, (_, idx) => {
+                  const i = idx + 1
+                  return {
+                    '@type': 'Question',
+                    name: t(faq.questionKey(i)),
+                    acceptedAnswer: {
+                      '@type': 'Answer',
+                      text: t(faq.answerKey(i))
+                    }
                   }
-                }))
+                })
               }
             ]
           })
