@@ -53,6 +53,12 @@ def _get_admin_ticket(ticket_id: int, db: Session):
     return ticket
 
 
+def _admin_db_id(db: Session, admin: Admin) -> int:
+    """Resolve admin id for reply metadata. Config sudo admins may not have a DB row."""
+    dbadmin = crud.get_admin(db, admin.username)
+    return dbadmin.id if dbadmin else 0
+
+
 @router.get("/tickets", response_model=list[TicketListItem])
 def list_tickets(
     portal_user: PortalUser = Depends(PortalUser.get_current),
@@ -181,7 +187,7 @@ def admin_reply_ticket(
 ):
     ticket = _get_admin_ticket(ticket_id, db)
     try:
-        crud.add_admin_ticket_reply(db, ticket, admin.id, body.content)
+        crud.add_admin_ticket_reply(db, ticket, _admin_db_id(db, admin), body.content)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     ticket = crud.get_ticket_with_replies(db, ticket_id)

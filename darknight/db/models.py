@@ -25,6 +25,7 @@ import darknight.xray as xray
 from darknight.db.base import Base
 from darknight.models.node import NodeStatus
 from darknight.models.order import PortalOrderStatus
+from darknight.models.ticket import TicketAuthorType, TicketPriority, TicketStatus
 from darknight.models.proxy import (
     ProxyHostALPN,
     ProxyHostFingerprint,
@@ -482,3 +483,35 @@ class PortalOrder(Base):
     snapshot_data_limit_gb = Column(Integer, nullable=True)
     snapshot_duration_days = Column(Integer, nullable=True)
     snapshot_product_name = Column(String(128), nullable=True)
+
+
+class Ticket(Base):
+    __tablename__ = "tickets"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
+    user = relationship("User", backref="tickets")
+    subject = Column(String(256), nullable=False)
+    priority = Column(Enum(TicketPriority), nullable=False, default=TicketPriority.normal, index=True)
+    status = Column(Enum(TicketStatus), nullable=False, default=TicketStatus.open, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    last_reply_at = Column(DateTime, nullable=True)
+    replies = relationship(
+        "TicketReply",
+        back_populates="ticket",
+        order_by="TicketReply.created_at",
+        cascade="all, delete-orphan",
+    )
+
+
+class TicketReply(Base):
+    __tablename__ = "ticket_replies"
+
+    id = Column(Integer, primary_key=True)
+    ticket_id = Column(Integer, ForeignKey("tickets.id", ondelete="CASCADE"), index=True, nullable=False)
+    ticket = relationship("Ticket", back_populates="replies")
+    author_type = Column(Enum(TicketAuthorType), nullable=False)
+    author_id = Column(Integer, nullable=False)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

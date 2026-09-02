@@ -32,6 +32,12 @@ export const adminRoutes: RouteRecordRaw[] = [
         meta: { title: 'header.productSettings', icon: 'ShoppingBag', authType: 'admin' }
       },
       {
+        path: 'tickets',
+        name: 'tickets',
+        component: () => import('@/views/admin/Ticket/index.vue'),
+        meta: { title: 'header.ticketSettings', icon: 'Headset', authType: 'admin' }
+      },
+      {
         path: 'settings',
         name: 'settings',
         component: () => import('@/views/admin/Setting/index.vue'),
@@ -43,5 +49,6 @@ export const adminRoutes: RouteRecordRaw[] = [
   { path: '/nodes', redirect: { name: 'nodes' } },
   { path: '/hosts', redirect: { name: 'hosts' } },
   { path: '/products', redirect: { name: 'products' } },
+  { path: '/tickets', redirect: { name: 'tickets' } },
   { path: '/settings', redirect: { name: 'settings' } }
 ]

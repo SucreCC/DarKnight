@@ -6,7 +6,6 @@ import { Loader2 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import {
   fetchPortalTicket,
-  formatTicketTime,
   replyPortalTicket,
   updatePortalTicketStatus,
   type TicketDetail,
@@ -25,6 +24,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import TicketChatThread from './TicketChatThread.vue'
 
 const props = defineProps<{
   modelValue: boolean
@@ -158,26 +158,7 @@ async function quickStatus(next: TicketStatus) {
           </div>
         </div>
 
-        <div class="min-h-0 flex-1 space-y-3 overflow-y-auto py-4">
-          <div
-            v-for="reply in detail.replies"
-            :key="reply.id"
-            class="rounded-lg border border-border px-4 py-3"
-            :class="reply.author_type === 'admin' ? 'bg-muted/40' : 'bg-background'"
-          >
-            <div class="mb-2 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-              <span>
-                {{
-                  reply.author_type === 'admin'
-                    ? t('portal.tickets.authorAdmin')
-                    : t('portal.tickets.authorUser')
-                }}
-              </span>
-              <span>{{ formatTicketTime(reply.created_at) }}</span>
-            </div>
-            <p class="whitespace-pre-wrap text-sm text-foreground">{{ reply.content }}</p>
-          </div>
-        </div>
+        <TicketChatThread :replies="detail.replies" perspective="user" />
 
         <div v-if="!isClosed" class="space-y-3 border-t border-border pt-4">
           <textarea

@@ -11,6 +11,7 @@ from darknight.api.v1.routers import (
     profile,
     subscription,
     system,
+    ticket,
     user,
     user_template,
 )
@@ -31,6 +32,7 @@ for router in (
     user.router,
     order.router,
     product.router,
+    ticket.router,
 ):
     api_router.include_router(router)
 

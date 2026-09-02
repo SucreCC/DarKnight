@@ -35,6 +35,8 @@ from darknight.db.models import (
     ProxyInbound,
     ProxyTypes,
     System,
+    Ticket,
+    TicketReply,
     User,
     UserTemplate,
     UserUsageResetLogs,
@@ -45,6 +47,7 @@ from darknight.models.product import (
     ProductCreate,
     ProductModify,
 )
+from darknight.models.ticket import TicketAuthorType, TicketCreate, TicketPriority, TicketStatus
 from darknight.models.proxy import ProxyHost as ProxyHostModify
 from darknight.models.user import (
     ReminderType,
@@ -2023,3 +2026,149 @@ def redeem_wallet_coupon(db: Session, user_id: int, coupon_code: str, amount: fl
     db.commit()
     db.refresh(row)
     return row
+
+
+def _ticket_now() -> datetime:
+    return datetime.utcnow()
+
+
+def create_ticket(db: Session, user_id: int, payload: TicketCreate) -> Ticket:
+    now = _ticket_now()
+    ticket = Ticket(
+        user_id=user_id,
+        subject=payload.subject.strip(),
+        priority=payload.priority,
+        status=TicketStatus.open,
+        created_at=now,
+        updated_at=now,
+        last_reply_at=now,
+    )
+    db.add(ticket)
+    db.flush()
+    db.add(
+        TicketReply(
+            ticket_id=ticket.id,
+            author_type=TicketAuthorType.user,
+            author_id=user_id,
+            content=payload.content.strip(),
+            created_at=now,
+        )
+    )
+    db.commit()
+    db.refresh(ticket)
+    return ticket
+
+
+def list_tickets_for_user(db: Session, user_id: int) -> list[Ticket]:
+    return (
+        db.query(Ticket)
+        .filter(Ticket.user_id == user_id)
+        .order_by(Ticket.last_reply_at.desc(), Ticket.id.desc())
+        .all()
+    )
+
+
+def get_ticket_with_replies(db: Session, ticket_id: int) -> Optional[Ticket]:
+    return (
+        db.query(Ticket)
+        .options(joinedload(Ticket.replies))
+        .filter(Ticket.id == ticket_id)
+        .first()
+    )
+
+
+def add_user_ticket_reply(db: Session, ticket: Ticket, user_id: int, content: str) -> TicketReply:
+    if ticket.status == TicketStatus.closed:
+        raise ValueError("Ticket is closed")
+    if ticket.status not in (TicketStatus.open, TicketStatus.pending):
+        raise ValueError("Cannot reply to this ticket")
+    now = _ticket_now()
+    reply = TicketReply(
+        ticket_id=ticket.id,
+        author_type=TicketAuthorType.user,
+        author_id=user_id,
+        content=content.strip(),
+        created_at=now,
+    )
+    ticket.status = TicketStatus.open
+    ticket.updated_at = now
+    ticket.last_reply_at = now
+    db.add(reply)
+    db.add(ticket)
+    db.commit()
+    db.refresh(reply)
+    return reply
+
+
+def update_ticket_user_status(db: Session, ticket: Ticket, status: TicketStatus) -> Ticket:
+    if ticket.status == TicketStatus.closed:
+        raise ValueError("Ticket is closed")
+    if status not in (TicketStatus.resolved, TicketStatus.closed):
+        raise ValueError("Invalid status")
+    ticket.status = status
+    ticket.updated_at = _ticket_now()
+    db.add(ticket)
+    db.commit()
+    db.refresh(ticket)
+    return ticket
+
+
+def list_admin_tickets(
+    db: Session,
+    *,
+    status: Optional[TicketStatus] = None,
+    priority: Optional[TicketPriority] = None,
+    offset: int = 0,
+    limit: int = 50,
+) -> list[Ticket]:
+    query = db.query(Ticket).options(joinedload(Ticket.user)).join(User, Ticket.user_id == User.id)
+    if status is not None:
+        query = query.filter(Ticket.status == status)
+    if priority is not None:
+        query = query.filter(Ticket.priority == priority)
+    return (
+        query.order_by(Ticket.last_reply_at.desc(), Ticket.id.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+
+def add_admin_ticket_reply(db: Session, ticket: Ticket, admin_id: int, content: str) -> TicketReply:
+    if ticket.status == TicketStatus.closed:
+        raise ValueError("Ticket is closed")
+    now = _ticket_now()
+    reply = TicketReply(
+        ticket_id=ticket.id,
+        author_type=TicketAuthorType.admin,
+        author_id=admin_id,
+        content=content.strip(),
+        created_at=now,
+    )
+    if ticket.status == TicketStatus.open:
+        ticket.status = TicketStatus.pending
+    ticket.updated_at = now
+    ticket.last_reply_at = now
+    db.add(reply)
+    db.add(ticket)
+    db.commit()
+    db.refresh(reply)
+    return reply
+
+
+def update_ticket_admin(
+    db: Session,
+    ticket: Ticket,
+    *,
+    status: Optional[TicketStatus] = None,
+    priority: Optional[TicketPriority] = None,
+) -> Ticket:
+    if status is not None:
+        ticket.status = status
+    if priority is not None:
+        ticket.priority = priority
+    ticket.updated_at = _ticket_now()
+    db.add(ticket)
+    db.commit()
+    db.refresh(ticket)
+    return ticket

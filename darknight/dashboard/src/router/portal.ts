@@ -25,6 +25,17 @@ export const portalRoutes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/portal/tickets/:ticketId',
+    name: 'portal-ticket-detail',
+    component: () => import('@/views/portal/Tickets/Detail.vue'),
+    meta: {
+      title: 'portal.tickets.detailTitle',
+      zone: 'portal',
+      authType: 'user',
+      hideInMenu: true
+    }
+  },
+  {
     path: '/portal',
     component: () => import('@/layout/UserLayout/index.vue'),
     meta: { zone: 'portal', authType: 'user' },
@@ -116,7 +127,7 @@ export const portalRoutes: RouteRecordRaw[] = [
       {
         path: 'tickets',
         name: 'portal-tickets',
-        component: () => import('@/views/portal/Placeholder/index.vue'),
+        component: () => import('@/views/portal/Tickets/index.vue'),
         meta: {
           title: 'portal.menu.tickets',
           icon: 'Headset',
