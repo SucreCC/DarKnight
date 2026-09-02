@@ -15,7 +15,6 @@ import { usePlanCatalog } from '../usePlanCatalog'
 const props = withDefaults(
   defineProps<{
     planId: string
-    cycleId: string
     coupon?: string
     submitLabel: string
     loading?: boolean
@@ -38,13 +37,14 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const { currency: catalogCurrency, getCycle, getPlan } = usePlanCatalog()
+const { currency: catalogCurrency, getPlan } = usePlanCatalog()
 const couponInput = ref(props.coupon ?? '')
 const verifying = ref(false)
 /** 已通过后端校验的折扣；仅用于展示，最终金额仍由后端下单时计算 */
 const verifiedDiscount = ref(0)
 
-const planName = computed(() => getPlan(props.planId)?.name ?? props.planId)
+const plan = computed(() => getPlan(props.planId))
+const planName = computed(() => plan.value?.name ?? props.planId)
 const currencyCode = computed(() => props.currency ?? catalogCurrency.value)
 const symbol = computed(() => currencySymbol(currencyCode.value))
 
@@ -55,7 +55,7 @@ const listPrice = computed(() => {
   if (props.amount !== undefined) {
     return Math.round((props.amount + discount.value) * 100) / 100
   }
-  return getCycle(props.planId, props.cycleId)?.price
+  return plan.value?.price
 })
 
 const total = computed(() => {
@@ -64,20 +64,20 @@ const total = computed(() => {
   return Math.round((listPrice.value - discount.value) * 100) / 100
 })
 
-const cycleLabel = computed(() => getCycle(props.planId, props.cycleId)?.label ?? props.cycleId)
-// 价目表还没加载时 durationDays 拿不到，此时宁可不显示描述，也不要显示「0 天」。
-const durationDays = computed(() => getCycle(props.planId, props.cycleId)?.durationDays ?? 0)
+const durationDays = computed(() => plan.value?.durationDays ?? 0)
 const planDescription = computed(() =>
   durationDays.value > 0
     ? t('portal.buy.planDescription', { plan: planName.value, days: durationDays.value })
     : ''
 )
 
-// 换套餐或换周期后旧折扣不再适用，重新校验前先清掉。
-watch([() => props.planId, () => props.cycleId], () => {
-  verifiedDiscount.value = 0
-  emit('update:coupon', '')
-})
+watch(
+  () => props.planId,
+  () => {
+    verifiedDiscount.value = 0
+    emit('update:coupon', '')
+  }
+)
 
 async function verifyCoupon() {
   const code = couponInput.value.trim()
@@ -91,7 +91,6 @@ async function verifyCoupon() {
   try {
     const preview = await previewCoupon({
       plan_id: props.planId,
-      cycle_id: props.cycleId,
       coupon: code
     })
     verifiedDiscount.value = preview.discount
@@ -126,7 +125,7 @@ async function verifyCoupon() {
         {{ total === undefined ? '--' : symbol + formatPrice(total) }}
       </p>
       <div class="space-y-1">
-        <p class="text-base font-semibold text-foreground">{{ planName }} · {{ cycleLabel }}</p>
+        <p class="text-base font-semibold text-foreground">{{ planName }}</p>
         <p v-if="planDescription" class="text-sm leading-relaxed text-muted-foreground">
           {{ planDescription }}
         </p>

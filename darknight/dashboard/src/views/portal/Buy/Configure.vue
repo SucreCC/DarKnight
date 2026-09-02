@@ -9,37 +9,19 @@ import { finishCheckoutBoot, startCheckoutBoot } from './checkoutBoot'
 import { preloadPayPalSdk } from './paypalPreload'
 import { resolvePortalApiError } from '@/utils/portalError'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { cn } from '@/lib/utils'
 import OrderSummary from './components/OrderSummary.vue'
-import { currencySymbol, formatPrice } from './plans'
 import { usePlanCatalog } from './usePlanCatalog'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
-const { currency, getPlan, isLoading, isError } = usePlanCatalog()
+const { getPlan, isLoading, isError } = usePlanCatalog()
 
 const planId = computed(() => String(route.params.planId || ''))
 const plan = computed(() => getPlan(planId.value))
-const selectedCycleId = ref('')
 const coupon = ref('')
 const submitting = ref(false)
-
-watch(
-  [plan, () => route.query.cycle],
-  ([value, cycleQuery]) => {
-    const fromQuery = typeof cycleQuery === 'string' ? cycleQuery : ''
-    if (fromQuery && value?.cycles.some((c) => c.id === fromQuery)) {
-      selectedCycleId.value = fromQuery
-      return
-    }
-    if (value?.cycles[0]) {
-      selectedCycleId.value = value.cycles[0].id
-    }
-  },
-  { immediate: true }
-)
 
 watch([planId, isLoading], () => {
   if (!isLoading.value && !plan.value) {
@@ -56,7 +38,6 @@ async function placeOrder() {
   try {
     const order = await createPortalOrder({
       plan_id: plan.value.id,
-      cycle_id: selectedCycleId.value,
       coupon: coupon.value.trim() || undefined
     })
     await preparePortalOrderPayment(order.id)
@@ -98,41 +79,10 @@ async function placeOrder() {
           </li>
         </ul>
       </div>
-
-      <div
-        v-if="plan.cycles.length > 1"
-        class="rounded-xl border border-border bg-card p-7"
-      >
-        <p class="mb-4 text-base font-semibold text-foreground">
-          {{ t('portal.buy.paymentCycle') }}
-        </p>
-        <div class="space-y-3">
-          <button
-            v-for="cycle in plan.cycles"
-            :key="cycle.id"
-            type="button"
-            :class="
-              cn(
-                'flex w-full items-center justify-between rounded-lg border px-5 py-4 text-[15px] transition-colors',
-                selectedCycleId === cycle.id
-                  ? 'border-primary bg-primary/5 text-foreground ring-1 ring-primary'
-                  : 'border-border text-foreground hover:border-primary/40'
-              )
-            "
-            @click="selectedCycleId = cycle.id"
-          >
-            <span>{{ cycle.label }}</span>
-            <span class="font-semibold">
-              {{ currencySymbol(currency) }}{{ formatPrice(cycle.price) }}
-            </span>
-          </button>
-        </div>
-      </div>
     </div>
 
     <OrderSummary
       :plan-id="plan.id"
-      :cycle-id="selectedCycleId"
       :coupon="coupon"
       :loading="submitting"
       :submit-label="t('portal.buy.placeOrder')"

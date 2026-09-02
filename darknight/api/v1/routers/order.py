@@ -13,7 +13,6 @@ from darknight.models.order import (
     OrderResponse,
     PayPalConfigResponse,
     PlanCatalogResponse,
-    PlanCycleResponse,
     PlanResponse,
     generate_order_id,
 )
@@ -79,23 +78,11 @@ def list_plans(db: Session = Depends(get_db)):
                 plan_id=p.slug,
                 name_zh=p.name_zh,
                 name_en=p.name_en,
-                category=p.category,
                 features_zh=coerce_feature_list(p.features_zh),
                 features_en=coerce_feature_list(p.features_en),
-                display_cycle_id=p.display_cycle_key,
+                price=p.price,
+                duration_days=p.duration_days,
                 sort_order=p.sort_order,
-                cycles=[
-                    PlanCycleResponse(
-                        cycle_id=c.cycle_key,
-                        price=c.price,
-                        data_limit_gb=c.data_limit_gb,
-                        duration_days=c.duration_days,
-                        label_zh=c.label_zh,
-                        label_en=c.label_en,
-                    )
-                    for c in sorted(p.cycles, key=lambda x: x.sort_order)
-                    if c.is_listed
-                ],
             )
             for p in products
         ],
@@ -108,22 +95,21 @@ def preview_coupon(
     portal_user: PortalUser = Depends(PortalUser.get_current),
     db: Session = Depends(get_db),
 ):
-    pair = crud.get_listed_cycle(db, body.plan_id, body.cycle_id)
-    if not pair:
-        raise HTTPException(status_code=400, detail="Invalid plan or billing cycle")
+    product = crud.get_listed_product(db, body.plan_id)
+    if not product:
+        raise HTTPException(status_code=400, detail="Invalid plan")
 
-    _, cycle = pair
     try:
-        code, discount = resolve_discount(body.coupon, cycle.price)
+        code, discount = resolve_discount(body.coupon, product.price)
     except CouponError as exc:
         raise HTTPException(status_code=400, detail="Coupon is invalid or expired") from exc
 
     return CouponPreviewResponse(
         coupon=code or "",
         currency=get_app_config().paypal.currency,
-        original_amount=cycle.price,
+        original_amount=product.price,
         discount=discount,
-        amount=round(cycle.price - discount, 2),
+        amount=round(product.price - discount, 2),
     )
 
 
@@ -133,17 +119,16 @@ def create_portal_order(
     portal_user: PortalUser = Depends(PortalUser.get_current),
     db: Session = Depends(get_db),
 ):
-    pair = crud.get_listed_cycle(db, body.plan_id, body.cycle_id)
-    if not pair:
-        raise HTTPException(status_code=400, detail="Invalid plan or billing cycle")
+    product = crud.get_listed_product(db, body.plan_id)
+    if not product:
+        raise HTTPException(status_code=400, detail="Invalid plan")
 
     dbuser = crud.get_user(db, portal_user.username)
     if not dbuser:
         raise HTTPException(status_code=404, detail="User not found")
 
-    product, cycle = pair
     try:
-        coupon_code, discount = resolve_discount(body.coupon, cycle.price)
+        coupon_code, discount = resolve_discount(body.coupon, product.price)
     except CouponError as exc:
         raise HTTPException(status_code=400, detail="Coupon is invalid or expired") from exc
 
@@ -153,14 +138,13 @@ def create_portal_order(
         order_id=generate_order_id(),
         user_id=dbuser.id,
         plan_id=product.slug,
-        cycle_id=cycle.cycle_key,
-        amount=round(cycle.price - discount, 2),
+        amount=round(product.price - discount, 2),
         currency=cfg.currency,
         paypal_order_id=None,
         coupon=coupon_code,
         discount=discount,
-        snapshot_data_limit_gb=cycle.data_limit_gb,
-        snapshot_duration_days=cycle.duration_days,
+        snapshot_data_limit_gb=0,
+        snapshot_duration_days=product.duration_days,
         snapshot_product_name=product.name_zh,
     )
     return OrderResponse.model_validate(order)

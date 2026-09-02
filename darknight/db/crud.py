@@ -24,7 +24,6 @@ from darknight.db.models import (
     PortalOrder,
     PortalOrderStatus,
     Product,
-    ProductCycle,
     Proxy,
     ProxyHost,
     ProxyInbound,
@@ -38,8 +37,6 @@ from darknight.models.admin import AdminCreate, AdminModify, AdminPartialModify
 from darknight.models.node import NodeCreate, NodeModify, NodeStatus, NodeUsageResponse
 from darknight.models.product import (
     ProductCreate,
-    ProductCycleCreate,
-    ProductCycleModify,
     ProductModify,
 )
 from darknight.models.proxy import ProxyHost as ProxyHostModify
@@ -1578,12 +1575,6 @@ def get_product_by_slug(db: Session, slug: str) -> Product | None:
 
 
 def create_product(db: Session, payload: ProductCreate) -> Product:
-    if not payload.cycles:
-        raise ValueError("at least one cycle is required")
-    keys = {c.cycle_key for c in payload.cycles}
-    display_key = payload.display_cycle_key or payload.cycles[0].cycle_key
-    if display_key not in keys:
-        display_key = payload.cycles[0].cycle_key
     max_sort = db.query(func.max(Product.sort_order)).scalar()
     sort_order = payload.sort_order if payload.sort_order is not None else (max_sort or 0) + 1
     product = Product(
@@ -1593,15 +1584,11 @@ def create_product(db: Session, payload: ProductCreate) -> Product:
         category=payload.category,
         features_zh=payload.features_zh,
         features_en=payload.features_en,
-        display_cycle_key=display_key,
+        price=payload.price,
+        duration_days=payload.duration_days,
         sort_order=sort_order,
         is_listed=payload.is_listed,
     )
-    for c in payload.cycles:
-        cycle = ProductCycle(**c.model_dump())
-        cycle.data_limit_gb = 0
-        cycle.is_listed = payload.is_listed
-        product.cycles.append(cycle)
     db.add(product)
     db.commit()
     db.refresh(product)
@@ -1609,11 +1596,6 @@ def create_product(db: Session, payload: ProductCreate) -> Product:
 
 
 def update_product(db: Session, product: Product, payload: ProductModify) -> Product:
-    if payload.display_cycle_key is not None:
-        keys = {c.cycle_key for c in product.cycles}
-        if payload.display_cycle_key not in keys:
-            raise ValueError("display_cycle_key must match a cycle")
-
     if payload.slug is not None:
         product.slug = payload.slug
     if payload.name_zh is not None:
@@ -1626,15 +1608,14 @@ def update_product(db: Session, product: Product, payload: ProductModify) -> Pro
         product.features_zh = payload.features_zh
     if payload.features_en is not None:
         product.features_en = payload.features_en
-    if payload.display_cycle_key is not None:
-        product.display_cycle_key = payload.display_cycle_key
+    if payload.price is not None:
+        product.price = payload.price
+    if payload.duration_days is not None:
+        product.duration_days = payload.duration_days
     if payload.sort_order is not None:
         product.sort_order = payload.sort_order
     if payload.is_listed is not None:
         product.is_listed = payload.is_listed
-        # 商品级上架/下架时同步所有周期，避免后台显示已上架但门户不可见
-        for cycle in product.cycles:
-            cycle.is_listed = payload.is_listed
 
     db.commit()
     db.refresh(product)
@@ -1646,84 +1627,20 @@ def remove_product(db: Session, product: Product) -> None:
     db.commit()
 
 
-def get_product_cycle(db: Session, cycle_id: int) -> ProductCycle | None:
-    return db.query(ProductCycle).filter(ProductCycle.id == cycle_id).first()
-
-
-def add_product_cycle(db: Session, product: Product, payload: ProductCycleCreate) -> ProductCycle:
-    cycle = ProductCycle(**payload.model_dump())
-    cycle.data_limit_gb = 0
-    product.cycles.append(cycle)
-    db.commit()
-    db.refresh(cycle)
-    return cycle
-
-
-def update_product_cycle(db: Session, cycle: ProductCycle, payload: ProductCycleModify) -> ProductCycle:
-    if payload.cycle_key is not None and payload.cycle_key != cycle.cycle_key:
-        if cycle.cycle_key == cycle.product.display_cycle_key:
-            cycle.product.display_cycle_key = payload.cycle_key
-        cycle.cycle_key = payload.cycle_key
-    if payload.label_zh is not None:
-        cycle.label_zh = payload.label_zh
-    if payload.label_en is not None:
-        cycle.label_en = payload.label_en
-    if payload.price is not None:
-        cycle.price = payload.price
-    if payload.duration_days is not None:
-        cycle.duration_days = payload.duration_days
-    if payload.is_listed is not None:
-        cycle.is_listed = payload.is_listed
-    if payload.sort_order is not None:
-        cycle.sort_order = payload.sort_order
-
-    cycle.data_limit_gb = 0
-
-    db.commit()
-    db.refresh(cycle)
-    return cycle
-
-
-def remove_product_cycle(db: Session, cycle: ProductCycle) -> None:
-    product = cycle.product
-    was_display = cycle.cycle_key == product.display_cycle_key
-    cycle_id = cycle.id
-    db.delete(cycle)
-    db.flush()
-    if was_display:
-        remaining = [c for c in product.cycles if c.id != cycle_id]
-        if not remaining:
-            raise ValueError("cannot delete last cycle")
-        first = min(remaining, key=lambda c: (c.sort_order, c.id))
-        product.display_cycle_key = first.cycle_key
-    db.commit()
-
-
 def list_listed_products(db: Session) -> list[Product]:
-    products = (
+    return (
         db.query(Product)
         .filter(Product.is_listed.is_(True))
         .order_by(Product.sort_order.asc(), Product.id.asc())
         .all()
     )
-    result = []
-    for p in products:
-        listed = [c for c in p.cycles if c.is_listed]
-        if not listed:
-            continue
-        # 调用方只应暴露 listed cycles；可在 router 层过滤
-        result.append(p)
-    return result
 
 
-def get_listed_cycle(db: Session, slug: str, cycle_key: str) -> tuple[Product, ProductCycle] | None:
+def get_listed_product(db: Session, slug: str) -> Product | None:
     product = get_product_by_slug(db, slug)
     if not product or not product.is_listed:
         return None
-    cycle = next((c for c in product.cycles if c.cycle_key == cycle_key and c.is_listed), None)
-    if not cycle:
-        return None
-    return product, cycle
+    return product
 
 
 def has_pending_orders_for_product(db: Session, slug: str) -> bool:
@@ -1738,26 +1655,12 @@ def has_pending_orders_for_product(db: Session, slug: str) -> bool:
     )
 
 
-def has_pending_orders_for_cycle(db: Session, slug: str, cycle_key: str) -> bool:
-    return (
-        db.query(PortalOrder)
-        .filter(
-            PortalOrder.plan_id == slug,
-            PortalOrder.cycle_id == cycle_key,
-            PortalOrder.status == PortalOrderStatus.pending,
-        )
-        .first()
-        is not None
-    )
-
-
 def create_portal_order(
     db: Session,
     *,
     order_id: str,
     user_id: int,
     plan_id: str,
-    cycle_id: str,
     amount: float,
     currency: str,
     paypal_order_id: str | None = None,
@@ -1771,7 +1674,7 @@ def create_portal_order(
         id=order_id,
         user_id=user_id,
         plan_id=plan_id,
-        cycle_id=cycle_id,
+        cycle_id="",
         amount=amount,
         currency=currency,
         paypal_order_id=paypal_order_id,

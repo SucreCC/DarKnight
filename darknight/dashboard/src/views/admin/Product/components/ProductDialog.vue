@@ -18,13 +18,11 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-const CYCLE_KEY = 'default'
-
 const props = defineProps<{ modelValue: boolean; product: Product | null }>()
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
 
 const { t } = useI18n()
-const { addProduct, updateProduct, addCycle, updateCycle } = useProductMutations()
+const { addProduct, updateProduct } = useProductMutations()
 
 const isEditing = computed(() => !!props.product)
 const errorMsg = ref('')
@@ -42,15 +40,14 @@ const form = reactive({
 
 function resetForm(product: Product | null) {
   errorMsg.value = ''
-  const cycle = product?.cycles[0]
   if (product) {
     form.slug = product.slug
     form.name_zh = product.name_zh
     form.name_en = product.name_en
     form.features_zh = product.features_zh.length ? [...product.features_zh] : ['']
     form.features_en = product.features_en.length ? [...product.features_en] : ['']
-    form.price = cycle?.price ?? 4.99
-    form.duration_days = cycle?.duration_days ?? 30
+    form.price = product.price
+    form.duration_days = product.duration_days
   } else {
     form.slug = ''
     form.name_zh = ''
@@ -87,59 +84,25 @@ function cleanFeatures(values: string[]) {
   return values.map((v) => v.trim()).filter(Boolean)
 }
 
-function cyclePayload(listed: boolean) {
-  return {
-    cycle_key: CYCLE_KEY,
-    label_zh: form.name_zh,
-    label_en: form.name_en,
-    price: form.price,
-    data_limit_gb: 0,
-    duration_days: form.duration_days,
-    is_listed: listed,
-    sort_order: 0
-  }
-}
-
 async function onSubmit() {
   errorMsg.value = ''
   submitting.value = true
   try {
+    const body = {
+      slug: form.slug,
+      name_zh: form.name_zh,
+      name_en: form.name_en,
+      features_zh: cleanFeatures(form.features_zh),
+      features_en: cleanFeatures(form.features_en),
+      price: form.price,
+      duration_days: form.duration_days
+    }
+
     if (isEditing.value && props.product) {
-      await updateProduct.mutateAsync({
-        id: props.product.id,
-        body: {
-          slug: form.slug,
-          name_zh: form.name_zh,
-          name_en: form.name_en,
-          features_zh: cleanFeatures(form.features_zh),
-          features_en: cleanFeatures(form.features_en),
-          display_cycle_key: CYCLE_KEY
-        }
-      })
-      const cycle = props.product.cycles[0]
-      if (cycle) {
-        await updateCycle.mutateAsync({
-          productId: props.product.id,
-          cycleId: cycle.id,
-          body: cyclePayload(props.product.is_listed)
-        })
-      } else {
-        await addCycle.mutateAsync({
-          productId: props.product.id,
-          body: cyclePayload(props.product.is_listed)
-        })
-      }
+      await updateProduct.mutateAsync({ id: props.product.id, body })
       toast.success(t('products.saveSuccess'))
     } else {
-      await addProduct.mutateAsync({
-        slug: form.slug,
-        name_zh: form.name_zh,
-        name_en: form.name_en,
-        features_zh: cleanFeatures(form.features_zh),
-        features_en: cleanFeatures(form.features_en),
-        display_cycle_key: CYCLE_KEY,
-        cycles: [cyclePayload(false)]
-      })
+      await addProduct.mutateAsync({ ...body, is_listed: false })
       toast.success(t('products.createSuccess'))
     }
     emit('update:modelValue', false)

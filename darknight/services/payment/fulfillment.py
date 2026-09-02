@@ -38,7 +38,7 @@ def fulfill_portal_order(db: Session, dbuser: User, order: PortalOrder) -> User:
     if order.snapshot_data_limit_gb is None or order.snapshot_duration_days is None:
         raise ValueError(
             f"Order {order.id} missing fulfillment snapshot "
-            f"({order.plan_id}/{order.cycle_id})"
+            f"({order.plan_id})"
         )
 
     if dbuser.used_traffic:

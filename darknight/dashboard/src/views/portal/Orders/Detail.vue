@@ -35,13 +35,10 @@ const paymentError = ref('')
 const paymentFormReady = ref(false)
 const paymentInitFailed = ref(false)
 
-const { getPlan, getCycle } = usePlanCatalog()
+const { getPlan } = usePlanCatalog()
 
 const planName = computed(() =>
   order.value ? (getPlan(order.value.plan_id)?.name ?? order.value.plan_id) : ''
-)
-const cycleLabel = computed(() =>
-  order.value ? (getCycle(order.value.plan_id, order.value.cycle_id)?.label ?? order.value.cycle_id) : ''
 )
 const isPaid = computed(() => order.value?.status === 'paid')
 
@@ -178,7 +175,6 @@ async function onPaymentError(_message: string, refreshOrder = true) {
       >
         <OrderSummary
           :plan-id="order.plan_id"
-          :cycle-id="order.cycle_id"
           :coupon="order.coupon || undefined"
           :amount="order.amount"
           :discount="order.discount"
@@ -199,7 +195,7 @@ async function onPaymentError(_message: string, refreshOrder = true) {
               t('portal.buy.paymentSuccess')
             }}</h2>
             <p class="max-w-sm text-sm text-muted-foreground">
-              {{ t('portal.buy.paymentSuccessHint', { plan: planName, cycle: cycleLabel }) }}
+              {{ t('portal.buy.paymentSuccessHint', { plan: planName, cycle: planName }) }}
             </p>
             <div class="mt-2 flex flex-wrap items-center justify-center gap-3">
               <Button @click="router.push({ name: 'portal-dashboard' })">

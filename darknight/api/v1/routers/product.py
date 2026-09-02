@@ -3,18 +3,11 @@ from sqlalchemy.exc import IntegrityError
 
 from darknight.db import Session, crud, get_db
 from darknight.models.admin import Admin
-from darknight.models.product import (
-    ProductCreate,
-    ProductCycleCreate,
-    ProductCycleModify,
-    ProductCycleResponse,
-    ProductModify,
-    ProductResponse,
-)
+from darknight.models.product import ProductCreate, ProductModify, ProductResponse
 
 router = APIRouter(tags=["Product"])
 
-_CONFLICT_DETAIL = "Product slug or cycle_key already exists"
+_CONFLICT_DETAIL = "Product slug already exists"
 
 
 def _product_or_404(db: Session, product_id: int):
@@ -22,13 +15,6 @@ def _product_or_404(db: Session, product_id: int):
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
-
-
-def _cycle_or_404(db: Session, product, cycle_id: int):
-    cycle = crud.get_product_cycle(db, cycle_id)
-    if not cycle or cycle.product_id != product.id:
-        raise HTTPException(status_code=404, detail="Product cycle not found")
-    return cycle
 
 
 @router.get("/products", response_model=list[ProductResponse])
@@ -87,56 +73,4 @@ def remove_product(
     if crud.has_pending_orders_for_product(db, product.slug):
         raise HTTPException(status_code=409, detail="Product has pending orders")
     crud.remove_product(db, product)
-    return {}
-
-
-@router.post("/product/{product_id}/cycle", response_model=ProductCycleResponse)
-def add_product_cycle(
-    product_id: int,
-    body: ProductCycleCreate,
-    db: Session = Depends(get_db),
-    _: Admin = Depends(Admin.check_sudo_admin),
-):
-    product = _product_or_404(db, product_id)
-    try:
-        return crud.add_product_cycle(db, product, body)
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(status_code=409, detail=_CONFLICT_DETAIL)
-
-
-@router.put("/product/{product_id}/cycle/{cycle_id}", response_model=ProductCycleResponse)
-def modify_product_cycle(
-    product_id: int,
-    cycle_id: int,
-    body: ProductCycleModify,
-    db: Session = Depends(get_db),
-    _: Admin = Depends(Admin.check_sudo_admin),
-):
-    product = _product_or_404(db, product_id)
-    cycle = _cycle_or_404(db, product, cycle_id)
-    try:
-        return crud.update_product_cycle(db, cycle, body)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(status_code=409, detail=_CONFLICT_DETAIL)
-
-
-@router.delete("/product/{product_id}/cycle/{cycle_id}")
-def remove_product_cycle(
-    product_id: int,
-    cycle_id: int,
-    db: Session = Depends(get_db),
-    _: Admin = Depends(Admin.check_sudo_admin),
-):
-    product = _product_or_404(db, product_id)
-    cycle = _cycle_or_404(db, product, cycle_id)
-    if crud.has_pending_orders_for_cycle(db, product.slug, cycle.cycle_key):
-        raise HTTPException(status_code=409, detail="Product cycle has pending orders")
-    try:
-        crud.remove_product_cycle(db, cycle)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {}

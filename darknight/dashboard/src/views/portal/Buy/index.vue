@@ -32,36 +32,25 @@ interface PlanCard {
 }
 
 const planCards = computed<PlanCard[]>(() => {
-  const sorted = [...plans.value].sort((a, b) => {
-    const daysA = a.cycles[0]?.durationDays ?? 0
-    const daysB = b.cycles[0]?.durationDays ?? 0
-    return daysA - daysB
+  const sorted = [...plans.value].sort((a, b) => a.durationDays - b.durationDays)
+
+  return sorted.map((plan) => {
+    const months = billingMonths(plan.durationDays)
+    return {
+      plan,
+      price: plan.price,
+      durationDays: plan.durationDays,
+      monthlyPrice: monthlyEquivalent(plan.price, plan.durationDays),
+      discount: planDiscountByMonths(months),
+      featured: plan.durationDays >= 365
+    }
   })
-
-  const anchor = sorted.find((plan) => (plan.cycles[0]?.durationDays ?? 0) <= 31) ?? sorted[0]
-  const anchorMonthly = anchor?.cycles[0]?.price ?? 4.99
-
-  return sorted
-    .filter((plan) => plan.cycles[0])
-    .map((plan) => {
-      const cycle = plan.cycles[0]
-      const months = billingMonths(cycle.durationDays)
-      return {
-        plan,
-        price: cycle.price,
-        durationDays: cycle.durationDays,
-        monthlyPrice: monthlyEquivalent(cycle.price, cycle.durationDays),
-        discount: planDiscountByMonths(months),
-        featured: cycle.durationDays >= 365
-      }
-    })
 })
 
-function subscribe(planId: string, cycleId: string) {
+function subscribe(planId: string) {
   router.push({
     name: 'portal-buy-configure',
-    params: { planId },
-    query: { cycle: cycleId }
+    params: { planId }
   })
 }
 </script>
@@ -154,7 +143,7 @@ function subscribe(planId: string, cycleId: string) {
 
         <Button
           class="mt-3 h-10 w-full text-sm"
-          @click="subscribe(card.plan.id, card.plan.cycles[0].id)"
+          @click="subscribe(card.plan.id)"
         >
           {{ t('portal.buy.subscribeNow') }}
         </Button>

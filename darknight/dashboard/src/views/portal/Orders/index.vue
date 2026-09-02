@@ -34,14 +34,10 @@ const { data, isLoading, isError } = useQuery({
   refetchOnWindowFocus: false
 })
 
-const { getPlan, getCycle } = usePlanCatalog()
+const { getPlan } = usePlanCatalog()
 
 function planName(order: PortalOrder) {
   return getPlan(order.plan_id)?.name ?? order.plan_id
-}
-
-function cycleLabel(order: PortalOrder) {
-  return getCycle(order.plan_id, order.cycle_id)?.label ?? order.cycle_id
 }
 
 function openOrder(order: PortalOrder) {
@@ -96,9 +92,7 @@ function openOrder(order: PortalOrder) {
                 {{ row.id }}
               </button>
             </td>
-            <td class="px-4 py-3">
-              {{ planName(row) }} · {{ cycleLabel(row) }}
-            </td>
+            <td class="px-4 py-3">{{ planName(row) }}</td>
             <td class="px-4 py-3">
               {{ currencySymbol(row.currency) }}{{ formatPrice(row.amount) }}
             </td>

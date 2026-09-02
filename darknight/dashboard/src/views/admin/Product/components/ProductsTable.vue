@@ -14,10 +14,6 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-
-function primaryCycle(product: Product) {
-  return product.cycles[0]
-}
 </script>
 
 <template>
@@ -52,12 +48,8 @@ function primaryCycle(product: Product) {
         >
           <td class="px-4 py-3 font-mono text-foreground">{{ row.slug }}</td>
           <td class="px-4 py-3 text-foreground">{{ row.name_zh }}</td>
-          <td class="px-4 py-3 text-foreground">
-            {{ primaryCycle(row)?.price ?? '—' }}
-          </td>
-          <td class="px-4 py-3 text-foreground">
-            {{ primaryCycle(row)?.duration_days ?? '—' }}
-          </td>
+          <td class="px-4 py-3 text-foreground">{{ row.price }}</td>
+          <td class="px-4 py-3 text-foreground">{{ row.duration_days }}</td>
           <td class="px-4 py-3">
             <Switch
               :model-value="row.is_listed"

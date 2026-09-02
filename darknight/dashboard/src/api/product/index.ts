@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { http } from '@/config/axios'
-import type { Product, ProductCreateBody, ProductCycleInput, ProductModifyBody } from './types'
+import type { Product, ProductCreateBody, ProductModifyBody } from './types'
 
 export const productsQueryKey = ['products'] as const
 
@@ -32,30 +32,5 @@ export function useProductMutations() {
     onSuccess: invalidate
   })
 
-  const addCycle = useMutation({
-    mutationFn: ({ productId, body }: { productId: number; body: ProductCycleInput }) =>
-      http(`/product/${productId}/cycle`, { method: 'POST', body }),
-    onSuccess: invalidate
-  })
-
-  const updateCycle = useMutation({
-    mutationFn: ({
-      productId,
-      cycleId,
-      body
-    }: {
-      productId: number
-      cycleId: number
-      body: Partial<ProductCycleInput>
-    }) => http(`/product/${productId}/cycle/${cycleId}`, { method: 'PUT', body }),
-    onSuccess: invalidate
-  })
-
-  const deleteCycle = useMutation({
-    mutationFn: ({ productId, cycleId }: { productId: number; cycleId: number }) =>
-      http(`/product/${productId}/cycle/${cycleId}`, { method: 'DELETE' }),
-    onSuccess: invalidate
-  })
-
-  return { addProduct, updateProduct, deleteProduct, addCycle, updateCycle, deleteCycle }
+  return { addProduct, updateProduct, deleteProduct }
 }

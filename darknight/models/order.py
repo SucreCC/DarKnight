@@ -17,14 +17,12 @@ class PortalOrderStatus(str, Enum):
 
 class CreateOrderRequest(BaseModel):
     plan_id: str = Field(min_length=1, max_length=32)
-    cycle_id: str = Field(min_length=1, max_length=32)
     coupon: Optional[str] = Field(default=None, max_length=64)
 
 
 class OrderResponse(BaseModel):
     id: str
     plan_id: str
-    cycle_id: str
     amount: float
     currency: str
     status: PortalOrderStatus
@@ -40,7 +38,6 @@ class OrderResponse(BaseModel):
 
 class CouponPreviewRequest(BaseModel):
     plan_id: str = Field(min_length=1, max_length=32)
-    cycle_id: str = Field(min_length=1, max_length=32)
     coupon: str = Field(min_length=1, max_length=64)
 
 
@@ -58,25 +55,15 @@ class PayPalConfigResponse(BaseModel):
     enabled: bool
 
 
-class PlanCycleResponse(BaseModel):
-    cycle_id: str
-    price: float
-    data_limit_gb: int
-    duration_days: int
-    label_zh: str = ""
-    label_en: str = ""
-
-
 class PlanResponse(BaseModel):
     plan_id: str
     name_zh: str = ""
     name_en: str = ""
-    category: str = "period"
     features_zh: list[str] = Field(default_factory=list)
     features_en: list[str] = Field(default_factory=list)
-    display_cycle_id: str = ""
+    price: float
+    duration_days: int
     sort_order: int = 0
-    cycles: list[PlanCycleResponse]
 
     @field_validator("features_zh", "features_en", mode="before")
     @classmethod
@@ -110,7 +97,6 @@ __all__ = [
     "OrderResponse",
     "PayPalConfigResponse",
     "PlanCatalogResponse",
-    "PlanCycleResponse",
     "PlanResponse",
     "PortalOrderStatus",
     "generate_order_id",

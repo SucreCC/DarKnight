@@ -5,7 +5,6 @@ export type OrderStatus = 'pending' | 'paid' | 'closed' | 'failed'
 export interface PortalOrder {
   id: string
   plan_id: string
-  cycle_id: string
   amount: number
   currency: string
   status: OrderStatus
@@ -25,7 +24,7 @@ export interface CouponPreview {
   amount: number
 }
 
-export function previewCoupon(body: { plan_id: string; cycle_id: string; coupon: string }) {
+export function previewCoupon(body: { plan_id: string; coupon: string }) {
   return http<CouponPreview>('/coupons/preview', { method: 'POST', body })
 }
 
@@ -35,25 +34,15 @@ export interface PayPalConfig {
   enabled: boolean
 }
 
-export interface PlanCycle {
-  cycle_id: string
-  price: number
-  data_limit_gb: number
-  duration_days: number
-  label_zh: string
-  label_en: string
-}
-
 export interface Plan {
   plan_id: string
   name_zh: string
   name_en: string
-  category: 'period' | 'traffic'
   features_zh: string[]
   features_en: string[]
-  display_cycle_id: string
+  price: number
+  duration_days: number
   sort_order: number
-  cycles: PlanCycle[]
 }
 
 export interface PlanCatalog {
@@ -69,11 +58,7 @@ export function fetchPlanCatalog() {
   return http<PlanCatalog>('/plans')
 }
 
-export function createPortalOrder(body: {
-  plan_id: string
-  cycle_id: string
-  coupon?: string
-}) {
+export function createPortalOrder(body: { plan_id: string; coupon?: string }) {
   return http<PortalOrder>('/orders', { method: 'POST', body })
 }
 

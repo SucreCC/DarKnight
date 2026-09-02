@@ -2,24 +2,15 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useQuery } from '@tanstack/vue-query'
 import { fetchPlanCatalog } from '@/api/portal/orders'
-import { pickLocale, type PlanCategory, type PlanFilter } from './plans'
-
-export interface PricedCycle {
-  id: string
-  label: string
-  price: number
-  dataLimitGb: number
-  durationDays: number
-}
+import { pickLocale } from './plans'
 
 export interface PricedPlan {
   id: string
   name: string
-  category: PlanCategory
   features: string[]
-  displayCycleId: string
+  price: number
+  durationDays: number
   sortOrder: number
-  cycles: PricedCycle[]
 }
 
 export const planCatalogQueryKey = ['portal', 'plans'] as const
@@ -46,17 +37,10 @@ export function usePlanCatalog() {
       .map((plan) => ({
         id: plan.plan_id,
         name: pickLocale(loc, plan.name_zh, plan.name_en),
-        category: plan.category,
         features: pickLocale(loc, plan.features_zh, plan.features_en),
-        displayCycleId: plan.display_cycle_id,
-        sortOrder: plan.sort_order,
-        cycles: plan.cycles.map((cycle) => ({
-          id: cycle.cycle_id,
-          label: pickLocale(loc, cycle.label_zh, cycle.label_en),
-          price: cycle.price,
-          dataLimitGb: cycle.data_limit_gb,
-          durationDays: cycle.duration_days
-        }))
+        price: plan.price,
+        durationDays: plan.duration_days,
+        sortOrder: plan.sort_order
       }))
   })
 
@@ -64,36 +48,11 @@ export function usePlanCatalog() {
     return plans.value.find((plan) => plan.id === planId)
   }
 
-  function getCycle(planId: string, cycleId: string): PricedCycle | undefined {
-    return getPlan(planId)?.cycles.find((cycle) => cycle.id === cycleId)
-  }
-
-  function displayCycle(plan: PricedPlan) {
-    return plan.cycles.find((cycle) => cycle.id === plan.displayCycleId) ?? plan.cycles[0]
-  }
-
-  function sortPlans(filter: PlanFilter): PricedPlan[] {
-    const list = [...plans.value]
-    if (filter === 'all') {
-      return list.sort((a, b) => a.sortOrder - b.sortOrder)
-    }
-    return list.sort((a, b) => {
-      const cycleA = displayCycle(a)
-      const cycleB = displayCycle(b)
-      if (filter === 'period') {
-        return cycleA.durationDays - cycleB.durationDays
-      }
-      return cycleA.dataLimitGb - cycleB.dataLimitGb
-    })
-  }
-
   return {
     plans,
     currency,
     isLoading: query.isLoading,
     isError: query.isError,
-    getPlan,
-    getCycle,
-    sortPlans
+    getPlan
   }
 }
