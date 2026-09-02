@@ -9,6 +9,32 @@ import portalFa from '@/locales/portal.fa.json'
 import siteRu from '@/locales/site.ru.json'
 import siteFa from '@/locales/site.fa.json'
 
+function escapeI18nSpecials(msg: string): string {
+  // Avoid double-escaping already-literalized characters like {'@'}.
+  return msg.replace(/@/g, (match, offset, source) => {
+    const prev = source.slice(Math.max(0, offset - 2), offset)
+    const next = source.slice(offset + 1, offset + 3)
+    if (prev === "{'" && next === "'}") return match
+    return "{'@'}"
+  })
+}
+
+function resolveFlatMessage(
+  messages: Record<string, unknown>,
+  path: string
+): string | null {
+  const direct = messages[path]
+  if (typeof direct === 'string') return escapeI18nSpecials(direct)
+
+  const parts = path.split('.')
+  let current: unknown = messages
+  for (const part of parts) {
+    if (!current || typeof current !== 'object') return null
+    current = (current as Record<string, unknown>)[part]
+  }
+  return typeof current === 'string' ? escapeI18nSpecials(current) : null
+}
+
 const ru = { ...ruBase, ...portalRu, ...siteRu }
 const fa = { ...faBase, ...portalFa, ...siteFa }
 
@@ -35,12 +61,7 @@ export const i18n = createI18n({
   legacy: false,
   locale: detectLocale(),
   fallbackLocale: 'en',
-  // Flat locale keys + emails with "@" must not be parsed as linked messages.
-  messageResolver: (obj, path) => {
-    const msg = (obj as Record<string, unknown>)[path]
-    if (typeof msg !== 'string') return null
-    return msg.includes('@') ? msg.replaceAll('@', "{'@'}") : msg
-  },
+  messageResolver: (obj, path) => resolveFlatMessage(obj as Record<string, unknown>, path),
   messages: { en, zh, ru, fa }
 })
 

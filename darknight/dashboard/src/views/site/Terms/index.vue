@@ -28,7 +28,11 @@ const sections = [1, 2, 3, 4, 5] as const
         {{ t(`site.legal.termsS${section}Title`) }}
       </h2>
       <p class="mt-2 m-0 text-sm leading-relaxed text-muted-foreground">
-        {{ t(`site.legal.termsS${section}Body`) }}
+        {{
+          section === 5
+            ? t('site.legal.termsS5Body', { email: SITE_CONTACT_EMAIL })
+            : t(`site.legal.termsS${section}Body`)
+        }}
       </p>
     </section>
 
