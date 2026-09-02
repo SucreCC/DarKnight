@@ -1,8 +1,15 @@
 import { createI18n } from 'vue-i18n'
 import en from '@/locales/en.json'
 import zh from '@/locales/zh.json'
-import ru from '@/locales/ru.json'
-import fa from '@/locales/fa.json'
+import ruBase from '@/locales/ru.json'
+import faBase from '@/locales/fa.json'
+import portalRu from '@/locales/portal.ru.json'
+import portalFa from '@/locales/portal.fa.json'
+import siteRu from '@/locales/site.ru.json'
+import siteFa from '@/locales/site.fa.json'
+
+const ru = { ...ruBase, ...portalRu, ...siteRu }
+const fa = { ...faBase, ...portalFa, ...siteFa }
 
 const LANG_KEY = 'darknight-lang'
 

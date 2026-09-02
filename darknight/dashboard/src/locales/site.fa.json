@@ -1,0 +1,13 @@
+{
+  "site.footer": "DarKnight — سرویس شبکه امن و پایدار",
+  "site.home.title": "به DarKnight خوش آمدید",
+  "site.home.subtitle": "DarKnight یک پورتال کاربری ساده و مدیریت قدرتمند گره‌ها ارائه می‌دهد تا بتوانید به‌راحتی اشتراک بگیرید، متصل شوید و سرویس‌های شبکه را مدیریت کنید.",
+  "site.home.getStarted": "شروع کنید",
+  "site.home.login": "ورود",
+  "site.home.feature1Title": "امن و پایدار",
+  "site.home.feature1Desc": "مبتنی بر هسته Xray با پروتکل‌های متعدد و گزینه‌های TLS برای اتصالات امن.",
+  "site.home.feature2Title": "مدیریت گره‌ها",
+  "site.home.feature2Desc": "مدیران می‌توانند گره‌ها، inboundها و تنظیمات هاست را به‌صورت متمرکز برای عملیات کارآمد مدیریت کنند.",
+  "site.home.feature3Title": "راهنمای تفصیلی",
+  "site.home.feature3Desc": "پس از ورود، آموزش‌های گام‌به‌گام نصب و وارد کردن کلاینت را در پورتال کاربری مشاهده کنید."
+}
