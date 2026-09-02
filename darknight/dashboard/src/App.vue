@@ -4,6 +4,7 @@ import { useThemeStore } from '@/store/modules/theme'
 import { useI18n } from 'vue-i18n'
 import { Toaster } from '@/components/ui/sonner'
 import ConfirmDialog from '@/components/ConfirmDialog/index.vue'
+import CookieConsentBanner from '@/components/CookieConsentBanner/index.vue'
 
 const theme = useThemeStore()
 const { locale } = useI18n()
@@ -15,6 +16,7 @@ const rtl = computed(() => (locale.value === 'fa' ? 'rtl' : 'ltr'))
     <router-view />
     <Toaster :theme="theme.mode" position="top-center" rich-colors />
     <ConfirmDialog />
+    <CookieConsentBanner />
   </div>
 </template>
 

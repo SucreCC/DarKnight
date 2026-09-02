@@ -27,5 +27,11 @@
   "site.home.faq4Q": "Какие клиенты можно использовать?",
   "site.home.faq4A": "Рекомендуем Clash Verge Rev для Windows и macOS, Shadowrocket для iOS и Clash Meta for Android. После входа доступны подробные инструкции.",
   "site.home.faq5Q": "Насколько безопасно подключение?",
-  "site.home.faq5A": "DarKnight использует ядро Xray с TLS и современным шифрованием для защиты трафика между клиентом и узлом."
+  "site.home.faq5A": "DarKnight использует ядро Xray с TLS и современным шифрованием для защиты трафика между клиентом и узлом.",
+  "site.legal.privacy": "Политика конфиденциальности",
+  "site.legal.terms": "Условия использования",
+  "site.cookie.title": "Уведомление о cookie",
+  "site.cookie.message": "Мы используем необходимые cookie и локальное хранилище для входа, языка и темы. Рекламные трекеры не используются. Подробнее:",
+  "site.cookie.accept": "Согласен",
+  "site.cookie.decline": "Не согласен"
 }

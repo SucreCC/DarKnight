@@ -6,7 +6,9 @@ import { toast } from 'vue-sonner'
 import { registerUser, sendVerificationCode } from '@/api/portal'
 import { isEmailAlreadyRegisteredError, resolvePortalApiError } from '@/utils/portalError'
 import { removeUserToken, setUserToken } from '@/utils/userAuth'
+import AuthTrustFooter from '@/components/AuthTrustFooter/index.vue'
 import LanguageSwitch from '@/components/LanguageSwitch/index.vue'
+import { usePageSeo } from '@/composables/usePageSeo'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -36,6 +38,12 @@ const sending = ref(false)
 const countdown = ref(0)
 const errorMsg = ref('')
 const captchaVisible = ref(false)
+
+usePageSeo({
+  titleKey: 'site.auth.registerSeoTitle',
+  descriptionKey: 'site.auth.registerSeoDescription',
+  noindex: true
+})
 
 /** 未聚焦前只读，阻止浏览器把邮箱/密码灌进验证码框 */
 const codeReadonly = ref(true)
@@ -210,11 +218,22 @@ async function onSubmit() {
     </div>
     <div class="flex flex-1 items-center justify-center">
       <div class="relative w-full max-w-md rounded-xl border border-border bg-card p-7 shadow-sm">
-        <h1 class="text-center text-2xl font-bold tracking-tight text-foreground">
-          {{ t('portal.siteName') }}
+        <div class="mb-3 flex justify-center">
+          <img
+            src="/statics/logo.png"
+            alt="DarKnight"
+            class="size-20 rounded-2xl object-contain"
+          />
+        </div>
+        <p class="mb-1 text-center text-sm font-semibold text-foreground">DarKnight</p>
+        <p class="mb-4 text-center text-xs text-muted-foreground">
+          {{ t('site.auth.officialDomain') }}
+        </p>
+        <h1 class="text-center text-xl font-bold tracking-tight text-foreground">
+          {{ t('portal.registerSubtitle') }}
         </h1>
         <p class="mb-6 mt-2 text-center text-sm text-muted-foreground">
-          {{ t('portal.registerSubtitle') }}
+          {{ t('site.auth.registerTrustNotice') }}
         </p>
 
         <form class="flex flex-col gap-4" autocomplete="off" @submit.prevent="onSubmit">
@@ -326,6 +345,7 @@ async function onSubmit() {
       </div>
     </div>
 
+    <AuthTrustFooter />
     <SlideCaptchaDialog v-model="captchaVisible" @success="onCaptchaSuccess" />
   </div>
 </template>

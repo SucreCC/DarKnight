@@ -4,9 +4,12 @@ import { useI18n } from 'vue-i18n'
 import { Cable, FileText, Lock } from 'lucide-vue-next'
 import type { Component } from 'vue'
 import { Button } from '@/components/ui/button'
+import { useSiteSeo } from '@/composables/useSiteSeo'
 
 const { t } = useI18n()
 const router = useRouter()
+
+useSiteSeo()
 
 const features: { icon: Component; title: string; desc: string }[] = [
   { icon: Lock, title: 'site.home.feature1Title', desc: 'site.home.feature1Desc' },

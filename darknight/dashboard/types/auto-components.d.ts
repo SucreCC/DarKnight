@@ -8,11 +8,14 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AuthTrustFooter: typeof import('./../src/components/AuthTrustFooter/index.vue')['default']
     ConfirmDialog: typeof import('./../src/components/ConfirmDialog/index.vue')['default']
+    CookieConsentBanner: typeof import('./../src/components/CookieConsentBanner/index.vue')['default']
     LanguageSwitch: typeof import('./../src/components/LanguageSwitch/index.vue')['default']
     LoadingOverlay: typeof import('./../src/components/LoadingOverlay/index.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SiteLegalFooter: typeof import('./../src/components/SiteLegalFooter/index.vue')['default']
     ThemeToggle: typeof import('./../src/components/ThemeToggle/index.vue')['default']
   }
 }

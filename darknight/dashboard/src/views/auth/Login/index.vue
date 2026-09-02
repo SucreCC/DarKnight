@@ -6,7 +6,9 @@ import { extractErrorDetail } from '@/config/axios'
 import { loginAccount } from '@/api/portal'
 import { removeToken, setToken } from '@/utils/auth'
 import { removeUserToken, setUserToken } from '@/utils/userAuth'
+import AuthTrustFooter from '@/components/AuthTrustFooter/index.vue'
 import LanguageSwitch from '@/components/LanguageSwitch/index.vue'
+import { usePageSeo } from '@/composables/usePageSeo'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { PasswordInput } from '@/components/ui/password-input'
@@ -21,6 +23,12 @@ const form = reactive({ username: '', password: '' })
 const fieldErrors = reactive({ username: '', password: '' })
 const loading = ref(false)
 const errorMsg = ref('')
+
+usePageSeo({
+  titleKey: 'site.auth.loginSeoTitle',
+  descriptionKey: 'site.auth.loginSeoDescription',
+  noindex: true
+})
 
 onMounted(() => {
   removeToken()
@@ -83,15 +91,19 @@ async function onSubmit() {
         <div class="mb-3 flex justify-center">
           <img
             src="/statics/logo.png"
-            alt="DarKnight VPN"
+            alt="DarKnight"
             class="size-28 rounded-2xl object-contain"
           />
         </div>
+        <p class="mb-1 text-center text-sm font-semibold text-foreground">DarKnight</p>
+        <p class="mb-4 text-center text-xs text-muted-foreground">
+          {{ t('site.auth.officialDomain') }}
+        </p>
         <h1 class="text-center text-lg font-semibold text-foreground">
           {{ t('login.loginYourAccount') }}
         </h1>
         <p class="mb-5 text-center text-sm text-muted-foreground">
-          {{ t('login.welcomeBack') }}
+          {{ t('site.auth.loginTrustNotice') }}
         </p>
         <form class="flex flex-col gap-4" @submit.prevent="onSubmit">
           <div class="space-y-2">
@@ -132,5 +144,6 @@ async function onSubmit() {
         </div>
       </div>
     </div>
+    <AuthTrustFooter />
   </div>
 </template>

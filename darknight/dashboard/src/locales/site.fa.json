@@ -27,5 +27,11 @@
   "site.home.faq4Q": "از کدام کلاینت‌ها می‌توانم استفاده کنم؟",
   "site.home.faq4A": "Clash Verge Rev را برای Windows و macOS، Shadowrocket را برای iOS و Clash Meta for Android را برای Android توصیه می‌کنیم. پس از ورود راهنماهای تنظیم در دسترس است.",
   "site.home.faq5Q": "آیا اتصال امن است؟",
-  "site.home.faq5A": "بله. DarKnight از هسته Xray با TLS و رمزنگاری مدرن برای کمک به محافظت از ترافیک بین کلاینت و گره استفاده می‌کند."
+  "site.home.faq5A": "بله. DarKnight از هسته Xray با TLS و رمزنگاری مدرن برای کمک به محافظت از ترافیک بین کلاینت و گره استفاده می‌کند.",
+  "site.legal.privacy": "سیاست حفظ حریم خصوصی",
+  "site.legal.terms": "شرایط استفاده",
+  "site.cookie.title": "اطلاعیه کوکی",
+  "site.cookie.message": "ما از کوکی‌ها و ذخیره‌سازی محلی ضروری برای ورود، زبان و تم استفاده می‌کنیم و ردیاب تبلیغاتی نداریم. جزئیات:",
+  "site.cookie.accept": "موافقم",
+  "site.cookie.decline": "مخالفم"
 }

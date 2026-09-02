@@ -3,14 +3,12 @@ import { watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import LanguageSwitch from '@/components/LanguageSwitch/index.vue'
+import SiteLegalFooter from '@/components/SiteLegalFooter/index.vue'
 import { Button } from '@/components/ui/button'
-import { useSiteSeo } from '@/composables/useSiteSeo'
 
 const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
-
-useSiteSeo()
 
 watch(locale, (value) => {
   if (route.meta.zone !== 'site') return
@@ -54,10 +52,6 @@ watch(locale, (value) => {
     <main class="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
       <router-view />
     </main>
-    <footer
-      class="border-t border-border bg-card px-6 py-5 text-center text-[13px] text-muted-foreground"
-    >
-      {{ t('site.footer') }}
-    </footer>
+    <SiteLegalFooter />
   </div>
 </template>

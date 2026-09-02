@@ -12,13 +12,13 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://darkight.com/" />
   </url>
   <url>
-    <loc>https://darkight.com/login</loc>
+    <loc>https://darkight.com/privacy</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://darkight.com/portal/register</loc>
+    <loc>https://darkight.com/terms</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.5</priority>
   </url>
 </urlset>

@@ -1,7 +1,9 @@
 User-agent: *
 Allow: /
-Allow: /login
-Allow: /portal/register
+Allow: /privacy
+Allow: /terms
+Disallow: /login
+Disallow: /portal/register
 Disallow: /admin/
 Disallow: /portal/
 
