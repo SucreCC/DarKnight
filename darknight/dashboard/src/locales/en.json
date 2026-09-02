@@ -292,7 +292,7 @@
   "portal.menu.invite": "My referrals",
   "portal.invite.registeredUsers": "Registered users",
   "portal.invite.currentBalance": "Available commission",
-  "portal.invite.balanceHint": "Credited automatically after the confirmation period and applied at checkout",
+  "portal.invite.balanceHint": "Credited automatically after the confirmation period and applied at checkout. Not withdrawable — for subscription purchases only.",
   "portal.invite.commissionRate": "Commission rate",
   "portal.invite.pendingCommission": "Pending commission",
   "portal.invite.pendingCommissionHint": "Commission is credited automatically after the confirmation period",

@@ -293,7 +293,7 @@
   "portal.menu.invite": "我的邀请",
   "portal.invite.registeredUsers": "已注册用户数",
   "portal.invite.currentBalance": "当前剩余佣金",
-  "portal.invite.balanceHint": "确认期结束后自动入账，下单时将自动抵扣应付金额",
+  "portal.invite.balanceHint": "确认期结束后自动入账，下单时将自动抵扣应付金额。佣金不可提现，仅限用于购买订阅。",
   "portal.invite.commissionRate": "佣金比例",
   "portal.invite.pendingCommission": "确认中的佣金",
   "portal.invite.pendingCommissionHint": "被邀请用户付款后，佣金需等待确认期结束后自动入账",

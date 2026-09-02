@@ -56,8 +56,27 @@ def fulfill_portal_order(db: Session, dbuser: User, order: PortalOrder) -> User:
     else:
         dbuser.data_limit = order.snapshot_data_limit_gb * 1024**3
 
-    now_ts = int(datetime.utcnow().timestamp())
-    base_expire = max(dbuser.expire or now_ts, now_ts)
+    fulfill_ts = int((order.paid_at or datetime.utcnow()).timestamp())
+    prior_paid_orders = (
+        db.query(PortalOrder)
+        .filter(
+            PortalOrder.user_id == dbuser.id,
+            PortalOrder.status == PortalOrderStatus.paid,
+            PortalOrder.id != order.id,
+        )
+        .count()
+    )
+
+    if prior_paid_orders == 0:
+        # First portal purchase: start from payment time, ignore any admin-set expiry.
+        base_expire = fulfill_ts
+    elif dbuser.expire and dbuser.expire > fulfill_ts:
+        # Renewal while still active: extend from current expiry.
+        base_expire = dbuser.expire
+    else:
+        # Renewal after expiry: start from payment time.
+        base_expire = fulfill_ts
+
     dbuser.expire = base_expire + order.snapshot_duration_days * 86400
 
     if dbuser.status != UserStatus.active:
