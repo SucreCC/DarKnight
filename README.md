@@ -41,8 +41,9 @@ docker compose up -d --build
 | 项目 | 说明 |
 | --- | --- |
 | `33100` | HTTP 面板与 API（`docker-compose.yml` 已映射） |
-| `1080/tcp`、`1080/udp` | 可选 Shadowsocks 等入站（按实际 Xray 配置使用） |
 | `./data` | 持久化目录：数据库、日志、运行时 `xray_config.json` |
+
+代理协议、TLS 端口与 Nginx 配合见 [PROTOCOL-README.md](PROTOCOL-README.md)。
 
 应用配置来自镜像内的 `darknight/config.yaml`。修改配置后需要重新构建并启动：
 
@@ -108,12 +109,15 @@ DarKnight/
 ├── docs/                # 设计与实现文档
 ├── docker-compose.yml
 ├── Dockerfile
+├── PROTOCOL-README.md
+├── README.md
 ├── alembic.ini
 └── requirements.txt
 ```
 
 ## 相关文档
 
+- [代理协议说明](PROTOCOL-README.md)
 - [前端 Dashboard](darknight/dashboard/README.md)
 - [节点与辅助脚本](scripts/README.md)
 - [数据库迁移说明](darknight/db/migrations/README)

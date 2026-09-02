@@ -81,10 +81,8 @@ RUN printf '%s\n' \
       'set -e' \
       'cd /app' \
       'mkdir -p /app/data/logs' \
-      'if [ ! -f /app/data/xray_config.json ]; then' \
-      '  echo "[docker] seeding /app/data/xray_config.json from default"' \
-      '  cp /app/xray_config.json /app/data/xray_config.json' \
-      'fi' \
+      'echo "[docker] syncing /app/data/xray_config.json from image default"' \
+      'cp /app/xray_config.json /app/data/xray_config.json' \
       'echo "[docker] running database migrations..."' \
       'alembic upgrade head' \
       'echo "[docker] starting DarKnight..."' \
@@ -93,6 +91,6 @@ RUN printf '%s\n' \
     && chmod +x /entrypoint.sh \
     && mkdir -p /app/data/logs
 
-EXPOSE 33100
+EXPOSE 33100 8443 8444 8445 1080
 
 ENTRYPOINT ["/entrypoint.sh"]
