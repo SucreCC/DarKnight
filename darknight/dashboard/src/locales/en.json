@@ -295,6 +295,7 @@
   "portal.buy.perMonth": "per month",
   "portal.buy.totalPrice": "Total: {total} ({months} months)",
   "portal.buy.discountBadge": "Save {percent}%",
+  "portal.buy.discountShort": "SAVE",
   "portal.buy.noDiscount": "No extra discount",
   "portal.buy.mostPopular": "Most popular",
   "portal.buy.filter.all": "All",

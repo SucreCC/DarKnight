@@ -11,6 +11,7 @@ import {
   planDiscountByMonths
 } from './plans'
 import { usePlanCatalog, type PricedPlan } from './usePlanCatalog'
+import PlanDiscountBurst from './PlanDiscountBurst.vue'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -66,7 +67,7 @@ function subscribe(planId: string, cycleId: string) {
 </script>
 
 <template>
-  <div class="max-w-6xl">
+  <div class="w-full">
     <h2 class="mb-5 text-2xl font-bold tracking-tight text-foreground">
       {{ t('portal.buy.choosePlan') }}
     </h2>
@@ -75,17 +76,23 @@ function subscribe(planId: string, cycleId: string) {
       <AlertDescription>{{ t('portal.buy.plansLoadFailed') }}</AlertDescription>
     </Alert>
 
-    <div v-if="isLoading" class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-      <Skeleton v-for="i in 4" :key="i" class="h-[28rem] rounded-xl" />
+    <div
+      v-if="isLoading"
+      class="grid justify-start gap-4 grid-cols-[repeat(auto-fill,270px)]"
+    >
+      <Skeleton v-for="i in 4" :key="i" class="h-[26rem] rounded-xl" />
     </div>
 
-    <div v-else class="grid items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-4">
+    <div
+      v-else
+      class="grid justify-start items-stretch gap-4 grid-cols-[repeat(auto-fill,270px)]"
+    >
       <div
         v-for="card in planCards"
         :key="card.plan.id"
         :class="
           cn(
-            'relative flex flex-col rounded-xl border bg-card p-7 transition-shadow hover:shadow-lg',
+            'relative flex flex-col rounded-xl border bg-card p-5 transition-shadow hover:shadow-lg',
             card.featured
               ? 'border-primary/40 shadow-md ring-1 ring-primary/20'
               : 'border-border'
@@ -100,45 +107,43 @@ function subscribe(planId: string, cycleId: string) {
           {{ t('portal.buy.mostPopular') }}
         </div>
 
-        <span
-          :class="
-            cn(
-              'absolute end-4 top-8 inline-flex rounded-full px-3 py-1 text-xs font-medium',
-              card.discount > 0
-                ? 'bg-primary/10 text-primary'
-                : 'bg-muted text-muted-foreground'
-            )
-          "
-        >
-          {{
-            card.discount > 0
-              ? t('portal.buy.discountBadge', { percent: card.discount })
-              : t('portal.buy.noDiscount')
-          }}
-        </span>
+        <div class="relative min-h-[4.25rem]">
+          <p class="pe-[4.5rem] text-xl font-bold leading-tight text-foreground">
+            {{ card.plan.name }}
+          </p>
 
-        <p class="pe-24 text-2xl font-bold text-foreground">{{ card.plan.name }}</p>
+          <div class="absolute end-0 top-4">
+            <PlanDiscountBurst
+              :percent="card.discount"
+              :label="
+                card.discount > 0
+                  ? t('portal.buy.discountShort')
+                  : t('portal.buy.noDiscount')
+              "
+            />
+          </div>
+        </div>
 
-        <div class="mt-4 flex items-baseline gap-1">
-          <span class="text-lg font-semibold text-foreground">{{ currencySymbol(currency) }}</span>
-          <span class="text-4xl font-bold leading-none tracking-tight text-foreground">
+        <div class="mt-1 flex items-baseline gap-1">
+          <span class="text-base font-semibold text-foreground">{{ currencySymbol(currency) }}</span>
+          <span class="text-3xl font-bold leading-none tracking-tight text-foreground">
             {{ formatPrice(card.monthlyPrice) }}
           </span>
           <span class="text-sm text-muted-foreground">{{ t('portal.buy.perMonth') }}</span>
         </div>
 
-        <ul v-if="card.plan.features.length" class="mt-5 flex-1 space-y-2">
+        <ul v-if="card.plan.features.length" class="mt-4 flex-1 space-y-1.5">
           <li
             v-for="(feature, index) in card.plan.features"
             :key="index"
-            class="flex items-start gap-2 text-sm leading-relaxed text-muted-foreground"
+            class="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground"
           >
             <Check class="mt-0.5 size-4 shrink-0 text-primary" />
             <span>{{ feature }}</span>
           </li>
         </ul>
 
-        <p class="pt-6 text-sm text-muted-foreground">
+        <p class="pt-4 text-xs text-muted-foreground">
           {{
             t('portal.buy.totalPrice', {
               total: `${currencySymbol(currency)}${formatPrice(card.price)}`,
@@ -148,7 +153,7 @@ function subscribe(planId: string, cycleId: string) {
         </p>
 
         <Button
-          class="mt-4 h-11 w-full"
+          class="mt-3 h-10 w-full text-sm"
           @click="subscribe(card.plan.id, card.plan.cycles[0].id)"
         >
           {{ t('portal.buy.subscribeNow') }}

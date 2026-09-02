@@ -296,6 +296,7 @@
   "portal.buy.perMonth": "每月",
   "portal.buy.totalPrice": "总计：{total}（{months} 个月）",
   "portal.buy.discountBadge": "优惠 {percent}%",
+  "portal.buy.discountShort": "优惠",
   "portal.buy.noDiscount": "无额外优惠",
   "portal.buy.mostPopular": "人气最高",
   "portal.buy.filter.all": "全部",
