@@ -103,6 +103,7 @@ export function usePageSeo(options: PageSeoOptions): void {
               {
                 '@type': 'Organization',
                 name: SITE_NAME,
+                alternateName: ['DarKnight', 'darkight', 'darknight'],
                 url: SITE_URL,
                 logo: ogImage,
                 description: description.value
@@ -110,6 +111,7 @@ export function usePageSeo(options: PageSeoOptions): void {
               {
                 '@type': 'WebSite',
                 name: SITE_NAME,
+                alternateName: ['DarKnight', 'darkight', 'darknight'],
                 url: SITE_URL,
                 description: description.value,
                 inLanguage: locale.value === 'zh' ? 'zh-CN' : locale.value
