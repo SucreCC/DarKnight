@@ -1,13 +1,9 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { Button } from '@/components/ui/button'
-import { usePageSeo } from '@/composables/usePageSeo'
-import { getBlogPostBySlug, type BlogPost } from './articles'
+import { getBlogPostBySlug } from './articles'
 import BlogArticle from './BlogArticle.vue'
 
-const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
