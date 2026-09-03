@@ -25,7 +25,7 @@ const steps: { icon: Component; title: string; desc: string }[] = [
 
 const protocols = ['VLESS', 'VMess', 'Trojan', 'Shadowsocks'] as const
 
-const faqItems = [1, 2, 3, 4, 5] as const
+const faqItems = [1, 2, 3, 4, 5, 6, 7] as const
 
 const quickLinks = [
   {

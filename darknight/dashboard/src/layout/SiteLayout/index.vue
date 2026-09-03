@@ -15,10 +15,16 @@ const navItems = [
   { name: 'site-home' as const, labelKey: 'site.menu.home' },
   { name: 'site-pricing' as const, labelKey: 'site.menu.pricing' },
   { name: 'site-guides' as const, labelKey: 'site.menu.guides' },
-  { name: 'site-faq' as const, labelKey: 'site.menu.faq' }
+  { name: 'site-faq' as const, labelKey: 'site.menu.faq' },
+  { name: 'site-blog' as const, labelKey: 'site.menu.blog' }
 ]
 
 const activeRoute = computed(() => route.name)
+
+function isNavActive(name: (typeof navItems)[number]['name']): boolean {
+  if (activeRoute.value === name) return true
+  return name === 'site-blog' && activeRoute.value === 'site-blog-detail'
+}
 
 watch(locale, (value) => {
   if (route.meta.zone !== 'site') return
@@ -65,7 +71,7 @@ watch(locale, (value) => {
             :class="
               cn(
                 'rounded-md px-2.5 py-1.5 transition-colors',
-                activeRoute === item.name
+                isNavActive(item.name)
                   ? 'bg-primary/10 font-medium text-primary'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )

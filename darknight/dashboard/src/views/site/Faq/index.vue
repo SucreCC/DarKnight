@@ -1,16 +1,20 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Button } from '@/components/ui/button'
 import { SITE_CONTACT_EMAIL } from '@/config/site'
-import { SITE_URL } from '@/config/seo'
+import { usePageSeo } from '@/composables/usePageSeo'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const router = useRouter()
 
-const faqItems = [1, 2, 3, 4, 5, 6, 7] as const
-const previousTitle = typeof document !== 'undefined' ? document.title : ''
+usePageSeo({
+  titleKey: 'site.faqPage.seoTitle',
+  descriptionKey: 'site.faqPage.seoDescription',
+  withHreflang: true
+})
+
+const faqItems = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const
 
 function answer(item: number): string {
   if (item === 7) {
@@ -18,25 +22,6 @@ function answer(item: number): string {
   }
   return t(`site.faqPage.a${item}`)
 }
-
-onMounted(() => {
-  document.title = t('site.faqPage.seoTitle')
-  const desc = document.querySelector('meta[name="description"]')
-  if (desc) desc.setAttribute('content', t('site.faqPage.seoDescription'))
-
-  let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null
-  if (!canonical) {
-    canonical = document.createElement('link')
-    canonical.rel = 'canonical'
-    document.head.appendChild(canonical)
-  }
-  const langQuery = locale.value === 'en' ? '' : `?lang=${locale.value}`
-  canonical.href = `${SITE_URL}/faq${langQuery}`
-})
-
-onUnmounted(() => {
-  document.title = previousTitle
-})
 </script>
 
 <template>

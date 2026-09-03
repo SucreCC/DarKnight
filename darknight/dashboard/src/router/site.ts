@@ -25,6 +25,18 @@ export const siteRoutes: RouteRecordRaw[] = [
         meta: { title: 'site.menu.faq', public: true, zone: 'site' }
       },
       {
+        path: 'blog',
+        name: 'site-blog',
+        component: () => import('@/views/site/Blog/index.vue'),
+        meta: { title: 'site.menu.blog', public: true, zone: 'site' }
+      },
+      {
+        path: 'blog/:slug',
+        name: 'site-blog-detail',
+        component: () => import('@/views/site/Blog/Detail.vue'),
+        meta: { title: 'site.menu.blog', public: true, zone: 'site' }
+      },
+      {
         path: 'guides',
         name: 'site-guides',
         component: () => import('@/views/site/Guides/index.vue'),

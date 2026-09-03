@@ -88,8 +88,8 @@ export function usePageSeo(options: PageSeoOptions): void {
 
       const faq =
         options.faqSchema ??
-        ({
-          count: 5,
+        (        {
+          count: 7,
           questionKey: (i: number) => `site.home.faq${i}Q`,
           answerKey: (i: number) => `site.home.faq${i}A`
         } as const)
