@@ -3,6 +3,7 @@ Allow: /
 Allow: /pricing
 Allow: /guides
 Allow: /faq
+Allow: /blog
 Allow: /privacy
 Allow: /terms
 Disallow: /login

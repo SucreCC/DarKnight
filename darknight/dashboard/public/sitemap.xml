@@ -27,6 +27,76 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://darkight.com/blog</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://darkight.com/blog" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://darkight.com/blog?lang=zh" />
+    <xhtml:link rel="alternate" hreflang="ru" href="https://darkight.com/blog?lang=ru" />
+    <xhtml:link rel="alternate" hreflang="fa" href="https://darkight.com/blog?lang=fa" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://darkight.com/blog" />
+  </url>
+  <url>
+    <loc>https://darkight.com/blog/what-is-darknight-vpn</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://darkight.com/blog/what-is-darknight-vpn" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://darkight.com/blog/what-is-darknight-vpn?lang=zh" />
+    <xhtml:link rel="alternate" hreflang="ru" href="https://darkight.com/blog/what-is-darknight-vpn?lang=ru" />
+    <xhtml:link rel="alternate" hreflang="fa" href="https://darkight.com/blog/what-is-darknight-vpn?lang=fa" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://darkight.com/blog/what-is-darknight-vpn" />
+  </url>
+  <url>
+    <loc>https://darkight.com/blog/get-started-with-darknight</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://darkight.com/blog/get-started-with-darknight" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://darkight.com/blog/get-started-with-darknight?lang=zh" />
+    <xhtml:link rel="alternate" hreflang="ru" href="https://darkight.com/blog/get-started-with-darknight?lang=ru" />
+    <xhtml:link rel="alternate" hreflang="fa" href="https://darkight.com/blog/get-started-with-darknight?lang=fa" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://darkight.com/blog/get-started-with-darknight" />
+  </url>
+  <url>
+    <loc>https://darkight.com/blog/supported-protocols-xray</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://darkight.com/blog/supported-protocols-xray" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://darkight.com/blog/supported-protocols-xray?lang=zh" />
+    <xhtml:link rel="alternate" hreflang="ru" href="https://darkight.com/blog/supported-protocols-xray?lang=ru" />
+    <xhtml:link rel="alternate" hreflang="fa" href="https://darkight.com/blog/supported-protocols-xray?lang=fa" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://darkight.com/blog/supported-protocols-xray" />
+  </url>
+  <url>
+    <loc>https://darkight.com/blog/recommended-vpn-clients</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://darkight.com/blog/recommended-vpn-clients" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://darkight.com/blog/recommended-vpn-clients?lang=zh" />
+    <xhtml:link rel="alternate" hreflang="ru" href="https://darkight.com/blog/recommended-vpn-clients?lang=ru" />
+    <xhtml:link rel="alternate" hreflang="fa" href="https://darkight.com/blog/recommended-vpn-clients?lang=fa" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://darkight.com/blog/recommended-vpn-clients" />
+  </url>
+  <url>
+    <loc>https://darkight.com/blog/darknight-vpn-faq-deep-dive</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://darkight.com/blog/darknight-vpn-faq-deep-dive" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://darkight.com/blog/darknight-vpn-faq-deep-dive?lang=zh" />
+    <xhtml:link rel="alternate" hreflang="ru" href="https://darkight.com/blog/darknight-vpn-faq-deep-dive?lang=ru" />
+    <xhtml:link rel="alternate" hreflang="fa" href="https://darkight.com/blog/darknight-vpn-faq-deep-dive?lang=fa" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://darkight.com/blog/darknight-vpn-faq-deep-dive" />
+  </url>
+  <url>
+    <loc>https://darkight.com/blog/is-darknight-a-vpn</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://darkight.com/blog/is-darknight-a-vpn" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://darkight.com/blog/is-darknight-a-vpn?lang=zh" />
+    <xhtml:link rel="alternate" hreflang="ru" href="https://darkight.com/blog/is-darknight-a-vpn?lang=ru" />
+    <xhtml:link rel="alternate" hreflang="fa" href="https://darkight.com/blog/is-darknight-a-vpn?lang=fa" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://darkight.com/blog/is-darknight-a-vpn" />
+  </url>
+  <url>
     <loc>https://darkight.com/privacy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>

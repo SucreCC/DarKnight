@@ -23,6 +23,10 @@ export interface PageSeoOptions {
     questionKey: (index: number) => string
     answerKey: (index: number) => string
   }
+  blogPosting?: {
+    datePublished: string
+    dateModified: string
+  }
 }
 
 export function usePageSeo(options: PageSeoOptions): void {
@@ -84,53 +88,77 @@ export function usePageSeo(options: PageSeoOptions): void {
     meta: computed(() => [{ name: 'keywords', content: keywords.value }]),
     link: linkTags,
     script: computed(() => {
-      if (!options.withFaqSchema) return []
+      if (!options.withFaqSchema && !options.blogPosting) return []
 
-      const faq =
-        options.faqSchema ??
-        (        {
-          count: 7,
-          questionKey: (i: number) => `site.home.faq${i}Q`,
-          answerKey: (i: number) => `site.home.faq${i}A`
-        } as const)
+      const graph: Record<string, unknown>[] = [
+        {
+          '@type': 'Organization',
+          name: SITE_NAME,
+          alternateName: ['DarKnight', 'darkight', 'darknight'],
+          url: SITE_URL,
+          logo: ogImage,
+          description: description.value
+        },
+        {
+          '@type': 'WebSite',
+          name: SITE_NAME,
+          alternateName: ['DarKnight', 'darkight', 'darknight'],
+          url: SITE_URL,
+          description: description.value,
+          inLanguage: locale.value === 'zh' ? 'zh-CN' : locale.value
+        }
+      ]
+
+      if (options.withFaqSchema) {
+        const faq =
+          options.faqSchema ??
+          ({
+            count: 7,
+            questionKey: (i: number) => `site.home.faq${i}Q`,
+            answerKey: (i: number) => `site.home.faq${i}A`
+          } as const)
+
+        graph.push({
+          '@type': 'FAQPage',
+          mainEntity: Array.from({ length: faq.count }, (_, idx) => {
+            const i = idx + 1
+            return {
+              '@type': 'Question',
+              name: t(faq.questionKey(i)),
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: t(faq.answerKey(i))
+              }
+            }
+          })
+        })
+      }
+
+      if (options.blogPosting) {
+        graph.push({
+          '@type': 'BlogPosting',
+          headline: title.value,
+          description: description.value,
+          datePublished: options.blogPosting.datePublished,
+          dateModified: options.blogPosting.dateModified,
+          mainEntityOfPage: canonical.value,
+          url: canonical.value,
+          author: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
+          publisher: {
+            '@type': 'Organization',
+            name: SITE_NAME,
+            url: SITE_URL,
+            logo: { '@type': 'ImageObject', url: ogImage }
+          }
+        })
+      }
 
       return [
         {
           type: 'application/ld+json',
           innerHTML: JSON.stringify({
             '@context': 'https://schema.org',
-            '@graph': [
-              {
-                '@type': 'Organization',
-                name: SITE_NAME,
-                alternateName: ['DarKnight', 'darkight', 'darknight'],
-                url: SITE_URL,
-                logo: ogImage,
-                description: description.value
-              },
-              {
-                '@type': 'WebSite',
-                name: SITE_NAME,
-                alternateName: ['DarKnight', 'darkight', 'darknight'],
-                url: SITE_URL,
-                description: description.value,
-                inLanguage: locale.value === 'zh' ? 'zh-CN' : locale.value
-              },
-              {
-                '@type': 'FAQPage',
-                mainEntity: Array.from({ length: faq.count }, (_, idx) => {
-                  const i = idx + 1
-                  return {
-                    '@type': 'Question',
-                    name: t(faq.questionKey(i)),
-                    acceptedAnswer: {
-                      '@type': 'Answer',
-                      text: t(faq.answerKey(i))
-                    }
-                  }
-                })
-              }
-            ]
+            '@graph': graph
           })
         }
       ]

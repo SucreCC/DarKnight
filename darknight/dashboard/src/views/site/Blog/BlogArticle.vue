@@ -13,7 +13,11 @@ const router = useRouter()
 usePageSeo({
   titleKey: props.post.titleKey,
   descriptionKey: props.post.descriptionKey,
-  withHreflang: true
+  withHreflang: true,
+  blogPosting: {
+    datePublished: props.post.publishedAt,
+    dateModified: props.post.updatedAt
+  }
 })
 </script>
 
