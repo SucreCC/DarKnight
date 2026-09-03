@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import logging
+import os
 from collections import defaultdict
 from copy import deepcopy
 from pathlib import PosixPath
@@ -15,6 +17,8 @@ from darknight.models.proxy import ProxyTypes
 from darknight.models.user import UserStatus
 from darknight.utils.crypto import get_cert_SANs
 from darknight.services.config.settings import get_app_config
+
+logger = logging.getLogger(__name__)
 
 
 def merge_dicts(a, b):  # B will override A dictionary key and values
@@ -201,7 +205,16 @@ class XRayConfig(dict):
                     for certificate in tls_settings.get('certificates', []):
 
                         if certificate.get("certificateFile", None):
-                            with open(certificate['certificateFile'], 'rb') as file:
+                            cert_path = certificate['certificateFile']
+                            if not os.path.isfile(cert_path):
+                                logger.warning(
+                                    "TLS certificate file not found (%s); "
+                                    "skipping SAN resolve for this inbound. "
+                                    "Expected on production hosts with Let's Encrypt mounted.",
+                                    cert_path,
+                                )
+                                continue
+                            with open(cert_path, 'rb') as file:
                                 cert = file.read()
                                 settings['sni'].extend(get_cert_SANs(cert))
 
